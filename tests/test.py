@@ -4,9 +4,10 @@ from qec.css import CssCode
 
 qcode = CssCode(np.array([[1,1,1,1]]), np.array([[1,1,1,1]]))
 
-code = hamming_code(12)
+code = hamming_code(3)
 
 qcode = CssCode(code, code)
 
 
 print(qcode)
+qcode.test_logical_basis()
