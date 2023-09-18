@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "qec"
+version = "0.1.0"
+description = "Python Tools for Quantum Error Correction"
+authors = ["Joschka Roffe <joschka@roffe.eu>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
