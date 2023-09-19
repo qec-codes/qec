@@ -46,3 +46,5 @@ code = StabiliserCode(pauli_stabs=stabs)
 print(code.logical_basis.toarray())
 
 code.test_logical_basis()
+
+print(code)

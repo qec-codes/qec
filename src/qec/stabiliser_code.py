@@ -12,8 +12,9 @@ class StabiliserCode(object):
         h: Union[np.ndarray, scipy.sparse.spmatrix] = None,
         name: str = None,
     ):
-        name if name else "Stabiliser"
+        self.name = name if name else "Stabiliser"
         self.h = None
+        self.d = np.nan
 
         if pauli_stabs is not None:
             if not isinstance(pauli_stabs, np.ndarray):
@@ -87,6 +88,8 @@ class StabiliserCode(object):
 
         self.logical_basis = self.compute_logical_basis()
 
+        self.K = self.logical_basis.shape[0]//2
+
         self.logical_basis_left = self.logical_basis[:, : self.N]
         self.logical_basis_right = self.logical_basis[:, self.N :]
 
@@ -109,6 +112,7 @@ class StabiliserCode(object):
         return l_basis
 
     def test_logical_basis(self):
+
         """
         Validate the computed logical operator bases.
         """
@@ -129,3 +133,12 @@ class StabiliserCode(object):
 
         test_plu = gf2sparse.PluDecomposition(test)
         assert test_plu.rank == self.logical_basis.shape[0]
+
+    def __str__(self):
+        """
+        Return a string representation of the CssCode object.
+
+        Returns:
+            str: String representation of the CSS code.
+        """
+        return f"{self.name} Code: [[N={self.N}, K={self.K}, dmin={self.d}]]"

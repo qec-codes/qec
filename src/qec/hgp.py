@@ -121,3 +121,5 @@ class HyperGraphProductCode(CssCode):
         lx = scipy.sparse.vstack([lx1, lx2])
 
         return (lx, lz)
+    
+
