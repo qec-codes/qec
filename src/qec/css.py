@@ -4,10 +4,38 @@ from ldpc2 import gf2sparse
 import scipy
 import qec.util
 
-class CssCode(object):
 
-    def __init__(self, hx: Union[np.ndarray,scipy.sparse.spmatrix], hz: Union[np.ndarray,scipy.sparse.spmatrix], name: str = None):
-        
+class CssCode(object):
+    """
+    CSSCode class for generating and manipulating Calderbank-Shor-Steane (CSS) quantum error-correcting codes.
+
+    Attributes:
+        hx (Union[np.ndarray, scipy.sparse.spmatrix]): The X-check matrix.
+        hz (Union[np.ndarray, scipy.sparse.spmatrix]): The Z-check matrix.
+        name (str): A name for this CSS code.
+        N (int): Number of qubits in the code.
+        K (int): Dimension of the code.
+        d (int): Minimum distance of the code.
+        lx (Union[np.ndarray, scipy.sparse.spmatrix]): Logical X operator basis.
+        lz (Union[np.ndarray, scipy.sparse.spmatrix]): Logical Z operator basis.
+    """
+
+    def __init__(
+        self,
+        hx: Union[np.ndarray, scipy.sparse.spmatrix],
+        hz: Union[np.ndarray, scipy.sparse.spmatrix],
+        name: str = None,
+    ):
+        """
+        Initialise a new instance of the CssCode class.
+
+        Args:
+            hx (Union[np.ndarray, scipy.sparse.spmatrix]): The X-check matrix.
+            hz (Union[np.ndarray, scipy.sparse.spmatrix]): The Z-check matrix.
+            name (str, optional): A name for this CSS code. Defaults to "CSS".
+        """
+
+        # Assign a default name if none is provided
         if name is None:
             self.name = "CSS"
         else:
@@ -16,62 +44,80 @@ class CssCode(object):
         self.lx = None
         self.lz = None
 
-        #check matrix input and convert to sparse representation
-        self.hx = qec.util.check_binary_matrix_type(hx)
-        self.hz = qec.util.check_binary_matrix_type(hz)
-        
-        #set the number of qubits
+        # Convert matrices to sparse representation and set them as class attributes
+        self.hx = qec.util.convert_to_sparse(hx)
+        self.hz = qec.util.convert_to_sparse(hz)
+
+        # Calculate the number of qubits from the matrix dimension
         self.N = self.hx.shape[1]
-        
-        #check that the number of qubits is the same for both matrices
+
+        # Validate the number of qubits for both matrices
         try:
             assert self.N == self.hz.shape[1]
         except AssertionError:
-            raise ValueError(f"Input matrices hx and hz must have the same number of columns.\
-                             Current column count, hx: {hx.shape[1]}; hz: {hz.shape[1]}")
-        
-        #check that matrices commute
+            raise ValueError(
+                f"Input matrices hx and hz must have the same number of columns.\
+                              Current column count, hx: {hx.shape[1]}; hz: {hz.shape[1]}"
+            )
+
+        # Validate if the input matrices commute
         try:
             assert not np.any((self.hx @ self.hz.T).data % 2)
         except AssertionError:
-            raise ValueError("Input matrices hx and hz do not commute. I.e. they do not satisfy\
-                             the requirement that hx@hz.T = 0.")
+            raise ValueError(
+                "Input matrices hx and hz do not commute. I.e. they do not satisfy\
+                              the requirement that hx@hz.T = 0."
+            )
 
-        #compute a basis of the logical operators
+        # Compute a basis of the logical operators
         self.lx, self.lz = self.compute_logical_basis()
-        
-        #caculate the dimension of the code using the Rank-Nullity Theorem
+
+        # Calculate the dimension of the code
         self.K = self.lx.shape[0]
 
-        #
+        # Ensure that lx and lz have the same dimension
         assert self.K == self.lz.shape[0]
 
         self.d = np.nan
 
     def compute_logical_basis(self):
-    
+        """
+        Compute the logical operator basis for the given CSS code.
+
+        Returns:
+            Tuple[scipy.sparse.spmatrix, scipy.sparse.spmatrix]: Logical X and Z operator bases (lx, lz).
+        """
+
+        # Compute the kernel of hx and hz matrices
         kernel_hx = gf2sparse.kernel(self.hx)
         rank_hx = kernel_hx.shape[1] - kernel_hx.shape[0]
         kernel_hz = gf2sparse.kernel(self.hz)
         rank_hz = kernel_hx.shape[1] - kernel_hz.shape[0]
-    
-        logical_stack = scipy.sparse.hstack([self.hz.T,kernel_hx.T])
+
+        # Compute the logical Z operator basis
+        logical_stack = scipy.sparse.hstack([self.hz.T, kernel_hx.T])
         plu_z = gf2sparse.PluDecomposition(logical_stack)
-        kernel_rows= plu_z.pivots[rank_hz:] - rank_hz
+        kernel_rows = plu_z.pivots[rank_hz:] - rank_hz
         lz = kernel_hx[kernel_rows]
 
-        logical_stack = scipy.sparse.hstack([self.hx.T,kernel_hz.T])
+        # Compute the logical X operator basis
+        logical_stack = scipy.sparse.hstack([self.hx.T, kernel_hz.T])
         plu_x = gf2sparse.PluDecomposition(logical_stack)
-        kernel_rows= plu_x.pivots[rank_hx:] - rank_hx
+        kernel_rows = plu_x.pivots[rank_hx:] - rank_hx
         lx = kernel_hz[kernel_rows]
 
         return (lx, lz)
-    
-    def test_logical_basis(self):
 
+    def test_logical_basis(self):
+        """
+        Validate the computed logical operator bases.
+        """
+
+        # If logical bases are not computed yet, compute them
         if self.lx is None or self.lz is None:
             self.lx, self.lz = self.compute_logical_basis(self.hx, self.hz)
 
+        # Perform various tests to validate the logical bases
         assert not np.any((self.lx @ self.hz.T).data % 2)
         test = self.lx @ self.lz.T
         test.data = test.data % 2
@@ -84,11 +130,11 @@ class CssCode(object):
         test_plu = gf2sparse.PluDecomposition(test)
         assert test_plu.rank == self.K
 
-    
     def __str__(self):
+        """
+        Return a string representation of the CssCode object.
+
+        Returns:
+            str: String representation of the CSS code.
+        """
         return f"{self.name} Code: [[N={self.N}, K={self.K}, dmin={self.d}]]"
-
-
-
-
-        

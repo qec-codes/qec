@@ -19,7 +19,7 @@ qcode.test_logical_basis()
 
 print()
 
-for i in range(3,6):
+for i in range(3, 6):
     qcode = SurfaceCode(i)
     print(qcode)
 
