@@ -5,7 +5,7 @@ import scipy
 import qec.util
 
 
-class StabiliserCode(object):
+class StabCode(object):
     def __init__(
         self,
         pauli_stabs: np.ndarray = None,
@@ -88,7 +88,7 @@ class StabiliserCode(object):
 
         self.logical_basis = self.compute_logical_basis()
 
-        self.K = self.logical_basis.shape[0]//2
+        self.K = self.logical_basis.shape[0] // 2
 
         self.logical_basis_left = self.logical_basis[:, : self.N]
         self.logical_basis_right = self.logical_basis[:, self.N :]
@@ -112,7 +112,6 @@ class StabiliserCode(object):
         return l_basis
 
     def test_logical_basis(self):
-
         """
         Validate the computed logical operator bases.
         """

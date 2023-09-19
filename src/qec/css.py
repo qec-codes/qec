@@ -3,10 +3,10 @@ import numpy as np
 from ldpc2 import gf2sparse
 import scipy
 import qec.util
-from qec.stabiliser_code import StabiliserCode
+from qec.stab_code import StabCode
 
 
-class CssCode(StabiliserCode):
+class CssCode(StabCode):
     """
     CSSCode class for generating and manipulating Calderbank-Shor-Steane (CSS) quantum error-correcting codes.
 
@@ -130,4 +130,3 @@ class CssCode(StabiliserCode):
         test.data = test.data % 2
         test_plu = gf2sparse.PluDecomposition(test)
         assert test_plu.rank == self.K
-

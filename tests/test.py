@@ -4,7 +4,7 @@ from ldpc2 import gf2sparse
 from qec.css import CssCode
 from qec.hgp import HyperGraphProductCode
 from qec.codes import *
-from qec.stabiliser_code import StabiliserCode
+from qec.stab_code import StabCode
 
 qcode = FourTwoTwoCode()
 print(qcode)
@@ -41,7 +41,7 @@ print()
 
 stabs = np.array([["X", "X", "X", "X"], ["Z", "Z", "Z", "Z"]])
 
-code = StabiliserCode(pauli_stabs=stabs)
+code = StabCode(pauli_stabs=stabs)
 
 print(code.logical_basis.toarray())
 
