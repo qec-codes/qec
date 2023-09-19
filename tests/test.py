@@ -35,12 +35,12 @@ for i in range(3, 6):
 # print(a)
 
 
-pauli_stabs = np.array([[4, 0], [0, 4]], dtype=np.uint8)
+# 
 
+print()
 
+stabs = np.array([["X", "X", "X", "X"], ["Z", "Z", "Z", "Z"]])
 
-stabs = np.array([["I", "X", "Y", "Z"], ["X", "I", "Z", "Y"]], dtype=str)
-
-print(np.dtype(str) == np.dtype('<U'))
 code = StabiliserCode(pauli_stabs=stabs)
-assert code.h is not None
+
+print(code.logical_basis.toarray())

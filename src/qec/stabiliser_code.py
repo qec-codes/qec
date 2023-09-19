@@ -24,7 +24,7 @@ class StabiliserCode(object):
             if not pauli_stabs.dtype.type == np.str_:
                 if not pauli_stabs.dtype in [np.uint8, np.int8, np.int32, np.int64]:
                     raise TypeError("Input dtype must be uint8, int8, int, or str.")
-            
+
             if pauli_stabs.dtype in [int, np.int8, np.uint8]:
                 if not np.all(np.isin(pauli_stabs, [0, 1, 2, 3])):
                     raise ValueError(
@@ -68,11 +68,40 @@ class StabiliserCode(object):
             if not h.shape[1] % 2 == 0:
                 raise ValueError("Input matrix h must have an even number of columns.")
             self.h = qec.util.convert_to_sparse(h)
-            self.N = h.shape[1]
+            self.N = h.shape[1] // 2
 
         else:
             raise ValueError(
                 "Please provide either a stabiliser matrix or a check matrix."
             )
 
+        self.h_left = self.h[:, : self.N]
+        self.h_right = self.h[:, self.N :]
 
+        # check that the stabilisers commute
+
+        if np.any(
+            ((self.h_left @ self.h_right.T) + (self.h_right @ self.h_left.T)).data % 2
+        ):
+            raise ValueError("Stabilisers do not commute.")
+
+        self.logical_basis = self.compute_logical_basis()
+
+    def compute_logical_basis(self):
+
+        kernel_h = gf2sparse.kernel(self.h)
+
+        rank = kernel_h.shape[1] - kernel_h.shape[0]
+
+        kernel_h_left = kernel_h[:, : self.N]
+        kernel_h_right = kernel_h[:, self.N :]
+
+        swapped_kernel = scipy.sparse.hstack([kernel_h_right, kernel_h_left])
+
+        # Compute the logical operator basis
+        logical_stack = scipy.sparse.hstack([self.h.T, swapped_kernel.T])
+        plu = gf2sparse.PluDecomposition(logical_stack)
+        kernel_rows = plu.pivots[rank:] - rank
+        l_basis = kernel_h[kernel_rows]
+
+        return l_basis
