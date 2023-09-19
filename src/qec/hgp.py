@@ -6,10 +6,12 @@ from ldpc2 import gf2sparse
 from qec.css import CssCode
 import qec.util
 
-class HyperGraphProduct(CssCode):
+class HyperGraphProductCode(CssCode):
 
-    def __init__(self, h1: Union[np.ndarray,scipy.sparse.spmatrix], h2: Union[np.ndarray,scipy.sparse.spmatrix]):
+    def __init__(self, h1: Union[np.ndarray,scipy.sparse.spmatrix], h2: Union[np.ndarray,scipy.sparse.spmatrix], name = None):
 
+        if name is None:
+            self.name = "Hypergraph Product"
 
         #check input types
         self.h1 = qec.util.check_binary_matrix_type(h1)
@@ -27,7 +29,7 @@ class HyperGraphProduct(CssCode):
         hx = scipy.sparse.hstack([ scipy.sparse.kron(h1,Id(self.n2)) , scipy.sparse.kron(Id(self.m1), h2.T)])
         hz = scipy.sparse.hstack([scipy.sparse.kron(Id(self.n1), h2), scipy.sparse.kron(h1.T, Id(self.m2))])
 
-        CssCode.__init__(self, hx, hz, name = "Hypergraph Product")
+        CssCode.__init__(self, hx, hz, name = name)
 
     def compute_logical_basis(self):
 
