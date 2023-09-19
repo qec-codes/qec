@@ -4,6 +4,7 @@ from ldpc2 import gf2sparse
 from qec.css import CssCode
 from qec.hgp import HyperGraphProductCode
 from qec.codes import *
+from qec.stabiliser_code import StabiliserCode
 
 qcode = FourTwoTwoCode()
 print(qcode)
@@ -32,3 +33,14 @@ for i in range(3, 6):
 # a= gf2sparse.row_complement_basis(np.array([[1,1,1,1]])).toarray()
 
 # print(a)
+
+
+pauli_stabs = np.array([[4, 0], [0, 4]], dtype=np.uint8)
+
+
+
+stabs = np.array([["I", "X", "Y", "Z"], ["X", "I", "Z", "Y"]], dtype=str)
+
+print(np.dtype(str) == np.dtype('<U'))
+code = StabiliserCode(pauli_stabs=stabs)
+assert code.h is not None
