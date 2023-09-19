@@ -35,7 +35,7 @@ for i in range(3, 6):
 # print(a)
 
 
-# 
+#
 
 print()
 
@@ -44,3 +44,5 @@ stabs = np.array([["X", "X", "X", "X"], ["Z", "Z", "Z", "Z"]])
 code = StabiliserCode(pauli_stabs=stabs)
 
 print(code.logical_basis.toarray())
+
+code.test_logical_basis()

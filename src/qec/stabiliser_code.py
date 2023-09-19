@@ -87,8 +87,10 @@ class StabiliserCode(object):
 
         self.logical_basis = self.compute_logical_basis()
 
-    def compute_logical_basis(self):
+        self.logical_basis_left = self.logical_basis[:, : self.N]
+        self.logical_basis_right = self.logical_basis[:, self.N :]
 
+    def compute_logical_basis(self):
         kernel_h = gf2sparse.kernel(self.h)
 
         rank = kernel_h.shape[1] - kernel_h.shape[0]
@@ -105,3 +107,25 @@ class StabiliserCode(object):
         l_basis = kernel_h[kernel_rows]
 
         return l_basis
+
+    def test_logical_basis(self):
+        """
+        Validate the computed logical operator bases.
+        """
+
+        assert not np.any(
+            (
+                self.h_right @ self.logical_basis_left.T
+                + self.h_left @ self.logical_basis_right.T
+            ).data
+            % 2
+        )
+
+        test = (
+            self.logical_basis_right @ self.logical_basis_left.T
+            + self.logical_basis_left @ self.logical_basis_right.T
+        )
+        test.data = test.data % 2
+
+        test_plu = gf2sparse.PluDecomposition(test)
+        assert test_plu.rank == self.logical_basis.shape[0]
