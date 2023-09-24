@@ -1,6 +1,6 @@
 import numpy as np
 from ldpc2.codes import rep_code, hamming_code, ring_code
-from ldpc2 import gf2sparse
+from udlr import gf2sparse
 from qec.css import CssCode
 from qec.hgp import HyperGraphProductCode
 from qec.codes import *

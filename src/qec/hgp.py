@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
 from typing import Union
-from ldpc2 import gf2sparse
+from udlr import gf2sparse
 
 from qec.css import CssCode
 import qec.util

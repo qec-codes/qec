@@ -1,6 +1,6 @@
 from typing import Union
 import numpy as np
-from ldpc2 import gf2sparse
+from udlr import gf2sparse
 import scipy
 import qec.util
 from qec.stab_code import StabCode
