@@ -5,6 +5,7 @@ from qec.css import CssCode
 from qec.hgp import HyperGraphProductCode
 from qec.codes import *
 from qec.stab_code import StabCode
+from qec.lifted_hgp import LiftedHypergraphProduct
 
 qcode = FourTwoTwoCode()
 print(qcode)
@@ -48,3 +49,34 @@ print(code.logical_basis.toarray())
 code.test_logical_basis()
 
 print(code)
+
+print()
+
+from qec.protograph import RingOfCirculantsF2, permutation_matrix
+
+r = RingOfCirculantsF2([0,1,1])
+c = r.to_binary(10)
+c= permutation_matrix(10,1)
+
+print(type(c+c))
+
+import qec.protograph as pt
+
+pa = pt.array([[(0,1)]])
+
+pa = pt.identity(10)
+# print(pa)
+
+# print(pa.to_binary(100))
+
+proto_a=pt.array([
+        [(0), (11), (7), (12)],
+        [(1), (8), (1), (8)],
+        [(11), (0), (4), (8)],
+        [(6), (2), (4), (12)]])
+
+qcode=LiftedHypergraphProduct(lift_parameter=13,a=proto_a)
+
+print(qcode)
+
+

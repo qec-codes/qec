@@ -1,9 +1,9 @@
 from typing import Union
 import numpy as np
-import scipy
 from qec.css import CssCode
 from qec.hgp import HyperGraphProductCode
 from ldpc2.codes import rep_code, hamming_code, ring_code
+from qec.lifted_hgp import LiftedHypergraphProduct
 
 
 class FourTwoTwoCode(CssCode):
@@ -25,15 +25,23 @@ class SteaneCode(CssCode):
 
 
 class SurfaceCode(HyperGraphProductCode):
-    def __init__(self, d: int):
-        if type(d) is not int:
-            raise TypeError("Surface code distance must be an integer.")
+    def __init__(self, lx: int, lz: int = None):
+        if type(lx) is not int:
+            raise TypeError("Surface code lattice size `lx` must be an integer.")
 
-        if d < 2:
+        if lz is None:
+            lz = lx
+
+        if type(lz) is not int:
+            raise TypeError("Surface code lattice size `lz` must be an integer.")
+
+        if lx < 2:
+            raise ValueError("Surface code lattice size `lx` must be at least 2.")
+
+        if lz < 2:
             raise ValueError("Surface code distance must be at least 2.")
 
-        code = rep_code(d)
-        HyperGraphProductCode.__init__(self, code, code, name="Surface")
+        HyperGraphProductCode.__init__(self, rep_code(lx), rep_code(lz), name=f"Surface ({lx}x{lz})")
 
 
 class ToricCode(HyperGraphProductCode):
@@ -45,4 +53,17 @@ class ToricCode(HyperGraphProductCode):
             raise ValueError("Toric code distance must be at least 2.")
 
         code = ring_code(d)
-        HyperGraphProductCode.__init__(self, code, code, name="Toric")
+        HyperGraphProductCode.__init__(self, code, code, name=f"Toric ({d}x{d})")
+
+class TwistedToricCode(LiftedHypergraphProduct):
+
+    def __init__(self,nx,nz):
+
+        self.nx=nx
+        self.nz=nz
+        self.N=int(2*self.nx*self.nz)
+        
+        self.proto_1=np.array([[{0,1}]])
+        self.proto_2=np.array([[{0,nz}]])
+
+        LiftedHypergraphProduct.__init__(self.N//2,self.proto_2,self.proto_1, name = f"Twisted Toric ({nx},{nz})")
