@@ -36,6 +36,6 @@ jobs:
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.UDLR_PYPI }}
+          password: ${{ secrets.QEC_PYPI }}
           skip_existing: true
           verbose: true
