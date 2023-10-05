@@ -2,7 +2,7 @@ from typing import Union
 import numpy as np
 from qec.css import CssCode
 from qec.hgp import HyperGraphProductCode
-from ldpc2.codes import rep_code, hamming_code, ring_code
+from ldpc.codes import rep_code, hamming_code, ring_code
 from qec.lifted_hgp import LiftedHypergraphProduct
 
 

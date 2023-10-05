@@ -1,5 +1,5 @@
 import numpy as np
-from ldpc2.codes import rep_code, hamming_code, ring_code
+from ldpc.codes import rep_code, hamming_code, ring_code
 from udlr import gf2sparse
 from qec.css import CssCode
 from qec.hgp import HyperGraphProductCode
