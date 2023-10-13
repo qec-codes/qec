@@ -91,19 +91,25 @@ class CssCode(StabCode):
 
         # Compute the kernel of hx and hz matrices
         kernel_hx = gf2sparse.kernel(self.hx)
+        print("kernel_hx")
         rank_hx = kernel_hx.shape[1] - kernel_hx.shape[0]
         kernel_hz = gf2sparse.kernel(self.hz)
+        print("kernel_hz")
         rank_hz = kernel_hx.shape[1] - kernel_hz.shape[0]
 
         # Compute the logical Z operator basis
         logical_stack = scipy.sparse.hstack([self.hz.T, kernel_hx.T])
         plu_z = gf2sparse.PluDecomposition(logical_stack)
+        # print("plu_z")
         kernel_rows = plu_z.pivots[rank_hz:] - rank_hz
         lz = kernel_hx[kernel_rows]
 
         # Compute the logical X operator basis
         logical_stack = scipy.sparse.hstack([self.hx.T, kernel_hz.T])
         plu_x = gf2sparse.PluDecomposition(logical_stack)
+        print("plu_x")
+        print(plu_x.L.nnz/np.prod(plu_x.L.shape))
+        print(plu_x.U.nnz/np.prod(plu_x.U.shape))
         kernel_rows = plu_x.pivots[rank_hx:] - rank_hx
         lx = kernel_hz[kernel_rows]
 

@@ -231,6 +231,9 @@ class array(np.ndarray):
         '''
         L = lift_parameter
         m, n = self.shape
+
+        # print(m,n)
+
         row_indices = []
         col_indices = []
 
@@ -240,9 +243,11 @@ class array(np.ndarray):
                 # mat[i*L:(i+1)*L, j*L:(j+1)*L] = self[i, j].to_binary(L)
                 smat = self[i, j].to_binary(L)
                 smat_rows, smat_cols, _ = get_row_col_data_indices_binary_nonzero(smat)
-                col_indices += map(lambda x: x + i*L, smat_rows)
-                row_indices += map(lambda x: x + j*L, smat_cols)
+                col_indices += map(lambda x: x + j*L, smat_rows)
+                row_indices += map(lambda x: x + i*L, smat_cols)
         
+        # print(col_indices)
+
         data = np.ones(len(row_indices), dtype=np.uint8)
         mat = scipy.sparse.csr_matrix(
             (data, (row_indices, col_indices)), shape=(m*L, n*L))

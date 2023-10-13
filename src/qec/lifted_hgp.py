@@ -30,7 +30,10 @@ class LiftedHypergraphProduct(CssCode):
         
         self.lift_parameter=lift_parameter
 
-        CssCode.__init__(self.hx_proto.to_binary(lift_parameter),self.hz_proto.to_binary(lift_parameter), name = name)
+        hx = self.hx_proto.to_binary(lift_parameter)
+        hz = self.hz_proto.to_binary(lift_parameter)
+
+        CssCode.__init__(self, hx, hz, name = name)
 
     @property
     def protograph(self):
