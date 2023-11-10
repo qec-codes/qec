@@ -92,24 +92,22 @@ class CssCode(StabCode):
         # Compute the kernel of hx and hz matrices
         
         kernel_hx = ldpc.mod2.kernel(self.hx)
-        print("kernel_hx")
-        rank_hx = kernel_hx.shape[1] - kernel_hx.shape[0]
+        rank_hx = self.hx.shape[1] - kernel_hx.shape[0]
         
         kernel_hz = ldpc.mod2.kernel(self.hz)
-        print("kernel_hz")
-        rank_hz = kernel_hx.shape[1] - kernel_hz.shape[0]
+        rank_hz = self.hz.shape[1] - kernel_hz.shape[0]
 
         # Compute the logical Z operator basis
-        logical_stack = scipy.sparse.vstack([self.hz, kernel_hx])
+        logical_stack = scipy.sparse.vstack([self.hz, kernel_hx]).tocsr()
         ## find the first set of linearly independent rows
         p_rows = ldpc.mod2.pivot_rows(logical_stack)
         ## The linearly independents rows \in kernel_hz are logical operators
-        lz = logical_stack[p_rows[rank_hz:]-self.hz.shape[0]]
+        lz = logical_stack[p_rows[rank_hz:]]
 
         # Compute the logical X operator basis
-        logical_stack = scipy.sparse.vstack([self.hx, kernel_hz])
+        logical_stack = scipy.sparse.vstack([self.hx, kernel_hz]).tocsr()
         p_rows = ldpc.mod2.pivot_rows(logical_stack)
-        lx = logical_stack[p_rows[rank_hx:]-self.hx.shape[0]]
+        lx = logical_stack[p_rows[rank_hx:]]
 
         return (lx, lz)
 

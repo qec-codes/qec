@@ -55,7 +55,7 @@ print(code)
 
 # print()
 
-exit(22)
+# exit(22)
 
 # from qec.protograph import RingOfCirculantsF2, permutation_matrix
 
@@ -87,21 +87,23 @@ print(row_span(nullspace(H)))
 
 # proto_a=pt.array([[(0), (1)]])
 
-# qcode=LiftedHypergraphProduct(lift_parameter=13,a=proto_a)
+qcode=LiftedHypergraphProduct(lift_parameter=20,a=proto_a)
 
-# print(qcode.lx.nnz/np.prod(qcode.lx.shape))
+print(qcode)
 
-# print(qcode)
+print(qcode.lx.nnz/np.prod(qcode.lx.shape))
 
-# import scipy.sparse
-# scipy.sparse.save_npz("test.npz", qcode.hz)
+print(qcode)
 
-# from qec.lifted_hgp_3d import LiftedHGP3D
+import scipy.sparse
+scipy.sparse.save_npz("test.npz", qcode.hz)
 
-# qcode = LiftedHGP3D(proto_a,proto_a,proto_a,13)
+from qec.lifted_hgp_3d import LiftedHGP3D
+
+qcode = LiftedHGP3D(proto_a,proto_a,proto_a,30)
 # qcode.test()
 
-# print(qcode.N, qcode.K)
+print(qcode.N, qcode.K)
 
 
 # scipy.sparse.save_npz("3d_ldpc_hx.npz", scipy.sparse.csr_matrix(qcode.hx))
@@ -111,4 +113,4 @@ print(row_span(nullspace(H)))
 # scipy.sparse.save_npz("3d_ldpc_mx.npz", scipy.sparse.csr_matrix(qcode.mx))
 
 
-print(rep_code(9).toarray().__repr__())
+# print(rep_code(9).toarray().__repr__())

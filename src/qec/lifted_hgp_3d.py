@@ -3,14 +3,13 @@ import numpy as np
 import qec.protograph as pt
 from qec.css import CssCode
 import scipy.sparse
-from qec.css_old import css_code
 
 
 def kron3(A, B, C):
     return np.kron(np.kron(A, B), C)
 
 
-class LiftedHGP3D(css_code):
+class LiftedHGP3D(CssCode):
     ''' Class for constructing a 3D lifted hypgergraph product code from 3 
     Protographs
     '''
@@ -37,7 +36,7 @@ class LiftedHGP3D(css_code):
         print(type(self.hz))
         print(self.hz.toarray())
 
-        super().__init__(self.hx.toarray(), self.hz.toarray())
+        super().__init__(self.hx, self.hz)
 
     def initialize_boundary_operators(self, proto_A, proto_B, proto_C):
 
