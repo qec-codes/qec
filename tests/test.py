@@ -40,19 +40,22 @@ for i in range(3, 6):
 
 #
 
-print()
+# print()
 
 stabs = np.array([["X", "X", "X", "X"], ["Z", "Z", "Z", "Z"]])
 
 code = StabCode(pauli_stabs=stabs)
 
+print("Logical basis:")
 print(code.logical_basis.toarray())
 
 code.test_logical_basis()
 
 print(code)
 
-print()
+# print()
+
+exit(22)
 
 # from qec.protograph import RingOfCirculantsF2, permutation_matrix
 

@@ -1,6 +1,6 @@
 from typing import Union
 import numpy as np
-from ldpc import mod2
+import ldpc.mod2
 import scipy
 import qec.util
 
@@ -89,25 +89,29 @@ class StabCode(object):
         self.logical_basis = self.compute_logical_basis()
 
         self.K = self.logical_basis.shape[0] // 2
-
         self.logical_basis_left = self.logical_basis[:, : self.N]
         self.logical_basis_right = self.logical_basis[:, self.N :]
 
     def compute_logical_basis(self):
-        kernel_h = mod2.kernel(self.h)
+        kernel_h = ldpc.mod2.kernel(self.h)
 
-        rank = kernel_h.shape[1] - kernel_h.shape[0]
+        rank = self.h.shape[1] - kernel_h.shape[0]
 
         kernel_h_left = kernel_h[:, : self.N]
         kernel_h_right = kernel_h[:, self.N :]
 
         swapped_kernel = scipy.sparse.hstack([kernel_h_right, kernel_h_left])
 
+        # print(swapped_kernel.toarray())
+
         # Compute the logical operator basis
-        logical_stack = scipy.sparse.hstack([self.h.T, swapped_kernel.T])
-        plu = mod2.PluDecomposition(logical_stack)
-        kernel_rows = plu.pivots[rank:] - rank
-        l_basis = kernel_h[kernel_rows]
+        logical_stack = scipy.sparse.vstack([self.h, swapped_kernel])
+
+        # print(logical_stack.toarray())
+
+        p_rows = ldpc.mod2.pivot_rows(logical_stack)
+        # print(p_rows)
+        l_basis = logical_stack[p_rows[rank:]]
 
         return l_basis
 
@@ -129,9 +133,9 @@ class StabCode(object):
             + self.logical_basis_left @ self.logical_basis_right.T
         )
         test.data = test.data % 2
+        test.eliminate_zeros()
 
-        test_plu = mod2.PluDecomposition(test)
-        assert test_plu.rank == self.logical_basis.shape[0]
+        assert ldpc.mod2.rank(test,method="dense") == self.logical_basis.shape[0]
 
     def __str__(self):
         """

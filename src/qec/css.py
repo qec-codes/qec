@@ -104,12 +104,12 @@ class CssCode(StabCode):
         ## find the first set of linearly independent rows
         p_rows = ldpc.mod2.pivot_rows(logical_stack)
         ## The linearly independents rows \in kernel_hz are logical operators
-        lz = logical_stack[p_rows[rank_hz:]-rank_hz]
+        lz = logical_stack[p_rows[rank_hz:]-self.hz.shape[0]]
 
         # Compute the logical X operator basis
         logical_stack = scipy.sparse.vstack([self.hx, kernel_hz])
         p_rows = ldpc.mod2.pivot_rows(logical_stack)
-        lx = logical_stack[p_rows[rank_hx:]-rank_hx]
+        lx = logical_stack[p_rows[rank_hx:]-self.hx.shape[0]]
 
         return (lx, lz)
 
