@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
 from typing import Union
-from udlr import gf2sparse
+from ldpc import mod2
 
 from qec.css import CssCode
 import qec.util
@@ -66,15 +66,15 @@ class HyperGraphProductCode(CssCode):
             Tuple[scipy.sparse.spmatrix, scipy.sparse.spmatrix]: X-type and Z-type logical operators.
         """
 
-        ker_h1 = gf2sparse.kernel(self.h1)
-        ker_h2 = gf2sparse.kernel(self.h2)
-        ker_h1T = gf2sparse.kernel(self.h1.T)
-        ker_h2T = gf2sparse.kernel(self.h2.T)
+        ker_h1 = mod2.kernel(self.h1)
+        ker_h2 = mod2.kernel(self.h2)
+        ker_h1T = mod2.kernel(self.h1.T)
+        ker_h2T = mod2.kernel(self.h2.T)
 
-        row_comp_h1 = gf2sparse.row_complement_basis(self.h1)
-        row_comp_h2 = gf2sparse.row_complement_basis(self.h2)
-        row_comp_h1T = gf2sparse.row_complement_basis(self.h1.T)
-        row_comp_h2T = gf2sparse.row_complement_basis(self.h2.T)
+        row_comp_h1 = mod2.row_complement_basis(self.h1)
+        row_comp_h2 = mod2.row_complement_basis(self.h2)
+        row_comp_h1T = mod2.row_complement_basis(self.h1.T)
+        row_comp_h2T = mod2.row_complement_basis(self.h2.T)
 
         temp = scipy.sparse.kron(ker_h1, row_comp_h2)
         lz1 = scipy.sparse.hstack(

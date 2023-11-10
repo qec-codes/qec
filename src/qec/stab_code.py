@@ -1,6 +1,6 @@
 from typing import Union
 import numpy as np
-from udlr import gf2sparse
+from ldpc import mod2
 import scipy
 import qec.util
 
@@ -94,7 +94,7 @@ class StabCode(object):
         self.logical_basis_right = self.logical_basis[:, self.N :]
 
     def compute_logical_basis(self):
-        kernel_h = gf2sparse.kernel(self.h)
+        kernel_h = mod2.kernel(self.h)
 
         rank = kernel_h.shape[1] - kernel_h.shape[0]
 
@@ -105,7 +105,7 @@ class StabCode(object):
 
         # Compute the logical operator basis
         logical_stack = scipy.sparse.hstack([self.h.T, swapped_kernel.T])
-        plu = gf2sparse.PluDecomposition(logical_stack)
+        plu = mod2.PluDecomposition(logical_stack)
         kernel_rows = plu.pivots[rank:] - rank
         l_basis = kernel_h[kernel_rows]
 
@@ -130,7 +130,7 @@ class StabCode(object):
         )
         test.data = test.data % 2
 
-        test_plu = gf2sparse.PluDecomposition(test)
+        test_plu = mod2.PluDecomposition(test)
         assert test_plu.rank == self.logical_basis.shape[0]
 
     def __str__(self):

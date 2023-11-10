@@ -1,6 +1,6 @@
 from typing import Union
 import numpy as np
-from udlr import gf2sparse
+import ldpc.mod2
 import scipy
 import qec.util
 from qec.stab_code import StabCode
@@ -90,32 +90,30 @@ class CssCode(StabCode):
         """
 
         # Compute the kernel of hx and hz matrices
-        kernel_hx = gf2sparse.kernel(self.hx)
+        
+        kernel_hx = ldpc.mod2.kernel(self.hx)
         print("kernel_hx")
         rank_hx = kernel_hx.shape[1] - kernel_hx.shape[0]
-        kernel_hz = gf2sparse.kernel(self.hz)
+        
+        kernel_hz = ldpc.mod2.kernel(self.hz)
         print("kernel_hz")
         rank_hz = kernel_hx.shape[1] - kernel_hz.shape[0]
 
         # Compute the logical Z operator basis
-        logical_stack = scipy.sparse.hstack([self.hz.T, kernel_hx.T])
-        plu_z = gf2sparse.PluDecomposition(logical_stack)
-        # print("plu_z")
-        kernel_rows = plu_z.pivots[rank_hz:] - rank_hz
-        lz = kernel_hx[kernel_rows]
+        logical_stack = scipy.sparse.vstack([self.hz, kernel_hx])
+        ## find the first set of linearly independent rows
+        p_rows = ldpc.mod2.pivot_rows(logical_stack)
+        ## The linearly independents rows \in kernel_hz are logical operators
+        lz = logical_stack[p_rows[rank_hz:]-rank_hz]
 
         # Compute the logical X operator basis
-        logical_stack = scipy.sparse.hstack([self.hx.T, kernel_hz.T])
-        plu_x = gf2sparse.PluDecomposition(logical_stack)
-        print("plu_x")
-        print(plu_x.L.nnz/np.prod(plu_x.L.shape))
-        print(plu_x.U.nnz/np.prod(plu_x.U.shape))
-        kernel_rows = plu_x.pivots[rank_hx:] - rank_hx
-        lx = kernel_hz[kernel_rows]
+        logical_stack = scipy.sparse.vstack([self.hx, kernel_hz])
+        p_rows = ldpc.mod2.pivot_rows(logical_stack)
+        lx = logical_stack[p_rows[rank_hx:]-rank_hx]
 
         return (lx, lz)
 
-    def test_logical_basis(self):
+    def test_logical_basis(self)->bool:
         """
         Validate the computed logical operator bases.
         """
@@ -128,11 +126,11 @@ class CssCode(StabCode):
         assert not np.any((self.lx @ self.hz.T).data % 2)
         test = self.lx @ self.lz.T
         test.data = test.data % 2
-        test_plu = gf2sparse.PluDecomposition(test)
-        assert test_plu.rank == self.K
+        assert ldpc.mod2.rank(test) == self.K
 
         assert not np.any((self.lz @ self.hx.T).data % 2)
         test = self.lz @ self.lx.T
         test.data = test.data % 2
-        test_plu = gf2sparse.PluDecomposition(test)
-        assert test_plu.rank == self.K
+        assert ldpc.mod2.rank(test) == self.K
+
+        return True
