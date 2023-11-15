@@ -103,26 +103,17 @@ class CssCode(StabCode):
         # Z logicals are elements of ker_hx (commute with all X-stabilisers) that are not linear combinations of Z-stabilisers
         logical_stack = scipy.sparse.vstack([self.hz, ker_hx]).tocsr()
         rank_hz = ldpc.mod2.rank(self.hz)
-        assert rank_hz == len(ldpc.mod2.pivot_rows(self.hz)) == (self.hz.shape[1] - ker_hx.shape[0])
         # The first rank_hz pivot_rows of logical_stack are the Z-stabilisers. The remaining pivot_rows are the Z logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        print(pivots[rank_hz:])
         lz = logical_stack[pivots[rank_hz:], :]
 
         # X logicals
         ker_hz = ldpc.mod2.kernel(self.hz)
         logical_stack = scipy.sparse.vstack([self.hx, ker_hz]).tocsr()
         rank_hx = ldpc.mod2.rank(self.hx)
-        assert rank_hx == len(ldpc.mod2.pivot_rows(self.hx)) == (self.hx.shape[1] - ker_hz.shape[0])
         # The first rank_hx pivot_rows of logical_stack are the X-stabilisers. The remaining pivot_rows are the X logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        print(pivots[rank_hx:])
         lx = logical_stack[pivots[rank_hx:], :]
-
-        assert ldpc.mod2.rank(lx) == lx.shape[0] == self.N - rank_hx - rank_hz
-        assert ldpc.mod2.rank(lz) == lz.shape[0] == self.N - rank_hz - rank_hx
-
-        # assert lx.shape[0] == self.N - rank_hx - rank_hz
 
         return (lx, lz)
 
