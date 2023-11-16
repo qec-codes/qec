@@ -318,6 +318,7 @@ class CssCodeDistanceEstimator():
         self.hx = qcode.hx
         self.hz = qcode.hz
         self.K = qcode.K
+        self.N = qcode.N
         self.rank_hx = qcode.rank_hx
         self.rank_hz = qcode.rank_hz
         
@@ -332,13 +333,13 @@ class CssCodeDistanceEstimator():
         self.lz = self.lz.tocsr()
 
         for i in range(self.K):
-            if self.lx[i].nnz > max_lx:
-                max_lx = self.lx[i].nnz
+            if self.lx[i].nnz > self.max_lx:
+                self.max_lx = self.lx[i].nnz
             if self.lx[i].nnz < self.dx:
                 self.dx = self.lx[i].nnz
 
-            if self.lz[i].nnz > max_lz:
-                max_lz = self.lz[i].nnz
+            if self.lz[i].nnz > self.max_lz:
+                self.max_lz = self.lz[i].nnz
             if self.lz[i].nnz < self.dz:
                 self.dz = self.lz[i].nnz
 
@@ -351,50 +352,63 @@ class CssCodeDistanceEstimator():
         self.bp_osdx = BpOsdDecoder(
             self.x_stack,
             error_rate=0.1,
-            max_iter=10,
+            max_iter=50,
             bp_method="ms",
             ms_scaling_factor=0.9,
             schedule="parallel",
-            osd_method="osd_0",
+            osd_method="osd_cs",
             osd_order=0,
         )
 
         self.bp_osdz = BpOsdDecoder(
             self.z_stack,
             error_rate=0.1,
-            max_iter=10,
+            max_iter=50,
             bp_method="ms",
             schedule="parallel",
             ms_scaling_factor=0.9,
-            osd_method="osd_0",
+            osd_method="osd_cs",
             osd_order=0,
         )
 
-    def reduce_logical_weight(self, logical_combination: np.ndarray):
+    def reduce_logical_weight(self, logical_combination: np.ndarray, silent: bool = True):
         
         assert len(logical_combination) == self.K
 
-        dummy_syndrome_x = np.zeros(self.x_stack.shape[0], dtype=np.uint8)
-        dummy_syndrome_z = np.zeros(self.z_stack.shape[0], dtype=np.uint8)
+        dummy_syndrome_x = np.zeros(self.hx.shape[0], dtype=np.uint8)
+        dummy_syndrome_z = np.zeros(self.hz.shape[0], dtype=np.uint8)
         
         dummy_syndrome_x = np.hstack([dummy_syndrome_x, logical_combination])
         dummy_syndrome_z = np.hstack([dummy_syndrome_z, logical_combination])
 
+        # print(len(dummy_syndrome_x))
+        # print(len(dummy_syndrome_z))
+        # print(self.x_stack.shape[0])
+        # print(self.z_stack.shape[0])
+
         decoded_logical_x = self.bp_osdz.decode(dummy_syndrome_z)
         logical_size = np.count_nonzero(decoded_logical_x)
-        if (logical_size < self.max_lx):
+        if (0 < logical_size < self.max_lx):
             self.candidate_logicals_x.append(decoded_logical_x)
-        if logical_size < self.dx:
+        if 0 < logical_size < self.dx:
+            if not silent:
+                print(f"New minimum logical-x operator found, dx = {logical_size}")
             self.dx = logical_size
+
+        # print(logical_size)
 
         decoded_logical_z = self.bp_osdx.decode(dummy_syndrome_x)
         logical_size = np.count_nonzero(decoded_logical_z)
-        if (logical_size < self.max_lz):
+        if (0 < logical_size < self.max_lz):
             self.candidate_logicals_z.append(decoded_logical_z)
-        if logical_size < self.dz:
+        if 0 < logical_size < self.dz:
+            if not silent:
+                print(f"New minimum logical-z operator found, dz = {logical_size}")
             self.dz = logical_size
 
-    def reduce_logicals(self):
+        # print(logical_size)
+
+    def find_min_weight_basis_from_candidates(self):
         if len(self.candidate_logicals_x) != 0:
             self.candidate_logicals_x = scipy.sparse.csr_matrix(
                 np.array(self.candidate_logicals_x)
@@ -432,12 +446,60 @@ class CssCodeDistanceEstimator():
         self.candidate_logicals_z = []
 
         for i in range(self.K):
-            if self.lx[i].nnz > max_lx:
-                max_lx = self.lx[i].nnz
+            if self.lx[i].nnz > self.max_lx:
+                self.max_lx = self.lx[i].nnz
             if self.lx[i].nnz < self.dx:
                 self.dx = self.lx[i].nnz
 
-            if self.lz[i].nnz > max_lz:
-                max_lz = self.lz[i].nnz
+            if self.lz[i].nnz > self.max_lz:
+                self.max_lz = self.lz[i].nnz
             if self.lz[i].nnz < self.dz:
                 self.dz = self.lz[i].nnz
+
+    def reduce_current_basis(self, silent: bool = True):
+
+        for i in range(self.K):
+
+            logical_combination = np.zeros(self.K, dtype=np.uint8)
+            logical_combination[i] = 1
+            self.reduce_logical_weight(logical_combination, silent=silent)
+            self.find_min_weight_basis_from_candidates()
+
+    def monte_carlo_basis_reduction(self,timeout_seconds: float = None, silent: bool = True):
+        if timeout_seconds is None:
+            raise ValueError("Please provide a timeout in seconds.")
+        
+        print("Reducing current basis...")
+        self.reduce_current_basis(silent=False)
+        
+        start_time = time.time()
+
+        exit_search = False
+
+        print("Monte-Carlo basis reduction...")
+        count = 0
+        while exit_search == False:
+            for j in range(self.K):
+
+                if time.time() - start_time > timeout_seconds:
+                    self.find_min_weight_basis_from_candidates()
+                    exit_search = True
+                    break
+
+      
+                p = 0.01
+                logical_combination = (np.random.rand(self.K) < p).astype(np.uint8)
+                logical_combination[j] = 1
+
+                # logical_combination[j] = 1
+
+                self.reduce_logical_weight(logical_combination, silent=silent)
+                if (len(self.candidate_logicals_x) > self.K) or (len(self.candidate_logicals_z) > self.K):
+                    self.find_min_weight_basis_from_candidates()
+
+                count += 1
+
+        self.find_min_weight_basis_from_candidates()
+        print("Count: ", count)
+
+
