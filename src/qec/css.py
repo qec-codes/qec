@@ -185,8 +185,8 @@ class CssCode(StabCode):
         max_lx = 0
         max_lz = 0
 
-        self.lx = self.lx.tocsr()
-        self.lz = self.lz.tocsr()
+        # self.lx = self.lx.tocsr()
+        # self.lz = self.lz.tocsr()
 
         # self.rank_hx = ldpc.mod2.rank(self.hx)
         # self.rank_hz = ldpc.mod2.rank(self.hz)
@@ -308,3 +308,136 @@ class CssCode(StabCode):
             str: String representation of the CSS code.
         """
         return f"{self.name} Code: [[N={self.N}, K={self.K}, dx<={self.dx}, dz<={self.dz}]]"
+
+class CssCodeDistanceEstimator():
+
+    def __init__(self, qcode: CssCode):
+
+        self.lx = qcode.lx
+        self.lz = qcode.lz
+        self.hx = qcode.hx
+        self.hz = qcode.hz
+        self.K = qcode.K
+        self.rank_hx = qcode.rank_hx
+        self.rank_hz = qcode.rank_hz
+        
+        self.dx = self.N
+        self.dz = self.N
+        self.d = self.N
+        
+        self.max_lx = 0
+        self.max_lz = 0
+
+        self.lx = self.lx.tocsr()
+        self.lz = self.lz.tocsr()
+
+        for i in range(self.K):
+            if self.lx[i].nnz > max_lx:
+                max_lx = self.lx[i].nnz
+            if self.lx[i].nnz < self.dx:
+                self.dx = self.lx[i].nnz
+
+            if self.lz[i].nnz > max_lz:
+                max_lz = self.lz[i].nnz
+            if self.lz[i].nnz < self.dz:
+                self.dz = self.lz[i].nnz
+
+        self.candidate_logicals_x = []
+        self.candidate_logicals_z = []
+
+        self.x_stack = scipy.sparse.vstack([self.hx, self.lx])
+        self.z_stack = scipy.sparse.vstack([self.hz, self.lz])
+
+        self.bp_osdx = BpOsdDecoder(
+            self.x_stack,
+            error_rate=0.1,
+            max_iter=10,
+            bp_method="ms",
+            ms_scaling_factor=0.9,
+            schedule="parallel",
+            osd_method="osd_0",
+            osd_order=0,
+        )
+
+        self.bp_osdz = BpOsdDecoder(
+            self.z_stack,
+            error_rate=0.1,
+            max_iter=10,
+            bp_method="ms",
+            schedule="parallel",
+            ms_scaling_factor=0.9,
+            osd_method="osd_0",
+            osd_order=0,
+        )
+
+    def reduce_logical_weight(self, logical_combination: np.ndarray):
+        
+        assert len(logical_combination) == self.K
+
+        dummy_syndrome_x = np.zeros(self.x_stack.shape[0], dtype=np.uint8)
+        dummy_syndrome_z = np.zeros(self.z_stack.shape[0], dtype=np.uint8)
+        
+        dummy_syndrome_x = np.hstack([dummy_syndrome_x, logical_combination])
+        dummy_syndrome_z = np.hstack([dummy_syndrome_z, logical_combination])
+
+        decoded_logical_x = self.bp_osdz.decode(dummy_syndrome_z)
+        logical_size = np.count_nonzero(decoded_logical_x)
+        if (logical_size < self.max_lx):
+            self.candidate_logicals_x.append(decoded_logical_x)
+        if logical_size < self.dx:
+            self.dx = logical_size
+
+        decoded_logical_z = self.bp_osdx.decode(dummy_syndrome_x)
+        logical_size = np.count_nonzero(decoded_logical_z)
+        if (logical_size < self.max_lz):
+            self.candidate_logicals_z.append(decoded_logical_z)
+        if logical_size < self.dz:
+            self.dz = logical_size
+
+    def reduce_logicals(self):
+        if len(self.candidate_logicals_x) != 0:
+            self.candidate_logicals_x = scipy.sparse.csr_matrix(
+                np.array(self.candidate_logicals_x)
+            )
+
+            temp1 = scipy.sparse.vstack([self.candidate_logicals_x, self.lx]).tocsr()
+
+            row_weights = np.diff(temp1.indptr)
+            sorted_rows = np.argsort(row_weights)
+            temp1 = temp1[sorted_rows, :]
+
+            temp = scipy.sparse.vstack(
+                [self.hx, temp1]
+            ).tocsr()
+
+            self.lx = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hx : self.rank_hx + self.K]]
+
+        if len(self.candidate_logicals_z) != 0:
+            self.candidate_logicals_z = scipy.sparse.csr_matrix(
+                np.array(self.candidate_logicals_z)
+            )
+
+            temp1 = scipy.sparse.vstack([self.candidate_logicals_z, self.lz]).tocsr()
+
+            row_weights = np.diff(temp1.indptr)
+            sorted_rows = np.argsort(row_weights)
+            temp1 = temp1[sorted_rows, :]
+
+            temp = scipy.sparse.vstack(
+                [self.hz, temp1]
+            ).tocsr()
+            self.lz = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hz : self.rank_hz + self.K]]
+
+        self.candidate_logicals_x = []
+        self.candidate_logicals_z = []
+
+        for i in range(self.K):
+            if self.lx[i].nnz > max_lx:
+                max_lx = self.lx[i].nnz
+            if self.lx[i].nnz < self.dx:
+                self.dx = self.lx[i].nnz
+
+            if self.lz[i].nnz > max_lz:
+                max_lz = self.lz[i].nnz
+            if self.lz[i].nnz < self.dz:
+                self.dz = self.lz[i].nnz
