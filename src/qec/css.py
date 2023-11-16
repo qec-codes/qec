@@ -86,6 +86,8 @@ class CssCode(StabCode):
         assert self.K == self.lz.shape[0]
 
         self.d = np.nan
+        self.dx = np.nan
+        self.dz = np.nan
 
     def compute_logical_basis(self):
         """
@@ -98,9 +100,14 @@ class CssCode(StabCode):
         # Compute the kernel of hx and hz matrices
         
         # Z logicals
-                
-        ker_hx = ldpc.mod2.kernel(self.hx) #kernel of X-stabilisers
-        # Z logicals are elements of ker_hx (commute with all X-stabilisers) that are not linear combinations of Z-stabilisers
+
+        #Compute the kernel of hx        
+        ker_hx = ldpc.mod2.kernel(self.hx).tocsr() #kernel of X-stabilisers
+        #Sort the rows of ker_hx by weight
+        row_weights = np.diff(ker_hx.indptr)
+        sorted_rows = np.argsort(row_weights)
+        ker_hx = ker_hx[sorted_rows, :]
+        # Z logicals are elements of ker_hx (that commute with all the X-stabilisers) that are not linear combinations of Z-stabilisers
         logical_stack = scipy.sparse.vstack([self.hz, ker_hx]).tocsr()
         rank_hz = ldpc.mod2.rank(self.hz)
         # The first rank_hz pivot_rows of logical_stack are the Z-stabilisers. The remaining pivot_rows are the Z logicals
@@ -108,7 +115,14 @@ class CssCode(StabCode):
         lz = logical_stack[pivots[rank_hz:], :]
 
         # X logicals
+
+        #Compute the kernel of hz
         ker_hz = ldpc.mod2.kernel(self.hz)
+        #Sort the rows of ker_hz by weight
+        row_weights = np.diff(ker_hz.indptr)
+        sorted_rows = np.argsort(row_weights)
+        ker_hz = ker_hz[sorted_rows, :]
+        # X logicals are elements of ker_hz (that commute with all the Z-stabilisers) that are not linear combinations of X-stabilisers
         logical_stack = scipy.sparse.vstack([self.hx, ker_hz]).tocsr()
         rank_hx = ldpc.mod2.rank(self.hx)
         # The first rank_hx pivot_rows of logical_stack are the X-stabilisers. The remaining pivot_rows are the X logicals
@@ -151,7 +165,7 @@ class CssCode(StabCode):
 
         return True
     
-    def estimate_min_distance(self, timeout_seconds: float = 0.25) -> int:
+    def estimate_min_distance(self, reduce_logicals: bool = False, timeout_seconds: float = 0.25) -> int:
 
         if self.lx is None or self.lz is None:
             # Compute a basis of the logical operators
@@ -228,64 +242,32 @@ class CssCode(StabCode):
             if logical_size < min_z:
                 min_z = logical_size
 
-        if len(candidate_logicals_x) != 0:
-            candidate_logicals_x = scipy.sparse.csr_matrix(np.array(candidate_logicals_x))
-            temp = scipy.sparse.vstack([self.hx,candidate_logicals_x,self.lx]).tocsr()
-            self.lx = temp[ldpc.mod2.pivot_rows(temp)[rx:rx+self.K]]
+        if reduce_logicals:
 
-        if len(candidate_logicals_z) != 0:
-            print("Hello")
-            candidate_logicals_z = scipy.sparse.csr_matrix(np.array(candidate_logicals_z))
-            temp = scipy.sparse.vstack([self.hz,candidate_logicals_z,self.lz]).tocsr()
-            self.lz = temp[ldpc.mod2.pivot_rows(temp)[rz:rz+self.K]]
+            if len(candidate_logicals_x) != 0:
+                candidate_logicals_x = scipy.sparse.csr_matrix(np.array(candidate_logicals_x))
+                temp = scipy.sparse.vstack([self.hx,candidate_logicals_x,self.lx]).tocsr()
+                self.lx = temp[ldpc.mod2.pivot_rows(temp)[rx:rx+self.K]]
 
+            if len(candidate_logicals_z) != 0:
+                candidate_logicals_z = scipy.sparse.csr_matrix(np.array(candidate_logicals_z))
+                temp = scipy.sparse.vstack([self.hz,candidate_logicals_z,self.lz]).tocsr()
+                self.lz = temp[ldpc.mod2.pivot_rows(temp)[rz:rz+self.K]]
 
-        # combs = list(itertools.combinations(range(self.K), 2))
-        # no_combs = len(combs)
+        self.dx = min_x
+        self.dz = min_z
+        self.d = np.min([min_x, min_z])
+        
+        return self.d
+    
+    def __str__(self):
+        """
+        Return a string representation of the CssCode object.
 
-        # # Get the start time
-        # start_time = time.time()
-
-        # # Your while loop
-        # while True:
-        #     # Your loop logic here
-        #     # print("hello")
-            
-        #     # Check if the specified time has elapsed
-        #     elapsed_time = time.time() - start_time
-        #     if elapsed_time >= timeout_seconds:
-        #         break  # Exit the loop if the timeout has been reached
-
-        #     dummy_syndrome_x = np.zeros( self.hx.shape[0] + self.K, dtype=np.uint8)
-        #     dummy_syndrome_z = np.zeros( self.hz.shape[0] + self.K, dtype=np.uint8)
-      
-        #     i, j = combs[np.random.randint(no_combs)]
-
-        #     dummy_syndrome_x[self.hx.shape[0] + i] = 1
-        #     dummy_syndrome_x[self.hx.shape[0] + j] = 1
-
-        #     dummy_syndrome_z[self.hz.shape[0] + i] = 1
-        #     dummy_syndrome_z[self.hz.shape[0] + j] = 1
-
-
-        #     # print(dummy_syndrome_x)
-        #     # print(dummy_syndrome_z)
-
-        #     logical_x = bp_osdz.decode(dummy_syndrome_z)
-        #     logical_z = bp_osdx.decode(dummy_syndrome_x)
-            
-        #     dx = np.count_nonzero(logical_x)
-        #     dz = np.count_nonzero(logical_z)
-
-
-        #     if dz < min_z:
-        #         min_z = dz
-        #     if dx < min_x:
-        #         min_x = dx
-
-
-        # print(min_x, min_z)
-        return np.min([min_x, min_z])
+        Returns:
+            str: String representation of the CSS code.
+        """
+        return f"{self.name} Code: [[N={self.N}, K={self.K}, dx<={self.dx}, dz<={self.dz}]]"
 
 
 

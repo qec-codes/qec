@@ -24,7 +24,7 @@ class HyperGraphProductCode(CssCode):
         self,
         h1: Union[np.ndarray, scipy.sparse.spmatrix],
         h2: Union[np.ndarray, scipy.sparse.spmatrix],
-        name=None,
+        name="Hypergraph Product Code",
     ):
         """
         Initialise a Hypergraph Product Code with base matrices h1 and h2.
