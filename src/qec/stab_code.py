@@ -135,7 +135,7 @@ class StabCode(object):
         test.data = test.data % 2
         test.eliminate_zeros()
 
-        assert ldpc.mod2.rank(test,method="dense") == self.logical_basis.shape[0]
+        assert ldpc.mod2.rank(test, method="dense") == self.logical_basis.shape[0]
 
     def __str__(self):
         """

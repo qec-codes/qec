@@ -56,6 +56,9 @@ class HyperGraphProductCode(CssCode):
             [scipy.sparse.kron(Id(self.n1), h2), scipy.sparse.kron(h1.T, Id(self.m2))]
         )
 
+        # hx.eliminate_zeros()
+        # hz.eliminate_zeros()
+
         CssCode.__init__(self, hx, hz, name=name)
 
     # def compute_logical_basis(self):

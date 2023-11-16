@@ -10,28 +10,33 @@ def kron3(A, B, C):
 
 
 class LiftedHGP3D(CssCode):
-    ''' Class for constructing a 3D lifted hypgergraph product code from 3 
+    """Class for constructing a 3D lifted hypgergraph product code from 3
     Protographs
-    '''
+    """
 
-    def __init__(self, seed_protograph_a: pt.array,
-                 seed_protograph_b: pt.array,
-                 seed_protograph_c: pt.array, lift_parameter: int):
-        '''Initializes a CSS code with two parity check matrices and one type 
+    def __init__(
+        self,
+        seed_protograph_a: pt.array,
+        seed_protograph_b: pt.array,
+        seed_protograph_c: pt.array,
+        lift_parameter: int,
+    ):
+        """Initializes a CSS code with two parity check matrices and one type
         of meta checks
 
         Arguments:
             seed_protograph_a (Protograph)
-            seed_protograph_b (Protograph): optional input, if not given set 
+            seed_protograph_b (Protograph): optional input, if not given set
                                             equal to A
-            seed_protograph_c (Protograph): optional input, if not given set 
+            seed_protograph_c (Protograph): optional input, if not given set
                                             equal to A
 
-        '''
+        """
         self.lift_parameter = lift_parameter
 
         self.initialize_boundary_operators(
-            seed_protograph_a, seed_protograph_b, seed_protograph_c)
+            seed_protograph_a, seed_protograph_b, seed_protograph_c
+        )
 
         print(type(self.hz))
         print(self.hz.toarray())
@@ -39,7 +44,6 @@ class LiftedHGP3D(CssCode):
         super().__init__(self.hx, self.hz)
 
     def initialize_boundary_operators(self, proto_A, proto_B, proto_C):
-
         A_m, A_n = proto_A.shape
         B_m, B_n = proto_B.shape
         C_m, C_n = proto_C.shape
@@ -71,10 +75,16 @@ class LiftedHGP3D(CssCode):
         r12 = kron3(proto_A, I_B_m, I_C_n).to_binary(self.lift_parameter)
         r21 = kron3(I_A_m, I_B_n, proto_C).to_binary(self.lift_parameter)
 
-        r22 = scipy.sparse.csr_matrix(np.array([]),dtype=np.uint8).reshape=(r21.shape[0], r12.shape[1])
+        r22 = scipy.sparse.csr_matrix(np.array([]), dtype=np.uint8).reshape = (
+            r21.shape[0],
+            r12.shape[1],
+        )
         r23 = kron3(proto_A, I_B_n, I_C_m).to_binary(self.lift_parameter)
 
-        r13 = scipy.sparse.csr_matrix(np.array([]), dtype=np.uint8).reshape=(r11.shape[0], r23.shape[1])
+        r13 = scipy.sparse.csr_matrix(np.array([]), dtype=np.uint8).reshape = (
+            r11.shape[0],
+            r23.shape[1],
+        )
 
         r32 = kron3(I_A_n, I_B_m, proto_C).to_binary(self.lift_parameter)
         r33 = kron3(I_A_n, proto_B, I_C_m).to_binary(self.lift_parameter)
@@ -99,8 +109,6 @@ class LiftedHGP3D(CssCode):
         # meta-check matrices
         self.mx = self.delta_2.astype(np.uint8)
         self.mz = self.delta_1.T.astype(np.uint8)
-
-    
 
         # hgp code parameters
         self.N = self.hx.shape[1]

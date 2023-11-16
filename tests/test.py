@@ -74,10 +74,7 @@ print(code)
 
 # # print(pa.to_binary(100))
 
-proto_a=pt.array([
-        [(0), (11), (7)],
-        [(1), (8), (1)],
-        [(11), (0), (4)]])
+proto_a = pt.array([[(0), (11), (7)], [(1), (8), (1)], [(11), (0), (4)]])
 
 H = proto_a.to_binary(5).toarray()
 
@@ -87,20 +84,21 @@ print(row_span(nullspace(H)))
 
 # proto_a=pt.array([[(0), (1)]])
 
-qcode=LiftedHypergraphProduct(lift_parameter=20,a=proto_a)
+qcode = LiftedHypergraphProduct(lift_parameter=20, a=proto_a)
 
 print(qcode)
 
-print(qcode.lx.nnz/np.prod(qcode.lx.shape))
+print(qcode.lx.nnz / np.prod(qcode.lx.shape))
 
 print(qcode)
 
 import scipy.sparse
+
 scipy.sparse.save_npz("test.npz", qcode.hz)
 
 from qec.lifted_hgp_3d import LiftedHGP3D
 
-qcode = LiftedHGP3D(proto_a,proto_a,proto_a,30)
+qcode = LiftedHGP3D(proto_a, proto_a, proto_a, 30)
 # qcode.test()
 
 print(qcode.N, qcode.K)

@@ -86,12 +86,12 @@ class CssCode(StabCode):
         """
 
         # Compute the kernel of hx and hz matrices
-        
+
         # Z logicals
 
-        #Compute the kernel of hx        
-        ker_hx = ldpc.mod2.kernel(self.hx).tocsr() #kernel of X-stabilisers
-        #Sort the rows of ker_hx by weight
+        # Compute the kernel of hx
+        ker_hx = ldpc.mod2.kernel(self.hx)  # kernel of X-stabilisers
+        # Sort the rows of ker_hx by weight
         row_weights = np.diff(ker_hx.indptr)
         sorted_rows = np.argsort(row_weights)
         ker_hx = ker_hx[sorted_rows, :]
@@ -104,9 +104,9 @@ class CssCode(StabCode):
 
         # X logicals
 
-        #Compute the kernel of hz
+        # Compute the kernel of hz
         ker_hz = ldpc.mod2.kernel(self.hz)
-        #Sort the rows of ker_hz by weight
+        # Sort the rows of ker_hz by weight
         row_weights = np.diff(ker_hz.indptr)
         sorted_rows = np.argsort(row_weights)
         ker_hz = ker_hz[sorted_rows, :]
@@ -133,7 +133,7 @@ class CssCode(StabCode):
 
         return (self.lx, self.lz)
 
-    def test_logical_basis(self)->bool:
+    def test_logical_basis(self) -> bool:
         """
         Validate the computed logical operator bases.
         """
@@ -146,7 +146,7 @@ class CssCode(StabCode):
         # Test dimension
         assert self.K == self.lz.shape[0] == self.lx.shape[0]
 
-        #Check logical basis linearly independent
+        # Check logical basis linearly independent
         assert ldpc.mod2.rank(self.lx) == self.K
         assert ldpc.mod2.rank(self.lz) == self.K
 
@@ -166,9 +166,10 @@ class CssCode(StabCode):
         assert ldpc.mod2.rank(test) == self.K
 
         return True
-    
-    def estimate_min_distance(self, reduce_logicals: bool = False, timeout_seconds: float = 0.25) -> int:
 
+    def estimate_min_distance(
+        self, reduce_logicals: bool = False, timeout_seconds: float = 0.25
+    ) -> int:
         if self.lx is None or self.lz is None:
             # Compute a basis of the logical operators
             self.lx, self.lz = self.compute_logical_basis()
@@ -201,32 +202,33 @@ class CssCode(StabCode):
         candidate_logicals_z = []
 
         for i in range(self.K):
-
             x_stack = scipy.sparse.vstack([self.hx, self.lx[i]])
             z_stack = scipy.sparse.vstack([self.hz, self.lz[i]])
 
             bp_osdx = BpOsdDecoder(
                 x_stack,
-                error_rate = 0.1,
-                max_iter = 10,
-                bp_method = "ms",
-                ms_scaling_factor = 0.9,
-                schedule = "parallel",
-                osd_method = "osd0",
-                osd_order = 0)
-            
+                error_rate=0.1,
+                max_iter=10,
+                bp_method="ms",
+                ms_scaling_factor=0.9,
+                schedule="parallel",
+                osd_method="osd0",
+                osd_order=0,
+            )
+
             bp_osdz = BpOsdDecoder(
                 z_stack,
-                error_rate = 0.1,
-                max_iter = 10,
-                bp_method = "ms",
-                schedule = "parallel",
-                ms_scaling_factor = 0.9,
-                osd_method = "osd0",
-                osd_order = 0)
+                error_rate=0.1,
+                max_iter=10,
+                bp_method="ms",
+                schedule="parallel",
+                ms_scaling_factor=0.9,
+                osd_method="osd0",
+                osd_order=0,
+            )
 
-            dummy_syndrome_x = np.zeros( self.hx.shape[0] + 1, dtype=np.uint8)
-            dummy_syndrome_z = np.zeros( self.hz.shape[0] + 1, dtype=np.uint8)
+            dummy_syndrome_x = np.zeros(self.hx.shape[0] + 1, dtype=np.uint8)
+            dummy_syndrome_z = np.zeros(self.hz.shape[0] + 1, dtype=np.uint8)
             dummy_syndrome_x[-1] = 1
             dummy_syndrome_z[-1] = 1
 
@@ -245,22 +247,28 @@ class CssCode(StabCode):
                 self.dz = logical_size
 
         if reduce_logicals:
-
             if len(candidate_logicals_x) != 0:
-                print("hello")
-                candidate_logicals_x = scipy.sparse.csr_matrix(np.array(candidate_logicals_x))
-                temp = scipy.sparse.vstack([self.hx,candidate_logicals_x,self.lx]).tocsr()
-                self.lx = temp[ldpc.mod2.pivot_rows(temp)[rx:rx+self.K]]
+                candidate_logicals_x = scipy.sparse.csr_matrix(
+                    np.array(candidate_logicals_x)
+                )
+                temp = scipy.sparse.vstack(
+                    [self.hx, candidate_logicals_x, self.lx]
+                ).tocsr()
+                self.lx = temp[ldpc.mod2.pivot_rows(temp)[rx : rx + self.K]]
 
             if len(candidate_logicals_z) != 0:
-                candidate_logicals_z = scipy.sparse.csr_matrix(np.array(candidate_logicals_z))
-                temp = scipy.sparse.vstack([self.hz,candidate_logicals_z,self.lz]).tocsr()
-                self.lz = temp[ldpc.mod2.pivot_rows(temp)[rz:rz+self.K]]
+                candidate_logicals_z = scipy.sparse.csr_matrix(
+                    np.array(candidate_logicals_z)
+                )
+                temp = scipy.sparse.vstack(
+                    [self.hz, candidate_logicals_z, self.lz]
+                ).tocsr()
+                self.lz = temp[ldpc.mod2.pivot_rows(temp)[rz : rz + self.K]]
 
         self.d = np.min([self.dx, self.dz])
-        
+
         return self.d
-    
+
     def __str__(self):
         """
         Return a string representation of the CssCode object.
@@ -269,9 +277,3 @@ class CssCode(StabCode):
             str: String representation of the CSS code.
         """
         return f"{self.name} Code: [[N={self.N}, K={self.K}, dx<={self.dx}, dz<={self.dz}]]"
-
-
-
-
-
-

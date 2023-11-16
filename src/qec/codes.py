@@ -41,29 +41,43 @@ class SurfaceCode(HyperGraphProductCode):
         if lz < 2:
             raise ValueError("Surface code distance must be at least 2.")
 
-        HyperGraphProductCode.__init__(self, rep_code(lx), rep_code(lz), name=f"Surface ({lx}x{lz})")
+        HyperGraphProductCode.__init__(
+            self, rep_code(lx), rep_code(lz), name=f"Surface ({lx}x{lz})"
+        )
 
 
 class ToricCode(HyperGraphProductCode):
-    def __init__(self, d: int):
-        if type(d) is not int:
-            raise TypeError("Toric code distance must be an integer.")
+    def __init__(self, lx: int, lz: int = None):
+        if type(lx) is not int:
+            raise TypeError("Surface code lattice size `lx` must be an integer.")
 
-        if d < 2:
-            raise ValueError("Toric code distance must be at least 2.")
+        if lz is None:
+            lz = lx
 
-        code = ring_code(d)
-        HyperGraphProductCode.__init__(self, code, code, name=f"Toric ({d}x{d})")
+        if type(lz) is not int:
+            raise TypeError("Surface code lattice size `lz` must be an integer.")
+
+        if lx < 2:
+            raise ValueError("Surface code lattice size `lx` must be at least 2.")
+
+        if lz < 2:
+            raise ValueError("Surface code distance must be at least 2.")
+
+        HyperGraphProductCode.__init__(
+            self, ring_code(lx), ring_code(lz), name=f"Toric ({lx}x{lz})"
+        )
+
+
 
 class TwistedToricCode(LiftedHypergraphProduct):
+    def __init__(self, nx, nz):
+        self.nx = nx
+        self.nz = nz
+        self.N = int(2 * self.nx * self.nz)
 
-    def __init__(self,nx,nz):
+        self.proto_1 = np.array([[{0, 1}]])
+        self.proto_2 = np.array([[{0, nz}]])
 
-        self.nx=nx
-        self.nz=nz
-        self.N=int(2*self.nx*self.nz)
-        
-        self.proto_1=np.array([[{0,1}]])
-        self.proto_2=np.array([[{0,nz}]])
-
-        LiftedHypergraphProduct.__init__(self.N//2,self.proto_2,self.proto_1, name = f"Twisted Toric ({nx},{nz})")
+        LiftedHypergraphProduct.__init__(
+            self.N // 2, self.proto_2, self.proto_1, name=f"Twisted Toric ({nx},{nz})"
+        )

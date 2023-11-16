@@ -7,30 +7,29 @@ import ldpc.mod2
 import qec.hgp
 import qec.codes
 
-def test_hgp_16_4_6():
 
+def test_hgp_16_4_6():
     seedH = np.loadtxt("tests/pcms/16_4_6.txt").astype(np.uint8)
     qcode = qec.hgp.HyperGraphProductCode(seedH, seedH)
-    d= qcode.estimate_min_distance(reduce_logicals=True)
+    d = qcode.estimate_min_distance(reduce_logicals=True)
     qcode.test_logical_basis()
     print(qcode)
     assert d == 6
 
     seedH = np.loadtxt("tests/pcms/20_5_8.txt").astype(np.uint8)
     qcode = qec.hgp.HyperGraphProductCode(seedH, seedH)
-    d= qcode.estimate_min_distance(reduce_logicals=True)
+    d = qcode.estimate_min_distance(reduce_logicals=True)
     qcode.test_logical_basis()
     print(qcode)
     assert d == 8
 
     seedH = np.loadtxt("tests/pcms/24_6_10.txt").astype(np.uint8)
     qcode = qec.hgp.HyperGraphProductCode(seedH, seedH)
-    d= qcode.estimate_min_distance(reduce_logicals=True)
+    d = qcode.estimate_min_distance(reduce_logicals=True)
     qcode.test_logical_basis()
     print(qcode)
     assert d == 10
 
 
 if __name__ == "__main__":
-
     test_hgp_16_4_6()
