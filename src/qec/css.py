@@ -130,153 +130,114 @@ class CssCode(StabCode):
         # Test dimension
         assert self.K == self.lz.shape[0] == self.lx.shape[0]
 
+        #Check logical basis linearly independent
+        assert ldpc.mod2.rank(self.lx) == self.K
+        assert ldpc.mod2.rank(self.lz) == self.K
+
         # Perform various tests to validate the logical bases
+
+        # Check that the logical operators commute with the stabilisers
         assert not np.any((self.lx @ self.hz.T).data % 2)
+        assert not np.any((self.lz @ self.hx.T).data % 2)
+
+        # Check that the logical operators anticommute with each other
         test = self.lx @ self.lz.T
         test.data = test.data % 2
         assert ldpc.mod2.rank(test) == self.K
 
-        assert not np.any((self.lz @ self.hx.T).data % 2)
         test = self.lz @ self.lx.T
         test.data = test.data % 2
         assert ldpc.mod2.rank(test) == self.K
 
         return True
     
-    # def temp(self):
-    #     assert self.K == self.lz.shape[0] == self.lx.shape[0]
-    #     print(ldpc.mod2.rank(self.lx))
-    
     def estimate_min_distance(self, timeout_seconds: float = 0.25) -> int:
 
-        # if self.lx is None or self.lz is None:
-        #     # Compute a basis of the logical operators
-        #     self.lx, self.lz = self.compute_logical_basis()
-        #     # Calculate the dimension of the code
-        #     self.K = self.lx.shape[0]
+        if self.lx is None or self.lz is None:
+            # Compute a basis of the logical operators
+            self.lx, self.lz = self.compute_logical_basis()
+            # Calculate the dimension of the code
+            self.K = self.lx.shape[0]
 
-        # min_x = self.N
-        # min_z = self.N
-        # max_lx = 0
-        # max_lz = 0
+        min_x = self.N
+        min_z = self.N
+        max_lx = 0
+        max_lz = 0
 
-        # self.lx = self.lx.tocsr()
-        # self.lz = self.lz.tocsr()
-
-        # for i in range(self.K):
-        #     if self.lx[i].nnz > max_lx:
-        #         max_lx = self.lx[i].nnz
-        #     if self.lx[i].nnz < min_x:
-        #         min_x = self.lx[i].nnz
-
-        #     if self.lz[i].nnz > max_lz:
-        #         max_lz = self.lz[i].nnz
-        #     if self.lz[i].nnz < min_z:
-        #         min_z = self.lz[i].nnz
-
-        rankHx = ldpc.mod2.rank(self.hx)
-        print("Rank hx: ", rankHx)
-
-        self.test_logical_basis()
-
-        print(ldpc.mod2.rank(self.lx))
-        print(self.lx.shape)
-        print(self.lz.shape)
-
-        assert ldpc.mod2.rank(self.lx)  == self.K
-
-        temp = scipy.sparse.vstack([self.hx, self.lx])
-
-        rank=ldpc.mod2.rank(temp)
-
-        print(rank-rankHx)
-
-        print(ldpc.mod2.pivot_rows(temp)[rankHx:])
-
-
-        return 1
-
-        candidate_logicals_x = []
-        candidate_logicals_z = []
-
-        # for i in range(self.K):
-        #     # if self.lx[i].nnz < min_x:
-        #     #     min_x = self.lx[i].nnz
-
-        #     # if self.lz[i].nnz < min_z:
-        #     #     min_z = self.lz[i].nnz
-
-        #     self.lx=self.lx.tocsr()
-        #     self.lz = self.lz.tocsr()
-
-        #     x_stack = scipy.sparse.vstack([self.hx, self.lx[i]])
-        #     z_stack = scipy.sparse.vstack([self.hz, self.lz[i]])
-
-        #     bp_osdx = BpOsdDecoder(
-        #         x_stack,
-        #         error_rate = 0.1,
-        #         max_iter = 10,
-        #         bp_method = "ms",
-        #         ms_scaling_factor = 0.9,
-        #         schedule = "parallel",
-        #         osd_method = "osd0",
-        #         osd_order = 0)
-            
-        #     bp_osdz = BpOsdDecoder(
-        #         z_stack,
-        #         error_rate = 0.1,
-        #         max_iter = 10,
-        #         bp_method = "ms",
-        #         schedule = "parallel",
-        #         ms_scaling_factor = 0.9,
-        #         osd_method = "osd0",
-        #         osd_order = 0)
-
-        #     dummy_syndrome_x = np.zeros( self.hx.shape[0] + 1, dtype=np.uint8)
-        #     dummy_syndrome_z = np.zeros( self.hz.shape[0] + 1, dtype=np.uint8)
-        #     dummy_syndrome_x[-1] = 1
-        #     dummy_syndrome_z[-1] = 1
-
-        #     decoded_logical_x = bp_osdz.decode(dummy_syndrome_z)
-        #     logical_size = np.count_nonzero(decoded_logical_x)
-        #     if logical_size < max_lx:
-        #         candidate_logicals_x.append(decoded_logical_x)
-        #     if logical_size < min_x:
-        #         min_x = logical_size
-
-        #     decoded_logical_z = bp_osdx.decode(dummy_syndrome_x)
-        #     logical_size = np.count_nonzero(decoded_logical_z)
-        #     if logical_size < max_lz:
-        #         candidate_logicals_z.append(decoded_logical_z)
-        #     if logical_size < min_z:
-        #         min_z = logical_size
-
-        # candidate_logicals_z = scipy.sparse.csr_matrix(np.array(candidate_logicals_z))
-        # candidate_logicals_x = scipy.sparse.csr_matrix(np.array(candidate_logicals_x))
+        self.lx = self.lx.tocsr()
+        self.lz = self.lz.tocsr()
 
         rx = ldpc.mod2.rank(self.hx)
         rz = ldpc.mod2.rank(self.hz)
 
-        # temp = scipy.sparse.vstack([self.hx,candidate_logicals_x,self.lx]).tocsr()
-        temp = scipy.sparse.vstack([self.hx,self.lx])
+        for i in range(self.K):
+            if self.lx[i].nnz > max_lx:
+                max_lx = self.lx[i].nnz
+            if self.lx[i].nnz < min_x:
+                min_x = self.lx[i].nnz
 
-        # self.lx = temp[ldpc.mod2.pivot_rows(temp)[rx:rx+self.K]]
-        print("rank x: ", rx)
-        print(len(ldpc.mod2.pivot_rows(temp)))
-        print(self.K)
-        print(len(ldpc.mod2.pivot_rows(temp)[rx:]))
-        print()
+            if self.lz[i].nnz > max_lz:
+                max_lz = self.lz[i].nnz
+            if self.lz[i].nnz < min_z:
+                min_z = self.lz[i].nnz
 
-        # temp = scipy.sparse.vstack([self.hz,candidate_logicals_z,self.lz]).tocsr()
-        temp = scipy.sparse.vstack([self.hz,self.lz]).tocsr()
+        candidate_logicals_x = []
+        candidate_logicals_z = []
 
-        self.lz = temp[ldpc.mod2.pivot_rows(temp)[rz:rz+self.K]] 
+        for i in range(self.K):
 
-        assert self.lx.shape[0] == self.K
+            x_stack = scipy.sparse.vstack([self.hx, self.lx[i]])
+            z_stack = scipy.sparse.vstack([self.hz, self.lz[i]])
 
-        self.lx.eliminate_zeros()
-        self.lz.eliminate_zeros()
+            bp_osdx = BpOsdDecoder(
+                x_stack,
+                error_rate = 0.1,
+                max_iter = 10,
+                bp_method = "ms",
+                ms_scaling_factor = 0.9,
+                schedule = "parallel",
+                osd_method = "osd0",
+                osd_order = 0)
+            
+            bp_osdz = BpOsdDecoder(
+                z_stack,
+                error_rate = 0.1,
+                max_iter = 10,
+                bp_method = "ms",
+                schedule = "parallel",
+                ms_scaling_factor = 0.9,
+                osd_method = "osd0",
+                osd_order = 0)
 
+            dummy_syndrome_x = np.zeros( self.hx.shape[0] + 1, dtype=np.uint8)
+            dummy_syndrome_z = np.zeros( self.hz.shape[0] + 1, dtype=np.uint8)
+            dummy_syndrome_x[-1] = 1
+            dummy_syndrome_z[-1] = 1
+
+            decoded_logical_x = bp_osdz.decode(dummy_syndrome_z)
+            logical_size = np.count_nonzero(decoded_logical_x)
+            if logical_size < max_lx:
+                candidate_logicals_x.append(decoded_logical_x)
+            if logical_size < min_x:
+                min_x = logical_size
+
+            decoded_logical_z = bp_osdx.decode(dummy_syndrome_x)
+            logical_size = np.count_nonzero(decoded_logical_z)
+            if logical_size < max_lz:
+                candidate_logicals_z.append(decoded_logical_z)
+            if logical_size < min_z:
+                min_z = logical_size
+
+        if len(candidate_logicals_x) != 0:
+            candidate_logicals_x = scipy.sparse.csr_matrix(np.array(candidate_logicals_x))
+            temp = scipy.sparse.vstack([self.hx,candidate_logicals_x,self.lx]).tocsr()
+            self.lx = temp[ldpc.mod2.pivot_rows(temp)[rx:rx+self.K]]
+
+        if len(candidate_logicals_z) != 0:
+            print("Hello")
+            candidate_logicals_z = scipy.sparse.csr_matrix(np.array(candidate_logicals_z))
+            temp = scipy.sparse.vstack([self.hz,candidate_logicals_z,self.lz]).tocsr()
+            self.lz = temp[ldpc.mod2.pivot_rows(temp)[rz:rz+self.K]]
 
 
         # combs = list(itertools.combinations(range(self.K), 2))
@@ -323,7 +284,7 @@ class CssCode(StabCode):
         #         min_x = dx
 
 
-        print(min_x, min_z)
+        # print(min_x, min_z)
         return np.min([min_x, min_z])
 
 
