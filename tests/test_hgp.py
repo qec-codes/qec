@@ -14,6 +14,9 @@ def test_hgp_16_4_6():
     d = qcode.estimate_min_distance(reduce_logicals=True)
     qcode.test_logical_basis()
     print(qcode)
+    lx, lz = qcode.logical_operator_weights
+    print(lx)
+    print(lz)
     assert d == 6
 
     seedH = np.loadtxt("tests/pcms/20_5_8.txt").astype(np.uint8)
@@ -21,6 +24,9 @@ def test_hgp_16_4_6():
     d = qcode.estimate_min_distance(reduce_logicals=True)
     qcode.test_logical_basis()
     print(qcode)
+    lx, lz = qcode.logical_operator_weights
+    print(lx)
+    print(lz)
     assert d == 8
 
     seedH = np.loadtxt("tests/pcms/24_6_10.txt").astype(np.uint8)
@@ -28,7 +34,12 @@ def test_hgp_16_4_6():
     d = qcode.estimate_min_distance(reduce_logicals=True)
     qcode.test_logical_basis()
     print(qcode)
+    lx, lz = qcode.logical_operator_weights
+    print(lx)
+    print(lz)
+
     assert d == 10
+
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Tuple
 import numpy as np
 import ldpc.mod2
 import scipy
@@ -201,36 +201,38 @@ class CssCode(StabCode):
         candidate_logicals_x = []
         candidate_logicals_z = []
 
+        x_stack = scipy.sparse.vstack([self.hx, self.lx])
+        z_stack = scipy.sparse.vstack([self.hz, self.lz])
+
+        bp_osdx = BpOsdDecoder(
+            x_stack,
+            error_rate=0.1,
+            max_iter=10,
+            bp_method="ms",
+            ms_scaling_factor=0.9,
+            schedule="parallel",
+            osd_method="osd_0",
+            osd_order=0,
+        )
+
+        bp_osdz = BpOsdDecoder(
+            z_stack,
+            error_rate=0.1,
+            max_iter=10,
+            bp_method="ms",
+            schedule="parallel",
+            ms_scaling_factor=0.9,
+            osd_method="osd_0",
+            osd_order=0,
+        )
+
+
         for i in range(self.K):
-            x_stack = scipy.sparse.vstack([self.hx, self.lx[i]])
-            z_stack = scipy.sparse.vstack([self.hz, self.lz[i]])
 
-            bp_osdx = BpOsdDecoder(
-                x_stack,
-                error_rate=0.1,
-                max_iter=10,
-                bp_method="ms",
-                ms_scaling_factor=0.9,
-                schedule="parallel",
-                osd_method="osd0",
-                osd_order=0,
-            )
-
-            bp_osdz = BpOsdDecoder(
-                z_stack,
-                error_rate=0.1,
-                max_iter=10,
-                bp_method="ms",
-                schedule="parallel",
-                ms_scaling_factor=0.9,
-                osd_method="osd0",
-                osd_order=0,
-            )
-
-            dummy_syndrome_x = np.zeros(self.hx.shape[0] + 1, dtype=np.uint8)
-            dummy_syndrome_z = np.zeros(self.hz.shape[0] + 1, dtype=np.uint8)
-            dummy_syndrome_x[-1] = 1
-            dummy_syndrome_z[-1] = 1
+            dummy_syndrome_x = np.zeros(x_stack.shape[0], dtype=np.uint8)
+            dummy_syndrome_z = np.zeros(z_stack.shape[0], dtype=np.uint8)
+            dummy_syndrome_x[self.hx.shape[0] + i] = 1
+            dummy_syndrome_z[self.hz.shape[0] + i] = 1
 
             decoded_logical_x = bp_osdz.decode(dummy_syndrome_z)
             logical_size = np.count_nonzero(decoded_logical_x)
@@ -283,6 +285,16 @@ class CssCode(StabCode):
         self.d = np.min([self.dx, self.dz])
 
         return self.d
+    
+    @property
+    def logical_operator_weights(self)->Tuple[np.ndarray,np.ndarray]:
+        x_weights = []
+        z_weights = []
+        for i in range(self.K):
+            x_weights.append(self.lx[i].nnz)
+            z_weights.append(self.lz[i].nnz)
+
+        return (np.array(x_weights),np.array(z_weights))
 
     def __str__(self):
         """

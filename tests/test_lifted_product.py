@@ -12,16 +12,13 @@ def test_lifted_product():
             [(6), (2), (4), (12)]])
     
     qcode = qec.lifted_hgp.LiftedHypergraphProduct(13,a1,a1)
-    qcode.estimate_min_distance(reduce_logicals=True)
-    qcode.test_logical_basis()
+    for _ in range(10):
+        qcode.estimate_min_distance(reduce_logicals=True)
+        qcode.test_logical_basis()
 
-    x_weights = []
-    z_weights = []
-    for i in range(qcode.K):
-        x_weights.append(qcode.lx[i].nnz)
-        z_weights.append(qcode.lz[i].nnz)
+        lx, lz = qcode.logical_operator_weights
+        print(lx)
+        print(lz)
 
-    print(qcode)
-
-    print(x_weights)
-    print(z_weights)
+if __name__ == "__main__":
+    test_lifted_product()
