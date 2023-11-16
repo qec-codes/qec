@@ -234,14 +234,14 @@ class CssCode(StabCode):
 
             decoded_logical_x = bp_osdz.decode(dummy_syndrome_z)
             logical_size = np.count_nonzero(decoded_logical_x)
-            if logical_size < max_lx:
+            if (logical_size < max_lx) and reduce_logicals:
                 candidate_logicals_x.append(decoded_logical_x)
             if logical_size < self.dx:
                 self.dx = logical_size
 
             decoded_logical_z = bp_osdx.decode(dummy_syndrome_x)
             logical_size = np.count_nonzero(decoded_logical_z)
-            if logical_size < max_lz:
+            if (logical_size < max_lz) and reduce_logicals:
                 candidate_logicals_z.append(decoded_logical_z)
             if logical_size < self.dz:
                 self.dz = logical_size
@@ -251,17 +251,32 @@ class CssCode(StabCode):
                 candidate_logicals_x = scipy.sparse.csr_matrix(
                     np.array(candidate_logicals_x)
                 )
+
+                temp1 = scipy.sparse.vstack([candidate_logicals_x, self.lx]).tocsr()
+
+                row_weights = np.diff(temp1.indptr)
+                sorted_rows = np.argsort(row_weights)
+                temp1 = temp1[sorted_rows, :]
+
                 temp = scipy.sparse.vstack(
-                    [self.hx, candidate_logicals_x, self.lx]
+                    [self.hx, temp1]
                 ).tocsr()
+
                 self.lx = temp[ldpc.mod2.pivot_rows(temp)[rx : rx + self.K]]
 
             if len(candidate_logicals_z) != 0:
                 candidate_logicals_z = scipy.sparse.csr_matrix(
                     np.array(candidate_logicals_z)
                 )
+
+                temp1 = scipy.sparse.vstack([candidate_logicals_z, self.lz]).tocsr()
+
+                row_weights = np.diff(temp1.indptr)
+                sorted_rows = np.argsort(row_weights)
+                temp1 = temp1[sorted_rows, :]
+
                 temp = scipy.sparse.vstack(
-                    [self.hz, candidate_logicals_z, self.lz]
+                    [self.hz, temp1]
                 ).tocsr()
                 self.lz = temp[ldpc.mod2.pivot_rows(temp)[rz : rz + self.K]]
 

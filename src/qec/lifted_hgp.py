@@ -1,5 +1,5 @@
 import numpy as np
-import qec.protograph as pt
+import ldpc.protograph as pt
 from qec.css import CssCode
 
 
