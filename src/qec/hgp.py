@@ -61,66 +61,66 @@ class HyperGraphProductCode(CssCode):
 
         CssCode.__init__(self, hx, hz, name=name)
 
-    # def compute_logical_basis(self):
-    #     """
-    #     Compute the logical operators for the Hypergraph Product Code.
+    def compute_logical_basis(self):
+        """
+        Compute the logical operators for the Hypergraph Product Code.
 
-    #     Returns:
-    #         Tuple[scipy.sparse.spmatrix, scipy.sparse.spmatrix]: X-type and Z-type logical operators.
-    #     """
+        Returns:
+            Tuple[scipy.sparse.spmatrix, scipy.sparse.spmatrix]: X-type and Z-type logical operators.
+        """
 
-    #     ker_h1 = mod2.kernel(self.h1)
-    #     ker_h2 = mod2.kernel(self.h2)
-    #     ker_h1T = mod2.kernel(self.h1.T)
-    #     ker_h2T = mod2.kernel(self.h2.T)
+        ker_h1 = mod2.kernel(self.h1)
+        ker_h2 = mod2.kernel(self.h2)
+        ker_h1T = mod2.kernel(self.h1.T)
+        ker_h2T = mod2.kernel(self.h2.T)
 
-    #     row_comp_h1 = mod2.row_complement_basis(self.h1)
-    #     row_comp_h2 = mod2.row_complement_basis(self.h2)
-    #     row_comp_h1T = mod2.row_complement_basis(self.h1.T)
-    #     row_comp_h2T = mod2.row_complement_basis(self.h2.T)
+        row_comp_h1 = mod2.row_complement_basis(self.h1)
+        row_comp_h2 = mod2.row_complement_basis(self.h2)
+        row_comp_h1T = mod2.row_complement_basis(self.h1.T)
+        row_comp_h2T = mod2.row_complement_basis(self.h2.T)
 
-    #     temp = scipy.sparse.kron(ker_h1, row_comp_h2)
-    #     lz1 = scipy.sparse.hstack(
-    #         [
-    #             temp,
-    #             scipy.sparse.csr_matrix(
-    #                 (temp.shape[0], self.m1 * self.m2), dtype=np.uint8
-    #             ),
-    #         ]
-    #     )
+        temp = scipy.sparse.kron(ker_h1, row_comp_h2)
+        lz1 = scipy.sparse.hstack(
+            [
+                temp,
+                scipy.sparse.csr_matrix(
+                    (temp.shape[0], self.m1 * self.m2), dtype=np.uint8
+                ),
+            ]
+        )
 
-    #     temp = scipy.sparse.kron(row_comp_h1T, ker_h2T)
-    #     lz2 = scipy.sparse.hstack(
-    #         [
-    #             scipy.sparse.csr_matrix(
-    #                 (temp.shape[0], self.n1 * self.n2), dtype=np.uint8
-    #             ),
-    #             temp,
-    #         ]
-    #     )
+        temp = scipy.sparse.kron(row_comp_h1T, ker_h2T)
+        lz2 = scipy.sparse.hstack(
+            [
+                scipy.sparse.csr_matrix(
+                    (temp.shape[0], self.n1 * self.n2), dtype=np.uint8
+                ),
+                temp,
+            ]
+        )
 
-    #     lz = scipy.sparse.vstack([lz1, lz2])
+        lz = scipy.sparse.vstack([lz1, lz2])
 
-    #     temp = scipy.sparse.kron(row_comp_h1, ker_h2)
-    #     lx1 = scipy.sparse.hstack(
-    #         [
-    #             temp,
-    #             scipy.sparse.csr_matrix(
-    #                 (temp.shape[0], self.m1 * self.m2), dtype=np.uint8
-    #             ),
-    #         ]
-    #     )
+        temp = scipy.sparse.kron(row_comp_h1, ker_h2)
+        lx1 = scipy.sparse.hstack(
+            [
+                temp,
+                scipy.sparse.csr_matrix(
+                    (temp.shape[0], self.m1 * self.m2), dtype=np.uint8
+                ),
+            ]
+        )
 
-    #     temp = scipy.sparse.kron(ker_h1T, row_comp_h2T)
-    #     lx2 = scipy.sparse.hstack(
-    #         [
-    #             scipy.sparse.csr_matrix(
-    #                 (temp.shape[0], self.n1 * self.n2), dtype=np.uint8
-    #             ),
-    #             temp,
-    #         ]
-    #     )
+        temp = scipy.sparse.kron(ker_h1T, row_comp_h2T)
+        lx2 = scipy.sparse.hstack(
+            [
+                scipy.sparse.csr_matrix(
+                    (temp.shape[0], self.n1 * self.n2), dtype=np.uint8
+                ),
+                temp,
+            ]
+        )
 
-    #     lx = scipy.sparse.vstack([lx1, lx2])
+        lx = scipy.sparse.vstack([lx1, lx2])
 
-    #     return (lx, lz)
+        return (lx, lz)
