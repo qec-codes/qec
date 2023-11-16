@@ -75,19 +75,7 @@ class CssCode(StabCode):
             )
 
         # Compute a basis of the logical operators
-        self.lx, self.lz = self.compute_logical_basis()
-
-        # Calculate the dimension of the code
-        self.K = self.lx.shape[0]
-
-        # print(self.K, self.lz.shape[0])
-
-        # Ensure that lx and lz have the same dimension
-        assert self.K == self.lz.shape[0]
-
-        self.d = np.nan
-        self.dx = np.nan
-        self.dz = np.nan
+        self.compute_logical_basis()
 
     def compute_logical_basis(self):
         """
@@ -112,7 +100,7 @@ class CssCode(StabCode):
         rank_hz = ldpc.mod2.rank(self.hz)
         # The first rank_hz pivot_rows of logical_stack are the Z-stabilisers. The remaining pivot_rows are the Z logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        lz = logical_stack[pivots[rank_hz:], :]
+        self.lz = logical_stack[pivots[rank_hz:], :]
 
         # X logicals
 
@@ -127,9 +115,23 @@ class CssCode(StabCode):
         rank_hx = ldpc.mod2.rank(self.hx)
         # The first rank_hx pivot_rows of logical_stack are the X-stabilisers. The remaining pivot_rows are the X logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        lx = logical_stack[pivots[rank_hx:], :]
+        self.lx = logical_stack[pivots[rank_hx:], :]
 
-        return (lx, lz)
+        # set the dimension of the code
+        self.K = self.lx.shape[0]
+
+        # find the minimum weight logical operators
+        self.dx = self.N
+        self.dz = self.N
+
+        for i in range(self.K):
+            if self.lx[i].nnz < self.dx:
+                self.dx = self.lx[i].nnz
+            if self.lz[i].nnz < self.dz:
+                self.dz = self.lz[i].nnz
+        self.d = np.min([self.dx, self.dz])
+
+        return (self.lx, self.lz)
 
     def test_logical_basis(self)->bool:
         """
@@ -173,8 +175,8 @@ class CssCode(StabCode):
             # Calculate the dimension of the code
             self.K = self.lx.shape[0]
 
-        min_x = self.N
-        min_z = self.N
+        self.dx = self.N
+        self.dz = self.N
         max_lx = 0
         max_lz = 0
 
@@ -187,13 +189,13 @@ class CssCode(StabCode):
         for i in range(self.K):
             if self.lx[i].nnz > max_lx:
                 max_lx = self.lx[i].nnz
-            if self.lx[i].nnz < min_x:
-                min_x = self.lx[i].nnz
+            if self.lx[i].nnz < self.dx:
+                self.dx = self.lx[i].nnz
 
             if self.lz[i].nnz > max_lz:
                 max_lz = self.lz[i].nnz
-            if self.lz[i].nnz < min_z:
-                min_z = self.lz[i].nnz
+            if self.lz[i].nnz < self.dz:
+                self.dz = self.lz[i].nnz
 
         candidate_logicals_x = []
         candidate_logicals_z = []
@@ -232,19 +234,20 @@ class CssCode(StabCode):
             logical_size = np.count_nonzero(decoded_logical_x)
             if logical_size < max_lx:
                 candidate_logicals_x.append(decoded_logical_x)
-            if logical_size < min_x:
-                min_x = logical_size
+            if logical_size < self.dx:
+                self.dx = logical_size
 
             decoded_logical_z = bp_osdx.decode(dummy_syndrome_x)
             logical_size = np.count_nonzero(decoded_logical_z)
             if logical_size < max_lz:
                 candidate_logicals_z.append(decoded_logical_z)
-            if logical_size < min_z:
-                min_z = logical_size
+            if logical_size < self.dz:
+                self.dz = logical_size
 
         if reduce_logicals:
 
             if len(candidate_logicals_x) != 0:
+                print("hello")
                 candidate_logicals_x = scipy.sparse.csr_matrix(np.array(candidate_logicals_x))
                 temp = scipy.sparse.vstack([self.hx,candidate_logicals_x,self.lx]).tocsr()
                 self.lx = temp[ldpc.mod2.pivot_rows(temp)[rx:rx+self.K]]
@@ -254,9 +257,7 @@ class CssCode(StabCode):
                 temp = scipy.sparse.vstack([self.hz,candidate_logicals_z,self.lz]).tocsr()
                 self.lz = temp[ldpc.mod2.pivot_rows(temp)[rz:rz+self.K]]
 
-        self.dx = min_x
-        self.dz = min_z
-        self.d = np.min([min_x, min_z])
+        self.d = np.min([self.dx, self.dz])
         
         return self.d
     
