@@ -73,7 +73,7 @@ class CssCode(StabCode):
                 "Input matrices hx and hz do not commute. I.e. they do not satisfy\
                               the requirement that hx@hz.T = 0."
             )
-
+        
         # Compute a basis of the logical operators
         self.compute_logical_basis()
 
@@ -97,10 +97,10 @@ class CssCode(StabCode):
         ker_hx = ker_hx[sorted_rows, :]
         # Z logicals are elements of ker_hx (that commute with all the X-stabilisers) that are not linear combinations of Z-stabilisers
         logical_stack = scipy.sparse.vstack([self.hz, ker_hx]).tocsr()
-        rank_hz = ldpc.mod2.rank(self.hz)
-        # The first rank_hz pivot_rows of logical_stack are the Z-stabilisers. The remaining pivot_rows are the Z logicals
+        self.rank_hz = ldpc.mod2.rank(self.hz)
+        # The first self.rank_hz pivot_rows of logical_stack are the Z-stabilisers. The remaining pivot_rows are the Z logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        self.lz = logical_stack[pivots[rank_hz:], :]
+        self.lz = logical_stack[pivots[self.rank_hz:], :]
 
         # X logicals
 
@@ -112,10 +112,10 @@ class CssCode(StabCode):
         ker_hz = ker_hz[sorted_rows, :]
         # X logicals are elements of ker_hz (that commute with all the Z-stabilisers) that are not linear combinations of X-stabilisers
         logical_stack = scipy.sparse.vstack([self.hx, ker_hz]).tocsr()
-        rank_hx = ldpc.mod2.rank(self.hx)
-        # The first rank_hx pivot_rows of logical_stack are the X-stabilisers. The remaining pivot_rows are the X logicals
+        self.rank_hx = ldpc.mod2.rank(self.hx)
+        # The first self.rank_hx pivot_rows of logical_stack are the X-stabilisers. The remaining pivot_rows are the X logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        self.lx = logical_stack[pivots[rank_hx:], :]
+        self.lx = logical_stack[pivots[self.rank_hx:], :]
 
         # set the dimension of the code
         self.K = self.lx.shape[0]
@@ -130,6 +130,10 @@ class CssCode(StabCode):
             if self.lz[i].nnz < self.dz:
                 self.dz = self.lz[i].nnz
         self.d = np.min([self.dx, self.dz])
+
+        #compute the hx and hz rank
+        self.rank_hx = self.N - ker_hx.shape[0]
+        self.rank_hz = self.N - ker_hz.shape[0]
 
         return (self.lx, self.lz)
 
@@ -184,8 +188,8 @@ class CssCode(StabCode):
         self.lx = self.lx.tocsr()
         self.lz = self.lz.tocsr()
 
-        rx = ldpc.mod2.rank(self.hx)
-        rz = ldpc.mod2.rank(self.hz)
+        # self.rank_hx = ldpc.mod2.rank(self.hx)
+        # self.rank_hz = ldpc.mod2.rank(self.hz)
 
         for i in range(self.K):
             if self.lx[i].nnz > max_lx:
@@ -264,7 +268,7 @@ class CssCode(StabCode):
                     [self.hx, temp1]
                 ).tocsr()
 
-                self.lx = temp[ldpc.mod2.pivot_rows(temp)[rx : rx + self.K]]
+                self.lx = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hx : self.rank_hx + self.K]]
 
             if len(candidate_logicals_z) != 0:
                 candidate_logicals_z = scipy.sparse.csr_matrix(
@@ -280,7 +284,7 @@ class CssCode(StabCode):
                 temp = scipy.sparse.vstack(
                     [self.hz, temp1]
                 ).tocsr()
-                self.lz = temp[ldpc.mod2.pivot_rows(temp)[rz : rz + self.K]]
+                self.lz = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hz : self.rank_hz + self.K]]
 
         self.d = np.min([self.dx, self.dz])
 
