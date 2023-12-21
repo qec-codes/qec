@@ -11,7 +11,7 @@ import qec.codes
 def test_hgp_16_4_6():
     seedH = np.loadtxt("tests/pcms/16_4_6.txt").astype(np.uint8)
     qcode = qec.hgp.HyperGraphProductCode(seedH, seedH)
-    d = qcode.estimate_min_distance(reduce_logicals=True)
+    d = qcode.estimate_min_distance(reduce_logical_basis=True)
     qcode.test_logical_basis()
     print(qcode)
     lx, lz = qcode.logical_operator_weights
@@ -21,7 +21,7 @@ def test_hgp_16_4_6():
 
     seedH = np.loadtxt("tests/pcms/20_5_8.txt").astype(np.uint8)
     qcode = qec.hgp.HyperGraphProductCode(seedH, seedH)
-    d = qcode.estimate_min_distance(reduce_logicals=True)
+    d = qcode.estimate_min_distance(reduce_logical_basis=True)
     qcode.test_logical_basis()
     print(qcode)
     lx, lz = qcode.logical_operator_weights
@@ -31,7 +31,7 @@ def test_hgp_16_4_6():
 
     seedH = np.loadtxt("tests/pcms/24_6_10.txt").astype(np.uint8)
     qcode = qec.hgp.HyperGraphProductCode(seedH, seedH)
-    d = qcode.estimate_min_distance(reduce_logicals=True)
+    d = qcode.estimate_min_distance(reduce_logical_basis=True)
     qcode.test_logical_basis()
     print(qcode)
     lx, lz = qcode.logical_operator_weights

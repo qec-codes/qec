@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import Union, Tuple, List, Sequence
 import numpy as np
 import ldpc.mod2
 import scipy
@@ -8,6 +8,8 @@ from ldpc import BpOsdDecoder
 import itertools
 from tqdm import tqdm
 import time
+
+ArrayLike = Union[Sequence, np.ndarray]
 
 
 class CssCode(StabCode):
@@ -172,7 +174,7 @@ class CssCode(StabCode):
         return True
 
     def estimate_min_distance(
-        self, reduce_logicals: bool = False, timeout_seconds: float = 0.25
+        self, reduce_logical_basis: bool = False, timeout_seconds: float = 0.25
     ) -> int:
         if self.lx is None or self.lz is None:
             # Compute a basis of the logical operators
@@ -230,7 +232,6 @@ class CssCode(StabCode):
             osd_order=0,
         )
 
-
         for i in range(self.K):
 
             dummy_syndrome_x = np.zeros(x_stack.shape[0], dtype=np.uint8)
@@ -240,56 +241,63 @@ class CssCode(StabCode):
 
             decoded_logical_x = bp_osdz.decode(dummy_syndrome_z)
             logical_size = np.count_nonzero(decoded_logical_x)
-            if (logical_size < max_lx) and reduce_logicals:
+            if (logical_size < max_lx) and reduce_logical_basis:
                 candidate_logicals_x.append(decoded_logical_x)
             if logical_size < self.dx:
                 self.dx = logical_size
 
             decoded_logical_z = bp_osdx.decode(dummy_syndrome_x)
             logical_size = np.count_nonzero(decoded_logical_z)
-            if (logical_size < max_lz) and reduce_logicals:
+            if (logical_size < max_lz) and reduce_logical_basis:
                 candidate_logicals_z.append(decoded_logical_z)
             if logical_size < self.dz:
                 self.dz = logical_size
 
-        if reduce_logicals:
-            if len(candidate_logicals_x) != 0:
-                candidate_logicals_x = scipy.sparse.csr_matrix(
-                    np.array(candidate_logicals_x)
-                )
-
-                temp1 = scipy.sparse.vstack([candidate_logicals_x, self.lx]).tocsr()
-
-                row_weights = np.diff(temp1.indptr)
-                sorted_rows = np.argsort(row_weights)
-                temp1 = temp1[sorted_rows, :]
-
-                temp = scipy.sparse.vstack(
-                    [self.hx, temp1]
-                ).tocsr()
-
-                self.lx = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hx : self.rank_hx + self.K]]
-
-            if len(candidate_logicals_z) != 0:
-                candidate_logicals_z = scipy.sparse.csr_matrix(
-                    np.array(candidate_logicals_z)
-                )
-
-                temp1 = scipy.sparse.vstack([candidate_logicals_z, self.lz]).tocsr()
-
-                row_weights = np.diff(temp1.indptr)
-                sorted_rows = np.argsort(row_weights)
-                temp1 = temp1[sorted_rows, :]
-
-                temp = scipy.sparse.vstack(
-                    [self.hz, temp1]
-                ).tocsr()
-                self.lz = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hz : self.rank_hz + self.K]]
-
         self.d = np.min([self.dx, self.dz])
 
+        if reduce_logical_basis:
+            self.reduce_logical_operator_basis(
+                candidate_logicals_x, candidate_logicals_z
+            )
+
         return self.d
-    
+
+    def reduce_logical_operator_basis(self, candidate_logicals_x: ArrayLike = [], candidate_logicals_z: ArrayLike = []):
+
+        if len(candidate_logicals_x) != 0:
+            candidate_logicals_x = scipy.sparse.csr_matrix(
+                np.array(candidate_logicals_x)
+            )
+
+            temp1 = scipy.sparse.vstack([candidate_logicals_x, self.lx]).tocsr()
+
+            row_weights = np.diff(temp1.indptr)
+            sorted_rows = np.argsort(row_weights)
+            temp1 = temp1[sorted_rows, :]
+
+            temp = scipy.sparse.vstack(
+                [self.hx, temp1]
+            ).tocsr()
+
+            self.lx = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hx : self.rank_hx + self.K]]
+
+        if len(candidate_logicals_z) != 0:
+            candidate_logicals_z = scipy.sparse.csr_matrix(
+                np.array(candidate_logicals_z)
+            )
+
+            temp1 = scipy.sparse.vstack([candidate_logicals_z, self.lz]).tocsr()
+
+            row_weights = np.diff(temp1.indptr)
+            sorted_rows = np.argsort(row_weights)
+            temp1 = temp1[sorted_rows, :]
+
+            temp = scipy.sparse.vstack(
+                [self.hz, temp1]
+            ).tocsr()
+            self.lz = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hz : self.rank_hz + self.K]]
+
+
     @property
     def logical_operator_weights(self)->Tuple[np.ndarray,np.ndarray]:
         x_weights = []
