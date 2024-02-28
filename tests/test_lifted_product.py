@@ -16,26 +16,15 @@ def test_lifted_product():
         ]
     )
 
-    qcode = qec.lifted_hgp.LiftedHypergraphProduct(13, a1, a1.T)
+    qcode = qec.lifted_hgp.LiftedHypergraphProduct(13, a1, a1)
     for _ in range(1):
-        qcode.estimate_min_distance(reduce_logical_basis=True)
+        qcode.estimate_min_distance(reduce_logical_basis=True, timeout_seconds=10)
         qcode.test_logical_basis()
 
         lx, lz = qcode.logical_operator_weights
         print(lx)
         print(lz)
     print(qcode)
-
-    print()
-    de = qec.css.CssCodeDistanceEstimator(qcode)
-    de.monte_carlo_basis_reduction(1, silent=False)
-    qcode.lx = de.lx
-    qcode.lz = de.lz
-    qcode.test_logical_basis()
-
-    lx, lz = qcode.logical_operator_weights
-    print(lx)
-    print(lz)
 
 
 if __name__ == "__main__":

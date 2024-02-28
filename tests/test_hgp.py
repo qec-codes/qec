@@ -41,5 +41,24 @@ def test_hgp_16_4_6():
     assert d == 10
 
 
+def test_saved_hgp_codes():
+    qcode = qec.codes.HGP6Code()
+    d = qcode.estimate_min_distance(reduce_logical_basis=True)
+    qcode.test_logical_basis()
+    print(qcode)
+
+    qcode = qec.codes.HGP8Code()
+    d = qcode.estimate_min_distance(reduce_logical_basis=True)
+    qcode.test_logical_basis()
+    print(qcode)
+
+    qcode = qec.codes.HGP10Code()
+    d = qcode.estimate_min_distance(reduce_logical_basis=True)
+    qcode.test_logical_basis()
+    print(qcode)
+
+    qcode.save_npz(path="src/qec/pcms/hgp_codes/")
+
+
 if __name__ == "__main__":
     test_hgp_16_4_6()
