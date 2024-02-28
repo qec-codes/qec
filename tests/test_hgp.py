@@ -41,6 +41,5 @@ def test_hgp_16_4_6():
     assert d == 10
 
 
-
 if __name__ == "__main__":
     test_hgp_16_4_6()

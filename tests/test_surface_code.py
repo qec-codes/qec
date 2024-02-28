@@ -14,9 +14,10 @@ def test_surface_code():
     qcode.test_logical_basis()
 
     assert qcode.dx == 10
-    assert qcode.dz ==  2
+    assert qcode.dz == 2
 
     print(qcode)
+
 
 def test_toric_code():
     qcode = qec.codes.ToricCode(4)

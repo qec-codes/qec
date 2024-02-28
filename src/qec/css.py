@@ -75,7 +75,7 @@ class CssCode(StabCode):
                 "Input matrices hx and hz do not commute. I.e. they do not satisfy\
                               the requirement that hx@hz.T = 0."
             )
-        
+
         # Compute a basis of the logical operators
         self.compute_logical_basis()
 
@@ -102,7 +102,7 @@ class CssCode(StabCode):
         self.rank_hz = ldpc.mod2.rank(self.hz)
         # The first self.rank_hz pivot_rows of logical_stack are the Z-stabilisers. The remaining pivot_rows are the Z logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        self.lz = logical_stack[pivots[self.rank_hz:], :]
+        self.lz = logical_stack[pivots[self.rank_hz :], :]
 
         # X logicals
 
@@ -117,7 +117,7 @@ class CssCode(StabCode):
         self.rank_hx = ldpc.mod2.rank(self.hx)
         # The first self.rank_hx pivot_rows of logical_stack are the X-stabilisers. The remaining pivot_rows are the X logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        self.lx = logical_stack[pivots[self.rank_hx:], :]
+        self.lx = logical_stack[pivots[self.rank_hx :], :]
 
         # set the dimension of the code
         self.K = self.lx.shape[0]
@@ -133,7 +133,7 @@ class CssCode(StabCode):
                 self.dz = self.lz[i].nnz
         self.d = np.min([self.dx, self.dz])
 
-        #compute the hx and hz rank
+        # compute the hx and hz rank
         self.rank_hx = self.N - ker_hx.shape[0]
         self.rank_hz = self.N - ker_hz.shape[0]
 
@@ -262,7 +262,9 @@ class CssCode(StabCode):
 
         return self.d
 
-    def reduce_logical_operator_basis(self, candidate_logicals_x: ArrayLike = [], candidate_logicals_z: ArrayLike = []):
+    def reduce_logical_operator_basis(
+        self, candidate_logicals_x: ArrayLike = [], candidate_logicals_z: ArrayLike = []
+    ):
 
         if len(candidate_logicals_x) != 0:
             candidate_logicals_x = scipy.sparse.csr_matrix(
@@ -275,11 +277,11 @@ class CssCode(StabCode):
             sorted_rows = np.argsort(row_weights)
             temp1 = temp1[sorted_rows, :]
 
-            temp = scipy.sparse.vstack(
-                [self.hx, temp1]
-            ).tocsr()
+            temp = scipy.sparse.vstack([self.hx, temp1]).tocsr()
 
-            self.lx = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hx : self.rank_hx + self.K]]
+            self.lx = temp[
+                ldpc.mod2.pivot_rows(temp)[self.rank_hx : self.rank_hx + self.K]
+            ]
 
         if len(candidate_logicals_z) != 0:
             candidate_logicals_z = scipy.sparse.csr_matrix(
@@ -292,21 +294,20 @@ class CssCode(StabCode):
             sorted_rows = np.argsort(row_weights)
             temp1 = temp1[sorted_rows, :]
 
-            temp = scipy.sparse.vstack(
-                [self.hz, temp1]
-            ).tocsr()
-            self.lz = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hz : self.rank_hz + self.K]]
-
+            temp = scipy.sparse.vstack([self.hz, temp1]).tocsr()
+            self.lz = temp[
+                ldpc.mod2.pivot_rows(temp)[self.rank_hz : self.rank_hz + self.K]
+            ]
 
     @property
-    def logical_operator_weights(self)->Tuple[np.ndarray,np.ndarray]:
+    def logical_operator_weights(self) -> Tuple[np.ndarray, np.ndarray]:
         x_weights = []
         z_weights = []
         for i in range(self.K):
             x_weights.append(self.lx[i].nnz)
             z_weights.append(self.lz[i].nnz)
 
-        return (np.array(x_weights),np.array(z_weights))
+        return (np.array(x_weights), np.array(z_weights))
 
     def __str__(self):
         """
@@ -317,7 +318,8 @@ class CssCode(StabCode):
         """
         return f"{self.name} Code: [[N={self.N}, K={self.K}, dx<={self.dx}, dz<={self.dz}]]"
 
-class CssCodeDistanceEstimator():
+
+class CssCodeDistanceEstimator:
 
     def __init__(self, qcode: CssCode):
 
@@ -329,11 +331,11 @@ class CssCodeDistanceEstimator():
         self.N = qcode.N
         self.rank_hx = qcode.rank_hx
         self.rank_hz = qcode.rank_hz
-        
+
         self.dx = self.N
         self.dz = self.N
         self.d = self.N
-        
+
         self.max_lx = 0
         self.max_lz = 0
 
@@ -379,13 +381,15 @@ class CssCodeDistanceEstimator():
             osd_order=0,
         )
 
-    def reduce_logical_weight(self, logical_combination: np.ndarray, silent: bool = True):
-        
+    def reduce_logical_weight(
+        self, logical_combination: np.ndarray, silent: bool = True
+    ):
+
         assert len(logical_combination) == self.K
 
         dummy_syndrome_x = np.zeros(self.hx.shape[0], dtype=np.uint8)
         dummy_syndrome_z = np.zeros(self.hz.shape[0], dtype=np.uint8)
-        
+
         dummy_syndrome_x = np.hstack([dummy_syndrome_x, logical_combination])
         dummy_syndrome_z = np.hstack([dummy_syndrome_z, logical_combination])
 
@@ -396,7 +400,7 @@ class CssCodeDistanceEstimator():
 
         decoded_logical_x = self.bp_osdz.decode(dummy_syndrome_z)
         logical_size = np.count_nonzero(decoded_logical_x)
-        if (0 < logical_size < self.max_lx):
+        if 0 < logical_size < self.max_lx:
             self.candidate_logicals_x.append(decoded_logical_x)
         if 0 < logical_size < self.dx:
             if not silent:
@@ -407,7 +411,7 @@ class CssCodeDistanceEstimator():
 
         decoded_logical_z = self.bp_osdx.decode(dummy_syndrome_x)
         logical_size = np.count_nonzero(decoded_logical_z)
-        if (0 < logical_size < self.max_lz):
+        if 0 < logical_size < self.max_lz:
             self.candidate_logicals_z.append(decoded_logical_z)
         if 0 < logical_size < self.dz:
             if not silent:
@@ -428,11 +432,11 @@ class CssCodeDistanceEstimator():
             sorted_rows = np.argsort(row_weights)
             temp1 = temp1[sorted_rows, :]
 
-            temp = scipy.sparse.vstack(
-                [self.hx, temp1]
-            ).tocsr()
+            temp = scipy.sparse.vstack([self.hx, temp1]).tocsr()
 
-            self.lx = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hx : self.rank_hx + self.K]]
+            self.lx = temp[
+                ldpc.mod2.pivot_rows(temp)[self.rank_hx : self.rank_hx + self.K]
+            ]
 
         if len(self.candidate_logicals_z) != 0:
             self.candidate_logicals_z = scipy.sparse.csr_matrix(
@@ -445,10 +449,10 @@ class CssCodeDistanceEstimator():
             sorted_rows = np.argsort(row_weights)
             temp1 = temp1[sorted_rows, :]
 
-            temp = scipy.sparse.vstack(
-                [self.hz, temp1]
-            ).tocsr()
-            self.lz = temp[ldpc.mod2.pivot_rows(temp)[self.rank_hz : self.rank_hz + self.K]]
+            temp = scipy.sparse.vstack([self.hz, temp1]).tocsr()
+            self.lz = temp[
+                ldpc.mod2.pivot_rows(temp)[self.rank_hz : self.rank_hz + self.K]
+            ]
 
         self.candidate_logicals_x = []
         self.candidate_logicals_z = []
@@ -473,13 +477,15 @@ class CssCodeDistanceEstimator():
             self.reduce_logical_weight(logical_combination, silent=silent)
             self.find_min_weight_basis_from_candidates()
 
-    def monte_carlo_basis_reduction(self,timeout_seconds: float = None, silent: bool = True):
+    def monte_carlo_basis_reduction(
+        self, timeout_seconds: float = None, silent: bool = True
+    ):
         if timeout_seconds is None:
             raise ValueError("Please provide a timeout in seconds.")
-        
+
         print("Reducing current basis...")
         self.reduce_current_basis(silent=False)
-        
+
         start_time = time.time()
 
         exit_search = False
@@ -494,7 +500,6 @@ class CssCodeDistanceEstimator():
                     exit_search = True
                     break
 
-      
                 p = 0.01
                 logical_combination = (np.random.rand(self.K) < p).astype(np.uint8)
                 logical_combination[j] = 1
@@ -502,12 +507,12 @@ class CssCodeDistanceEstimator():
                 # logical_combination[j] = 1
 
                 self.reduce_logical_weight(logical_combination, silent=silent)
-                if (len(self.candidate_logicals_x) > self.K) or (len(self.candidate_logicals_z) > self.K):
+                if (len(self.candidate_logicals_x) > self.K) or (
+                    len(self.candidate_logicals_z) > self.K
+                ):
                     self.find_min_weight_basis_from_candidates()
 
                 count += 1
 
         self.find_min_weight_basis_from_candidates()
         print("Count: ", count)
-
-

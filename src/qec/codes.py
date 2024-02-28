@@ -7,7 +7,6 @@ from qec.lifted_hgp import LiftedHypergraphProduct
 import ldpc.protograph
 
 
-
 class FourTwoTwoCode(CssCode):
     def __init__(self):
         hx = np.array([[1, 1, 1, 1]])
@@ -70,7 +69,6 @@ class ToricCode(HyperGraphProductCode):
         )
 
 
-
 class TwistedToricCode(LiftedHypergraphProduct):
     def __init__(self, nx, nz):
         self.nx = nx
@@ -88,42 +86,68 @@ class TwistedToricCode(LiftedHypergraphProduct):
 class HQ12Code(LiftedHypergraphProduct):
     def __init__(self):
 
-        self.proto_1 = ldpc.protograph.array([[(0), (0),(0),(0),(0)],
-                                                [(0), (-2),(-4),(-7),(-11)],
-                                                [ (0), (-3),(-10),(-14),(-15)]])
-        
-        LiftedHypergraphProduct.__init__(self,16, self.proto_1, self.proto_1, name="HQ12")
+        self.proto_1 = ldpc.protograph.array(
+            [
+                [(0), (0), (0), (0), (0)],
+                [(0), (-2), (-4), (-7), (-11)],
+                [(0), (-3), (-10), (-14), (-15)],
+            ]
+        )
+
+        LiftedHypergraphProduct.__init__(
+            self, 16, self.proto_1, self.proto_1, name="HQ12"
+        )
 
 
 class HQ16Code(LiftedHypergraphProduct):
     def __init__(self):
 
-        lift  = 21
+        lift = 21
 
-        self.proto_1 = ldpc.protograph.array([[(0), (0),(0),(0),(0)],
-                                                [(0), (-4),(-5),(-7),(-17)],
-                                                [ (0), (-14),(-18),(-12),(-11)]])
-        
-        LiftedHypergraphProduct.__init__(self,lift, self.proto_1, self.proto_1, name=f"HQ16")
+        self.proto_1 = ldpc.protograph.array(
+            [
+                [(0), (0), (0), (0), (0)],
+                [(0), (-4), (-5), (-7), (-17)],
+                [(0), (-14), (-18), (-12), (-11)],
+            ]
+        )
+
+        LiftedHypergraphProduct.__init__(
+            self, lift, self.proto_1, self.proto_1, name=f"HQ16"
+        )
+
 
 class HQ20Code(LiftedHypergraphProduct):
     def __init__(self):
 
-        lift  = 30
+        lift = 30
 
-        self.proto_1 = ldpc.protograph.array([[(0), (0),(0),(0),(0)],
-                                                [(0), (-2),(-14),(-24),(-25)],
-                                                [ (0), (-16),(-11),(-14),(-13)]])
-        
-        LiftedHypergraphProduct.__init__(self,lift, self.proto_1, self.proto_1, name=f"HQ20")
+        self.proto_1 = ldpc.protograph.array(
+            [
+                [(0), (0), (0), (0), (0)],
+                [(0), (-2), (-14), (-24), (-25)],
+                [(0), (-16), (-11), (-14), (-13)],
+            ]
+        )
+
+        LiftedHypergraphProduct.__init__(
+            self, lift, self.proto_1, self.proto_1, name=f"HQ20"
+        )
+
 
 class HQ24Code(LiftedHypergraphProduct):
     def __init__(self):
 
-        lift  = 42
+        lift = 42
 
-        self.proto_1 = ldpc.protograph.array([[(0), (0),(0),(0),(0)],
-                                                [(0), (-6),(-7),(-9),(-30)],
-                                                [ (0), (-40),(-15),(-31),(-35)]])
-        
-        LiftedHypergraphProduct.__init__(self,lift, self.proto_1, self.proto_1, name=f"HQ24")
+        self.proto_1 = ldpc.protograph.array(
+            [
+                [(0), (0), (0), (0), (0)],
+                [(0), (-6), (-7), (-9), (-30)],
+                [(0), (-40), (-15), (-31), (-35)],
+            ]
+        )
+
+        LiftedHypergraphProduct.__init__(
+            self, lift, self.proto_1, self.proto_1, name=f"HQ24"
+        )
