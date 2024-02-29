@@ -47,18 +47,24 @@ def test_saved_hgp_codes():
     qcode.test_logical_basis()
     print(qcode)
 
+    qcode.save_npz(path="tests/pcms/HGP/",code_label=f"HGP_{qcode.N}_{qcode.K}_{qcode.d}")
+
+
     qcode = qec.codes.HGP8Code()
     d = qcode.estimate_min_distance(reduce_logical_basis=True)
     qcode.test_logical_basis()
     print(qcode)
+
+    qcode.save_npz(path="tests/pcms/HGP/",code_label=f"HGP_{qcode.N}_{qcode.K}_{qcode.d}")
+
 
     qcode = qec.codes.HGP10Code()
     d = qcode.estimate_min_distance(reduce_logical_basis=True)
     qcode.test_logical_basis()
     print(qcode)
 
-    qcode.save_npz(path="src/qec/pcms/hgp_codes/")
+    qcode.save_npz(path="tests/pcms/HGP/",code_label=f"HGP_{qcode.N}_{qcode.K}_{qcode.d}")
 
 
 if __name__ == "__main__":
-    test_hgp_16_4_6()
+    test_saved_hgp_codes()

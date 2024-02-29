@@ -151,13 +151,20 @@ class CssCode(StabCode):
         else:
             path = pathlib.Path(path)
 
+        if not path.exists():
+            path.mkdir(parents=True)
+
         if code_label is None:
             code_label = self.name
 
-        scipy.sparse.save_npz(f"{path}/{code_label}_hx.npz", self.hx)
-        scipy.sparse.save_npz(f"{path}/{code_label}_lx.npz", self.lx)
-        scipy.sparse.save_npz(f"{path}/{code_label}_hz.npz", self.hz)
-        scipy.sparse.save_npz(f"{path}/{code_label}_lz.npz", self.lz)
+        filename = f"{code_label}_hx.npz"
+        scipy.sparse.save_npz(path.joinpath(filename), self.hx)
+        filename = f"{code_label}_lx.npz"
+        scipy.sparse.save_npz(path.joinpath(filename), self.lx)
+        filename = f"{code_label}_hz.npz"
+        scipy.sparse.save_npz(path.joinpath(filename), self.hz)
+        filename = f"{code_label}_lz.npz"
+        scipy.sparse.save_npz(path.joinpath(filename), self.lz)
 
 
     def test_logical_basis(self) -> bool:
