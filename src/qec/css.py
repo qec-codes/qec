@@ -166,7 +166,6 @@ class CssCode(StabCode):
         filename = f"{code_label}_lz.npz"
         scipy.sparse.save_npz(path.joinpath(filename), self.lz)
 
-
     def test_logical_basis(self) -> bool:
         """
         Validate the computed logical operator bases.
