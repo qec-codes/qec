@@ -287,6 +287,9 @@ class CssCode(StabCode):
                 candidate_logicals_x, candidate_logicals_z
             )
 
+        # for i in range(self.K):
+        #     x_logicals_i = np.nonzero
+
         return self.d
 
     def reduce_logical_operator_basis(
