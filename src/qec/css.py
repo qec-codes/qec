@@ -355,6 +355,31 @@ class CssCode(StabCode):
                 ldpc.mod2.pivot_rows(temp)[self.rank_hz : self.rank_hz + self.K]
             ]
 
+    def fix_logical_operators(self, fix_logical: str = "X"):
+
+        if type(fix_logical) != str:
+            raise TypeError("fix_logical parameter must be a string")
+
+        if fix_logical.lower() == "x":
+            temp = self.lz@self.lx.T
+            temp.data = temp.data % 2
+            temp = ldpc.mod2.inverse(temp)
+            self.lz = temp@self.lz
+            self.lz.data = self.lz.data % 2
+  
+
+        elif fix_logical.lower() == "z":
+            temp = self.lx@self.lz.T
+            temp.data = temp.data % 2
+            temp = ldpc.mod2.inverse(temp)
+            self.lx = temp@self.lx
+            self.lx.data = self.lx.data % 2
+        else:
+            raise ValueError("Invalid fix_logical parameter")
+        
+        
+
+
     @property
     def logical_operator_weights(self) -> Tuple[np.ndarray, np.ndarray]:
         x_weights = []

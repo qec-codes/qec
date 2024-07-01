@@ -18,13 +18,34 @@ def test_lifted_product():
 
     qcode = qec.lifted_hgp.LiftedHypergraphProduct(13, a1, a1)
     for _ in range(1):
-        qcode.estimate_min_distance(reduce_logical_basis=True, timeout_seconds=10)
+        qcode.estimate_min_distance(reduce_logical_basis=True, timeout_seconds=100)
         qcode.test_logical_basis()
 
         lx, lz = qcode.logical_operator_weights
         print(lx)
         print(lz)
     print(qcode)
+
+    print()
+    qcode.fix_logical_operators(fix_logical="Z")
+    qcode.test_logical_basis()
+
+    temp = qcode.lx@qcode.lz.T
+    temp.data = temp.data%2
+    temp.eliminate_zeros()
+    # print(temp)
+
+    lx, lz = qcode.logical_operator_weights
+
+    temp = qcode.lx@qcode.lz.T
+    temp.data = temp.data % 2
+
+    print(temp.toarray())
+
+    print(lx)
+    print(lz)
+
+    print()
 
 
 if __name__ == "__main__":
