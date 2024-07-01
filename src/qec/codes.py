@@ -46,6 +46,75 @@ class SurfaceCode(HyperGraphProductCode):
             self, rep_code(lx), rep_code(lz), name=f"Surface ({lx}x{lz})"
         )
 
+class RotatedSurfaceCode(CssCode):
+
+    def __init__(self, d: int):
+
+        if d % 2 != 1:
+            raise ValueError("Rotated surface code distance must be odd.")
+
+        hz = np.zeros((d**2//2,d**2)).astype(np.uint8)
+        for k in np.arange(1,d**2+1):
+            stabs = [i for i in np.array(self.__data2st_Z(k, d))-(d+1)//2 if i>0 and i <= d**2//2]
+            # #print(f"Qubit {k}, connects to Z ancillas: {stabs}")
+            for i in stabs:
+                hz[i-1,k-1]=1
+
+        # #print()
+
+        hx = np.zeros((d**2//2,d**2)).astype(np.uint8)
+        for k in np.arange(1,d**2+1):
+            stabs = [i for i in np.array(self.__data2st_X(k, d))-(d+1)//2 if i>0 and i <= d**2//2]
+            # #print(f"Qubit {k}, connects to X ancillas: {stabs}")
+            for i in stabs:
+                hx[i-1,k-1]=1
+
+        super().__init__(hx,hz, name=f"Rotated Surface ({d}x{d})")
+        self.D = d
+
+    def __data2st_Z(self,k, d):
+        """
+        Function to relate a data qubit to the 2 Z graph vertices that enclose it.
+        :int k: Index of data qubit 1..d
+        :int d: distance of the surface code
+        :return: The 2 syndrome graph vertices that enclose the data qubit.
+        """
+
+        row = (k - 1) // d
+        column = (k - 1) % d
+        if not column % 2:
+            return int((k+row+1)/2), int((k+row+d)/2+1)
+        else:
+            if row % 2:
+                return int((k + (row + 1) + 1) / 2), int((k + (row + 1) + d) / 2)
+            else:
+                return int((k + (row - 1) + 1) / 2), int((k + (row - 1) + d) / 2 + 2)
+
+
+    def __data2st_X(self,k, d):
+        """
+        Function to relate a data qubit to the 2 X graph vertices that enclose it.
+        :int k: Index of data qubit 1..d
+        :int d: distance of the surface code
+        :return: The 2 syndrome graph vertices that enclose the data qubit.
+        """
+        row = (k - 1) // d
+        column = (k - 1) % d
+        if not row % 2:
+            if not column % 2:
+                return int(column * (d + 1) / 2 + (row + 2) / 2), \
+                    int(column * (d + 1) / 2 + (row + 2) / 2 + (d + 1) / 2)
+            else:
+                return int((column + 1) * (d + 1) / 2 + (row + 2) / 2), \
+                    int((column + 1) * (d + 1) / 2 + (row + 2) / 2 - (d + 1) / 2)
+        else:
+            if not column % 2:
+                return int((column + 1) * (d + 1) / 2 + (row + 1) / 2), \
+                    int((column + 1) * (d + 1) / 2 + (row + 1) / 2 - (d - 1) / 2)
+            else:
+                return int(column * (d + 1) / 2 + (row + 1) / 2), \
+                    int(column * (d + 1) / 2 + (row + 1) / 2 + (d + 3) / 2)
+    
 
 class ToricCode(HyperGraphProductCode):
     def __init__(self, lx: int, lz: int = None):

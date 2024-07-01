@@ -166,6 +166,32 @@ class CssCode(StabCode):
         filename = f"{code_label}_lz.npz"
         scipy.sparse.save_npz(path.joinpath(filename), self.lz)
 
+    def save_txt(self, path: str = None, code_label: str = None):
+        """
+        Save the hx, lx, hz, lz matrices to a .txt file.
+        """
+
+        if path is None:
+            path = pathlib.Path(os.getcwd())
+        else:
+            path = pathlib.Path(path)
+
+        if not path.exists():
+            path.mkdir(parents=True)
+
+        if code_label is None:
+            code_label = self.name
+
+        filename = f"{code_label}_hx.txt"
+        np.savetxt(path.joinpath(filename), self.hx.toarray(), fmt="%d")
+        filename = f"{code_label}_lx.txt"
+        np.savetxt(path.joinpath(filename), self.lx.toarray(), fmt="%d")
+        filename = f"{code_label}_hz.txt"
+        np.savetxt(path.joinpath(filename), self.hz.toarray(), fmt="%d")
+        filename = f"{code_label}_lz.txt"
+        np.savetxt(path.joinpath(filename), self.lz.toarray(), fmt="%d")
+
+
     def test_logical_basis(self) -> bool:
         """
         Validate the computed logical operator bases.
