@@ -227,8 +227,11 @@ class CssCode(StabCode):
         return True
 
     def estimate_min_distance(
-        self, reduce_logical_basis: bool = False, timeout_seconds: float = 0.25
+        self, reduce_logical_basis: bool = False, timeout_seconds: float = 0.25, p: float = 0.25
     ) -> int:
+        
+        start_time = time.time()
+
         if self.lx is None or self.lz is None:
             # Compute a basis of the logical operators
             self.lx, self.lz = self.compute_logical_basis()
@@ -313,8 +316,118 @@ class CssCode(StabCode):
                 candidate_logicals_x, candidate_logicals_z
             )
 
-        # for i in range(self.K):
-        #     x_logicals_i = np.nonzero
+        logical_x_stack = scipy.sparse.vstack([self.hx, self.lx])
+        logical_z_stack = scipy.sparse.vstack([self.hz, self.lz])
+
+        candidate_logicals_x = []
+        candidate_logicals_z = []
+
+        with tqdm(total=timeout_seconds) as pbar:
+            while time.time() < timeout_seconds + start_time:
+                # Your loop content here
+                
+                # Calculate elapsed time and update progress bar
+                elapsed_time = time.time() - start_time
+                # Update progress bar with formatted elapsed time (1 decimal point)
+                # pbar.set_postfix_str(f"Time: {elapsed_time:.1f}s", refresh=True)
+                
+                # Update the progress bar by 1 (or any other logic for progress update)
+                pbar.update(elapsed_time - pbar.n)
+
+                pbar.set_description(f"dx<{self.dx}, dz<{self.dz}, Time: {elapsed_time:.1f}s/{timeout_seconds:.1f}s")
+
+
+                # p = 0.25
+            
+                logical_op_indices_x = np.random.choice([0, 1], size=logical_x_stack.shape[0], p=[1-p, p])
+                # to ensure it actually is a logical operator
+                logical_op_indices_x[self.hx.shape[0] + np.random.randint(self.K)] = 1
+                logical_op_indices_x = np.nonzero(logical_op_indices_x)[0]
+
+                logical_op_x = np.zeros(logical_x_stack.shape[1], dtype=np.uint8)
+
+                for i in logical_op_indices_x:
+                    logical_op_x += (logical_x_stack.getrow(i).toarray().flatten().astype(np.uint8)) 
+                
+                logical_op_x = logical_op_x % 2
+
+                x_stack = scipy.sparse.vstack([self.hx, logical_op_x]).astype(np.uint8)
+
+                # exit(22)
+
+                bp_osdx = BpOsdDecoder(
+                    x_stack,
+                    error_rate=0.1,
+                    max_iter=10,
+                    bp_method="ms",
+                    ms_scaling_factor=0.9,
+                    schedule="parallel",
+                    osd_method="osd_0",
+                    osd_order=0,
+                )
+
+                dummy_syndrome_x = np.zeros(x_stack.shape[0], dtype=np.uint8)
+                dummy_syndrome_x[-1] = 1
+                decoded_logical_z = bp_osdx.decode(dummy_syndrome_x)
+                logical_size = np.count_nonzero(decoded_logical_z)
+                if (logical_size < max_lz) and reduce_logical_basis:
+                    candidate_logicals_z.append(decoded_logical_z)
+                if logical_size < self.dz:
+                    self.dz = logical_size
+
+                logical_op_indices_z = np.random.choice([0, 1], size=logical_z_stack.shape[0], p=[1-p, p])
+                # to ensure it actually is a logical operator
+                logical_op_indices_z[self.hz.shape[0] + np.random.randint(self.K)] = 1
+                logical_op_indices_z = np.nonzero(logical_op_indices_z)[0]
+
+                logical_op_z = np.zeros(logical_z_stack.shape[1], dtype=np.uint8)
+
+                for i in logical_op_indices_z:
+                    logical_op_z += (logical_z_stack.getrow(i).toarray().flatten().astype(np.uint8))
+
+                logical_op_z = logical_op_z % 2
+
+                z_stack = scipy.sparse.vstack([self.hz, logical_op_z]).astype(np.uint8)
+
+                # exit(22)
+
+                bp_osdz = BpOsdDecoder(
+                    z_stack,
+                    error_rate=0.1,
+                    max_iter=10,
+                    bp_method="ms",
+                    ms_scaling_factor=0.9,
+                    schedule="parallel",
+                    osd_method="osd_0",
+                    osd_order=0,
+                )
+
+                dummy_syndrome_z = np.zeros(z_stack.shape[0], dtype=np.uint8)
+                dummy_syndrome_z[-1] = 1
+                decoded_logical_x = bp_osdz.decode(dummy_syndrome_z)
+                logical_size = np.count_nonzero(decoded_logical_x)
+                if (logical_size < max_lx) and reduce_logical_basis:
+                    candidate_logicals_x.append(decoded_logical_x)
+                if logical_size < self.dx:
+                    self.dx = logical_size
+
+
+
+                if len(candidate_logicals_x) > self.K:
+                    if reduce_logical_basis:
+                        self.reduce_logical_operator_basis(
+                            candidate_logicals_x, candidate_logicals_z
+                        )
+                
+                self.d = np.min([self.dx, self.dz])
+
+
+
+        if reduce_logical_basis:
+            self.reduce_logical_operator_basis(
+                candidate_logicals_x, candidate_logicals_z
+            )
+        self.d = np.min([self.dx, self.dz])
 
         return self.d
 
