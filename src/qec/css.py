@@ -271,7 +271,7 @@ class CssCode(StabCode):
             error_rate=0.1,
             max_iter=10,
             bp_method="ms",
-            ms_scaling_factor=0.9,
+            ms_scaling_factor=1.0,
             schedule="parallel",
             osd_method="osd_0",
             osd_order=0,
@@ -283,7 +283,7 @@ class CssCode(StabCode):
             max_iter=10,
             bp_method="ms",
             schedule="parallel",
-            ms_scaling_factor=0.9,
+            ms_scaling_factor=1.0,
             osd_method="osd_0",
             osd_order=0,
         )

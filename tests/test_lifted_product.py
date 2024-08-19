@@ -16,9 +16,9 @@ def test_lifted_product():
         ]
     )
 
-    qcode = qec.lifted_hgp.LiftedHypergraphProduct(11, a1, a1)
+    qcode = qec.lifted_hgp.LiftedHypergraphProduct(13, a1, a1)
     for _ in range(1):
-        qcode.estimate_min_distance(reduce_logical_basis=True, timeout_seconds=5, p=0.25)
+        qcode.estimate_min_distance(reduce_logical_basis=True, timeout_seconds=10, p=0.25)
         qcode.test_logical_basis()
 
         lx, lz = qcode.logical_operator_weights
