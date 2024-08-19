@@ -144,11 +144,11 @@ class TwistedToricCode(LiftedHypergraphProduct):
         self.nz = nz
         self.N = int(2 * self.nx * self.nz)
 
-        self.proto_1 = np.array([[{0, 1}]])
-        self.proto_2 = np.array([[{0, nz}]])
+        self.proto_1 = ldpc.protograph.array([[(0, 1)]])
+        self.proto_2 = ldpc.protograph.array([[(0, nz)]])
 
         LiftedHypergraphProduct.__init__(
-            self.N // 2, self.proto_2, self.proto_1, name=f"Twisted Toric ({nx},{nz})"
+            self, self.N // 2, self.proto_2, self.proto_1, name=f"Twisted Toric ({nx},{nz})"
         )
 
 
