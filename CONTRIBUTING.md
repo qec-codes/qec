@@ -13,9 +13,8 @@
 │   └── qec
 │       ├── codes
 │       │   └── hgp
-│       ├── utilities
-│       ├── examples
-│       └── ?
+│       └── utilities
+├── examples
 └── tests 
 ```
 
