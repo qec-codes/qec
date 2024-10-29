@@ -26,7 +26,7 @@ cd qec
 Finally, install the package:
 
 ```bash
-pip install .
+pip install -e .
 ```
 
 You are all set! To import the package use:
