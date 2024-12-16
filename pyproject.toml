@@ -23,4 +23,10 @@ dependencies = [
 where = ["src"]  
 include = ["qec","qec.*"]
 
+[tool.pytest.ini_options]
+pythonpath = [
+  "src"
+]
+testpaths = "tests"
+
 
