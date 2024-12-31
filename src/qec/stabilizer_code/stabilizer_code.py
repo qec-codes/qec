@@ -176,9 +176,11 @@ class StabiliserCode(object):
         p_rows = ldpc.mod2.pivot_rows(logical_stack)
 
         self.logicals = logical_stack[p_rows[self.n - self.k :]]
-        basis_minimum_hamming_weight = np.min(binary_pauli_hamming_weight(self.logicals))
-        
-        #update distance based on the minimum hamming weight of the logical operators in this basis
+        basis_minimum_hamming_weight = np.min(
+            binary_pauli_hamming_weight(self.logicals)
+        )
+
+        # update distance based on the minimum hamming weight of the logical operators in this basis
         if self.d is None:
             self.d = basis_minimum_hamming_weight
         elif basis_minimum_hamming_weight < self.d:
@@ -225,7 +227,9 @@ class StabiliserCode(object):
 
         return True
 
-    def compute_exact_code_distance(self, timeout: float = 0.5) -> Tuple[Optional[int], float]:
+    def compute_exact_code_distance(
+        self, timeout: float = 0.5
+    ) -> Tuple[Optional[int], float]:
         """
         Compute the distance of the code by searching through linear combinations of
         logical operators and stabilisers, returning a tuple of the minimal Hamming weight
@@ -234,7 +238,7 @@ class StabiliserCode(object):
         Parameters
         ----------
         timeout : float, optional
-            The time limit (in seconds) for the exhaustive search. Default is 0.5 seconds.
+            The time limit (in seconds) for the exhaustive search. Default is 0.5 seconds. To obtain the exact distance, set to `np.inf`.
 
         Returns
         -------
@@ -268,7 +272,7 @@ class StabiliserCode(object):
             distance = np.inf
         else:
             distance = self.d
-            
+
         logicals_considered = 0
         total_logical_operators = stabiliser_span.shape[0] * logical_span.shape[0]
 
@@ -290,11 +294,10 @@ class StabiliserCode(object):
         fraction_considered = logicals_considered / total_logical_operators
 
         return (
-            (int(distance), fraction_considered) 
-            if distance != np.inf 
+            (int(distance), fraction_considered)
+            if distance != np.inf
             else (None, fraction_considered)
         )
-
 
     def get_code_parameters(self) -> tuple:
         """
