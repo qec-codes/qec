@@ -2,7 +2,10 @@ import numpy as np
 import scipy
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
-def symplectic_product(a: np.typing.ArrayLike, b: np.typing.ArrayLike) -> scipy.sparse.csr_matrix:
+
+def symplectic_product(
+    a: np.typing.ArrayLike, b: np.typing.ArrayLike
+) -> scipy.sparse.csr_matrix:
     """
     Compute the symplectic product of two binary matrices in CSR format.
 
@@ -57,7 +60,9 @@ def symplectic_product(a: np.typing.ArrayLike, b: np.typing.ArrayLike) -> scipy.
     b = convert_to_binary_scipy_sparse(b)
 
     # Ensure both matrices have the same shape.
-    assert a.shape[1] == b.shape[1], "Input matrices must have the same number of columns."
+    assert (
+        a.shape[1] == b.shape[1]
+    ), "Input matrices must have the same number of columns."
     # Ensure the number of columns is even (we split them into x and z parts).
     assert a.shape[1] % 2 == 0, "Input matrices must have an even number of columns."
 
@@ -76,7 +81,10 @@ def symplectic_product(a: np.typing.ArrayLike, b: np.typing.ArrayLike) -> scipy.
 
     return sp
 
-def check_binary_pauli_matrices_commute(mat1: scipy.sparse.spmatrix, mat2: scipy.sparse.spmatrix)->bool:
+
+def check_binary_pauli_matrices_commute(
+    mat1: scipy.sparse.spmatrix, mat2: scipy.sparse.spmatrix
+) -> bool:
     """
     Check if two binary Pauli matrices commute.
     """

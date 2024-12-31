@@ -19,4 +19,3 @@ def test_print():
 
     print("logical operators")
     print(qcode.logicals.toarray())
-    

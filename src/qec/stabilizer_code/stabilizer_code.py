@@ -4,7 +4,11 @@ import ldpc.mod2
 
 from qec.utils.code_utils import pauli_str_to_binary_pcm, binary_pcm_to_pauli_str
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
-from qec.utils.symplectic_pauli_utils import symplectic_product, check_binary_pauli_matrices_commute
+from qec.utils.symplectic_pauli_utils import (
+    symplectic_product,
+    check_binary_pauli_matrices_commute,
+)
+
 
 class StabiliserCode(object):
     """
@@ -177,19 +181,23 @@ class StabiliserCode(object):
             True if the logical operators form a valid basis, otherwise False.
         """
         try:
-            assert check_binary_pauli_matrices_commute(self.h, self.logicals), \
-                "Logical operators do not commute with stabilisers."
+            assert check_binary_pauli_matrices_commute(
+                self.h, self.logicals
+            ), "Logical operators do not commute with stabilisers."
 
             logical_product = symplectic_product(self.logicals, self.logicals)
             logical_product.eliminate_zeros()
-            assert not logical_product.nnz == 0, \
-                "The logical operators do not anti-commute with one another."
+            assert (
+                not logical_product.nnz == 0
+            ), "The logical operators do not anti-commute with one another."
 
-            assert ldpc.mod2.rank(self.logicals, method="dense") == 2 * self.k, \
-                "The logical operators do not form a basis for the code."
+            assert (
+                ldpc.mod2.rank(self.logicals, method="dense") == 2 * self.k
+            ), "The logical operators do not form a basis for the code."
 
-            assert self.logicals.shape[0] == 2 * self.k, \
-                "The logical operators are not linearly independent."
+            assert (
+                self.logicals.shape[0] == 2 * self.k
+            ), "The logical operators are not linearly independent."
 
         except AssertionError as e:
             print(e)
