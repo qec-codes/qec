@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse
 import ldpc.mod2
+import time
 
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 from qec.utils.binary_pauli_utils import (
@@ -8,7 +9,9 @@ from qec.utils.binary_pauli_utils import (
     check_binary_pauli_matrices_commute,
     pauli_str_to_binary_pcm,
     binary_pcm_to_pauli_str,
+    binary_pauli_hamming_weight
 )
+
 
 
 class StabiliserCode(object):
@@ -206,21 +209,77 @@ class StabiliserCode(object):
 
         return True
 
-    def compute_code_distance(self) -> int:
+    def compute_exact_code_distance(self, timeout: float = 0.5) -> int:
         """
-        Compute the distance of the code.
+        Compute the distance of the code by searching through linear combinations of
+        logical operators and stabilisers, returning the minimal Hamming weight found.
+        This function attempts an exhaustive (exact) search, but will stop early if
+        the given `timeout` (in seconds) is reached, returning the lowest distance
+        found so far.
+
+        Parameters
+        ----------
+        timeout : float, optional
+            The time limit (in seconds) for the exhaustive search. Default is 0.5 seconds.
 
         Returns
         -------
         int
-            The distance of the code.
+            The best-known distance of the code (possibly exact if the search completed
+            within the `timeout`).
 
         Notes
         -----
-        This is not currently implemented and will raise `NotImplementedError` when called.
+        - We compute the row span of both the stabilisers and the logical operators.
+        - For every logical operator in the logical span, we add (mod 2) each stabiliser
+          in the stabiliser span to form candidate logical operators.
+        - We compute the Hamming weight of each candidate operator (i.e. how many qubits
+          are acted upon by the operator).
+        - We track the minimal Hamming weight encountered. If `timeout` is exceeded,
+          we immediately return the best distance found so far.
+
+        Examples
+        --------
+        >>> code = StabiliserCode(["XZZX", "ZZXX"])
+        >>> dist = code.compute_exact_code_distance(timeout=1.0)
+        >>> print(dist)
         """
-        # Placeholder for future implementation
-        return NotImplemented
+        start_time = time.time()
+
+        # Convert the row span to a list for iteration. Skipping index 0 if it is the zero row.
+        stabiliser_span = ldpc.mod2.row_span(self.h)[1:]
+        logical_span = ldpc.mod2.row_span(self.logicals)[1:]
+
+        distance = np.inf
+
+        # We iterate over each logical row in the logical span.
+        for logical in logical_span:
+            # Check if we've exceeded the timeout.
+            if time.time() - start_time > timeout:
+                break
+
+            # For each stabiliser in the stabiliser span, we form a candidate logical operator
+            # by adding them (mod 2). This ensures we explore all possible linear combos.
+            for stabiliser in stabiliser_span:
+                # Check again inside the nested loop to avoid unnecessary computation.
+                if time.time() - start_time > timeout:
+                    break
+
+                candidate_logical = logical + stabiliser
+                candidate_logical.data %= 2  # Ensure mod-2 arithmetic.
+
+                # Calculate the Hamming weight (number of qubits acted upon).
+                # Here, the candidate log matrix has just one row in the row-span representation.
+                # So, we take [0] to get the single row's weight.
+                hamming_weight = binary_pauli_hamming_weight(candidate_logical)[0]
+                if hamming_weight < distance:
+                    distance = hamming_weight
+
+        # Store the best distance found so far (even if the search was interrupted).
+        self.d = distance
+
+        # Return the integer value, or a large number if none found.
+        return int(distance) if distance != np.inf else 0
 
     def save_code(self, save_dense: bool = False):
         """
