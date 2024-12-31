@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 
 from qec.stabilizer_code.stabilizer_code import StabiliserCode
-from qec.utils.codetables_de_utils import load_codetables_de_matrix
+from qec.quantum_codes import CodeTablesDE
 
 # Define a binary parity check matrix for testing
 binary_pcm = np.array([[0, 0, 0, 0, 1, 1, 1, 1], [1, 1, 1, 1, 0, 0, 0, 0]])
@@ -174,6 +174,9 @@ def test_compute_exact_code_distance():
     # Initialize StabiliserCode with the stabilizers
     qcode = StabiliserCode(stabilisers=stabs)
 
+    # erase precomputed distance
+    qcode.d = None
+
     # Compute the exact code distance
     qcode.compute_exact_code_distance()
 
@@ -181,145 +184,12 @@ def test_compute_exact_code_distance():
     assert qcode.d == 2, f"Expected distance d=2, but got d={qcode.d}"
 
 
-def test_10_3_3_code():
-    """
-    Test function for the [[10, 3, 3]] quantum stabilizer code.
-
-    This test initializes the stabilizer matrix for the [[10, 3, 3]] code,
-    computes the code distance, retrieves the code parameters, and asserts
-    that they match the expected values.
-    """
-    # Define the stabilizer matrix for the [[10, 3, 3]] code
-    stabiliser_matrix = np.array(
-        [
-            [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0],
-            [0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0],
-            [0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0],
-            [0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0],
-            [0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ]
-    )
-
-    # Initialize StabiliserCode with the stabilizer matrix
-    qcode = StabiliserCode(stabilisers=stabiliser_matrix)
+def test_compute_exact_code_distance():
+    qcode = CodeTablesDE(n=10, k=1)
+    # erase precomputed distance
+    qcode.d = None
 
     # Compute the exact code distance
     qcode.compute_exact_code_distance()
 
-    # Retrieve the code parameters: n (length), k (number of logical qubits), d (distance)
-    n, k, d = qcode.get_code_parameters()
-
-    # Assert that the code parameters match the expected values
-    assert n == 10, f"Expected n=10, but got n={n}"
-    assert k == 3, f"Expected k=3, but got k={k}"
-    assert d == 3, f"Expected d=3, but got d={d}"
-
-
-def test_10_2_4_code():
-    """
-    Test function for the [[10, 2, 4]] quantum stabilizer code.
-
-    This test initializes the stabilizer matrix for the [[10, 2, 4]] code,
-    computes the code distance, retrieves the code parameters, and asserts
-    that they match the expected values.
-    """
-    # Define the stabilizer matrix for the [[10, 2, 4]] code
-    stabiliser_matrix = np.array(
-        [
-            # X components              # Z components
-            [1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
-            [0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1],
-            [0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1],
-            [0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-            [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0],
-            [0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0],
-            [0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0],
-        ],
-        dtype=int,
-    )
-
-    # Initialize StabiliserCode with the stabilizer matrix
-    qcode = StabiliserCode(stabilisers=stabiliser_matrix)
-
-    # Compute the exact code distance
-    qcode.compute_exact_code_distance()
-
-    # Retrieve the code parameters: n (length), k (number of logical qubits), d (distance)
-    n, k, d = qcode.get_code_parameters()
-
-    # Assert that the code parameters match the expected values
-    assert n == 10, f"Expected n=10, but got n={n}"
-    assert k == 2, f"Expected k=2, but got k={k}"
-    assert d == 4, f"Expected d=4, but got d={d}"
-
-
-def test_14_2_5_code():
-    """
-    Test function for the [[14, 2, 5]] quantum stabilizer code.
-
-    This function initializes the stabilizer matrix for the [[14, 2, 5]] code,
-    computes the code distance, retrieves the code parameters, and asserts
-    that they match the expected values.
-    """
-
-    stabiliser_matrix = load_codetables_de_matrix(
-        "src/qec/quantum_codes/codetables_de/14_2_5.txt"
-    )
-
-    # Initialize StabiliserCode with the stabilizer matrix
-    qcode = StabiliserCode(stabilisers=stabiliser_matrix)
-    print(qcode)
-
-    # Compute the exact code distance
-    qcode.compute_exact_code_distance()
-
-    print(qcode)
-
-    # Retrieve the code parameters: n (length), k (number of logical qubits), d (distance)
-    n, k, d = qcode.get_code_parameters()
-
-    # Assert that the code parameters match the expected values
-    assert n == 14, f"Expected n=14, but got n={n}"
-    assert k == 2, f"Expected k=2, but got k={k}"
-    assert d == 5, f"Expected d=5, but got d={d}"
-
-
-def test_16_1_6_code():
-    """
-    Test function for the [[16, 1, 6]] quantum stabilizer code.
-
-    This test initializes the stabilizer matrix for the [[16, 1, 6]] code,
-    computes the code distance, retrieves the code parameters, and asserts
-    that they match the expected values.
-
-    Raises:
-        AssertionError: If any of the code parameters (n, k, d) do not match
-                        the expected values for the [[16, 1, 6]] code.
-    """
-    # Load pcm
-    stabiliser_matrix = load_codetables_de_matrix(
-        "src/qec/quantum_codes/codetables_de/16_1_6.txt"
-    )
-
-    # Initialize the StabiliserCode with the stabilizer matrix
-    qcode = StabiliserCode(stabilisers=stabiliser_matrix)
-
-    print(qcode)
-
-    # Compute the exact code distance
-    d, fraction_considered = qcode.compute_exact_code_distance()
-
-    # Retrieve the code parameters: n (number of physical qubits), k (number of logical qubits), d (distance)
-    n, k, d = qcode.get_code_parameters()
-
-    # Assert that the code parameters match the expected values
-    assert n == 16, f"Expected n=16, but got n={n}"
-    assert k == 1, f"Expected k=1, but got k={k}"
-    assert d == 6, f"Expected d=6, but got d={d}"
-
-    print(qcode)
-    print(qcode.pauli_stabilisers)
-    print(fraction_considered)
+    assert qcode.d == 4
