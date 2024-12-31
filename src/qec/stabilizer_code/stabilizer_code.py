@@ -280,6 +280,18 @@ class StabiliserCode(object):
         # Return the integer value, or a large number if none found.
         return int(distance) if distance != np.inf else None
 
+    def get_code_parameters(self) -> tuple:
+        """
+        Return the parameters of the code as a tuple: (n, k, d).
+
+        Returns
+        -------
+        tuple
+            A tuple of integers representing the number of physical qubits, logical qubits,
+            and the distance of the code.
+        """
+        return self.n, self.k, self.d
+
     def save_code(self, save_dense: bool = False):
         """
         Save the stabiliser code to disk.
