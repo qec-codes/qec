@@ -6,7 +6,7 @@ from qec.utils.code_utils import pauli_str_to_binary_pcm, binary_pcm_to_pauli_st
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 
-class StabiliserCode:
+class StabiliserCode(object):
     def __init__(self, stabilisers: np.typing.ArrayLike, name: str = None):
         self.name = name if name else "stabiliser code"
         self.h = None
@@ -14,8 +14,7 @@ class StabiliserCode:
         self.k = None
         self.d = None
 
-        self.x_logicals = None
-        self.z_logicals = None
+        self.logicals = None
 
         if isinstance(stabilisers, list):
             stabilisers = np.array(stabilisers)
@@ -27,7 +26,6 @@ class StabiliserCode:
 
         if stabilisers.dtype.kind in {"U", "S"}:
             self.h = pauli_str_to_binary_pcm(stabilisers)
-            print(self.h)
 
         else:
             if stabilisers.shape[1] % 2 == 0:
@@ -37,9 +35,6 @@ class StabiliserCode:
                     "The parity check matrix must have an even number of columns."
                 )
 
-        # else:
-        #     raise TypeError("Please provide either a stabiliser parity check matrix or a list of Pauli stabilisers.")
-
         self.n = self.h.shape[1] // 2
 
         # Check that stabilisers commute:
@@ -47,18 +42,12 @@ class StabiliserCode:
         if np.any((temp_product + temp_product.T).data % 2):
             raise ValueError("The stabilisers do not commute.")
 
+        # Compute the dimension of the code
         self.k = self.n - ldpc.mod2.rank(self.h, method="dense")
 
-        # TO-DO
-        if self.h.shape[1] <= 15:
-            self.d = ldpc.mod2.compute_exact_code_distance(pcm=self.h)
-        else:
-            self.d, _, _ = ldpc.mod2.estimate_code_distance(
-                pcm=self.h, timeout_seconds=0.5
-            )
-            raise UserWarning(
-                "The code distance is estimated, not exact. This is due to the parity-check matrix of the stabilizer code being too large."
-            )
+        # Compute a basis for the logical operators of the code
+
+        self.logicals = self.compute_logical_basis()
 
     @property
     def pauli_stabilisers(self):
@@ -81,6 +70,9 @@ class StabiliserCode:
 
         return logical_stack[p_rows[self.n - self.k :]]
 
+    def compute_code_distance(self) -> int:
+        return NotImplemented
+
     def save_code(self, save_dense: bool = False):
         pass
 
@@ -91,6 +83,4 @@ class StabiliserCode:
         return f"Name: {self.name}, Class: Stabiliser Code"
 
     def __str__(self):
-        return f"Name: {self.name}, \\ \
-                 Class: Stabiliser Code \\ \
-                 Parameters: [[{self.n, self.k, self.d}]]"
+        return f"<Name: {self.name}, Class: Stabiliser Code, Parameters: [[{self.n}, {self.k}, {self.d}]]>"
