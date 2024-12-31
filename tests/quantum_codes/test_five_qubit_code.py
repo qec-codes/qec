@@ -20,6 +20,7 @@ def test_print():
     print("logical operators")
     print(qcode.logicals.toarray())
 
+
 def test_distance():
     qcode = FiveQubitCode()
     qcode.compute_exact_code_distance()

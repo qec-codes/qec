@@ -325,6 +325,7 @@ def check_binary_pauli_matrices_commute(
 import numpy as np
 import scipy.sparse
 
+
 def binary_pauli_hamming_weight(
     mat: scipy.sparse.spmatrix,
 ) -> np.ndarray:
@@ -398,4 +399,3 @@ def binary_pauli_hamming_weight(
 
     # The row-wise Hamming weight is the number of non-zero columns in each row.
     return xz_or.getnnz(axis=1)
-

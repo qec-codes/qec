@@ -87,13 +87,12 @@ def test_invalid_logical_operator_basis():
 
     assert not qcode.check_valid_logical_basis()
 
-def test_compute_exact_code_distance():
 
-    stabs= np.array([["ZZZZ"], ["XXXX"]])
+def test_compute_exact_code_distance():
+    stabs = np.array([["ZZZZ"], ["XXXX"]])
 
     qcode = StabiliserCode(stabilisers=stabs)
 
     qcode.compute_exact_code_distance()
 
     assert qcode.d == 2
-    

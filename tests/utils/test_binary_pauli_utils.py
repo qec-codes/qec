@@ -296,8 +296,8 @@ def test_symplectic_product_non_commuting_paulis():
     sp.eliminate_zeros()
     assert sp.nnz != 0
 
-def test_binary_pauli_hamming_weight():
 
+def test_binary_pauli_hamming_weight():
     mat = [["Y"], ["Y"]]
     mat = pauli_str_to_binary_pcm(mat)
     assert np.array_equal(binary_pauli_hamming_weight(mat), np.array([1, 1]))
@@ -309,7 +309,7 @@ def test_binary_pauli_hamming_weight():
     mat = [["XZZ"], ["ZXX"]]
     mat = pauli_str_to_binary_pcm(mat)
     assert np.array_equal(binary_pauli_hamming_weight(mat), np.array([3, 3]))
-    
+
     mat = [["ZZZ"], ["XXI"]]
     mat = pauli_str_to_binary_pcm(mat)
     assert np.array_equal(binary_pauli_hamming_weight(mat), np.array([3, 2]))

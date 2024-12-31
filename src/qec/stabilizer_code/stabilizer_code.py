@@ -9,9 +9,8 @@ from qec.utils.binary_pauli_utils import (
     check_binary_pauli_matrices_commute,
     pauli_str_to_binary_pcm,
     binary_pcm_to_pauli_str,
-    binary_pauli_hamming_weight
+    binary_pauli_hamming_weight,
 )
-
 
 
 class StabiliserCode(object):
