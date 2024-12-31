@@ -2,11 +2,12 @@ import numpy as np
 import scipy.sparse
 import ldpc.mod2
 
-from qec.utils.code_utils import pauli_str_to_binary_pcm, binary_pcm_to_pauli_str
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
-from qec.utils.symplectic_pauli_utils import (
+from qec.utils.binary_pauli_utils import (
     symplectic_product,
     check_binary_pauli_matrices_commute,
+    pauli_str_to_binary_pcm,
+    binary_pcm_to_pauli_str,
 )
 
 

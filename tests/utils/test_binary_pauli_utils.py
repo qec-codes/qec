@@ -1,10 +1,12 @@
 import pytest
-import numpy as np
 import scipy
-from qec.utils.code_utils import (
-    GF4_to_binary,
+import numpy as np
+from qec.utils.binary_pauli_utils import (
+    symplectic_product,
     pauli_str_to_binary_pcm,
     binary_pcm_to_pauli_str,
+    GF4_to_binary,
+    binary_pauli_hamming_weight,
 )
 
 
@@ -243,3 +245,75 @@ def test_binary_pcm_to_pauli_str_empty():
 
     assert pauli_strs.shape == (0, 1), f"Expected shape (0,1), got {pauli_strs.shape}"
     assert pauli_strs.size == 0
+
+
+def test_symplectic_product_commuting_paulis():
+    mat = [["XXXX"], ["ZZZZ"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    sp = symplectic_product(mat, mat)
+    sp.eliminate_zeros()
+
+    assert sp.nnz == 0
+
+    mat = [["XXII"], ["IIZZ"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    sp = symplectic_product(mat, mat)
+    sp.eliminate_zeros()
+
+    assert sp.nnz == 0
+
+    mat = [["XIII"], ["IIIZ"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    sp = symplectic_product(mat, mat)
+    sp.eliminate_zeros()
+
+    assert sp.nnz == 0
+
+    mat = [["XIZI"], ["ZIXI"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    sp = symplectic_product(mat, mat)
+    sp.eliminate_zeros()
+
+    assert sp.nnz == 0
+
+
+def test_symplectic_product_non_commuting_paulis():
+    mat = [["X"], ["Z"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    sp = symplectic_product(mat, mat)
+    assert sp.nnz != 0
+
+    mat = [["XZZ"], ["ZXX"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    sp = symplectic_product(mat, mat)
+    sp.eliminate_zeros()
+    assert sp.nnz != 0
+
+    mat = [["ZZZ"], ["XXX"]]
+    mat = pauli_str_to_binary_pcm(mat)
+
+    sp = symplectic_product(mat, mat)
+    sp.eliminate_zeros()
+    assert sp.nnz != 0
+
+def test_binary_pauli_hamming_weight():
+
+    mat = [["Y"], ["Y"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    assert np.array_equal(binary_pauli_hamming_weight(mat), np.array([1, 1]))
+
+    mat = [["X"], ["Z"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    assert np.array_equal(binary_pauli_hamming_weight(mat), np.array([1, 1]))
+
+    mat = [["XZZ"], ["ZXX"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    assert np.array_equal(binary_pauli_hamming_weight(mat), np.array([3, 3]))
+    
+    mat = [["ZZZ"], ["XXI"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    assert np.array_equal(binary_pauli_hamming_weight(mat), np.array([3, 2]))
+
+    mat = [["IIX"], ["III"]]
+    mat = pauli_str_to_binary_pcm(mat)
+    assert np.array_equal(binary_pauli_hamming_weight(mat), np.array([1, 0]))
