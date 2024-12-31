@@ -3,11 +3,12 @@ from qec.quantum_codes import FiveQubitCode
 
 def test_params():
     qcode = FiveQubitCode()
-    assert qcode.name == "5-qubit code"
+    assert qcode.name == "5-Qubit Code"
     assert qcode.n == 5
     assert qcode.k == 1
-
-    assert qcode.logicals.shape == (2, 5)
+    assert qcode.logicals.shape == (2, 10)
+    assert qcode.check_valid_logical_basis()
+    assert qcode.check_stabilizers_commute()
 
 
 def test_print():

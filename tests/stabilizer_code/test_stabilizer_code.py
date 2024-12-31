@@ -73,3 +73,16 @@ def test_non_commuting_stabilisers():
     )
     with pytest.raises(ValueError, match="The stabilisers do not commute."):
         temp_code = StabiliserCode(stabilisers=non_commuting_stabilisers)
+
+def test_invalid_logical_operator_basis():
+
+    stabs = np.array([["ZZZZ"], ["XXXX"]])
+
+    qcode = StabiliserCode(stabilisers=stabs)
+
+    assert qcode.logicals.shape == (4, 8)
+    assert qcode.check_valid_logical_basis()
+
+    qcode.logicals = np.array([[1, 0, 0, 0, 1, 0, 0, 0], [0, 1, 0, 0, 0, 1, 0, 0]])
+
+    assert not qcode.check_valid_logical_basis()
