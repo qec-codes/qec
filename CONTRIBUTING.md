@@ -6,7 +6,7 @@
 ### Production code
 All core code resides in the `src/qec/` directory, with the following main subfolders:
 - **`quantum_codes/`** – For code related to specific quantum code constructions (e.g., `five_qubit_code.py`).
-- **`stabilizer_code/`** – For stabiliser-code-specific implementations (e.g., `css_code.py`, `stabilizer_code.py`).
+- **`stabilizer_code/`** – For stabilizer-code-specific implementations (e.g., `css_code.py`, `stabilizer_code.py`).
 - **`utils/`** – For utility modules used across the various code constructions (e.g., `binary_pauli_utils.py`, `sparse_binary_utils.py`).
 
 ### Testing

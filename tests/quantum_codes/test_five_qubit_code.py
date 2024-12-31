@@ -16,7 +16,7 @@ def test_print():
     print(qcode)
     qcode.compute_exact_code_distance()
     print(qcode)
-    print(qcode.pauli_stabilisers)
+    print(qcode.pauli_stabilizers)
     print(qcode.h.toarray())
 
     print("logical operators")

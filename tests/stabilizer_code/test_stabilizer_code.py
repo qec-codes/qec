@@ -2,7 +2,7 @@ import pytest
 import warnings
 import numpy as np
 
-from qec.stabilizer_code.stabilizer_code import StabiliserCode
+from qec.stabilizer_code.stabilizer_code import StabilizerCode
 from qec.quantum_codes import CodeTablesDE
 
 # Define a binary parity check matrix for testing
@@ -14,24 +14,24 @@ pauli_strs = np.array([["ZZZZ"], ["XXXX"]])
 
 def test_initialisation_with_binary_pcm():
     """
-    Test the initialization of StabiliserCode using a binary parity check matrix.
+    Test the initialization of StabilizerCode using a binary parity check matrix.
 
-    This test verifies that the StabiliserCode correctly interprets a binary
+    This test verifies that the StabilizerCode correctly interprets a binary
     parity check matrix, sets the appropriate attributes, and initializes
     the number of physical and logical qubits correctly.
     """
-    # Initialize StabiliserCode with a binary parity check matrix
-    temp_code = StabiliserCode(stabilisers=binary_pcm)
+    # Initialize StabilizerCode with a binary parity check matrix
+    temp_code = StabilizerCode(stabilizers=binary_pcm)
 
     # Check if the name attribute is correctly set
-    assert temp_code.name == "stabiliser code", "StabiliserCode name mismatch."
+    assert temp_code.name == "stabilizer code", "StabilizerCode name mismatch."
 
     # Print the Pauli stabilizers for debugging purposes
-    print(temp_code.pauli_stabilisers)
+    print(temp_code.pauli_stabilizers)
 
     # Verify that the Pauli stabilizers match the expected Pauli strings
     assert (
-        temp_code.pauli_stabilisers == pauli_strs
+        temp_code.pauli_stabilizers == pauli_strs
     ).all(), "Pauli stabilizers mismatch."
 
     # Verify that the parity check matrix matches the input
@@ -47,21 +47,21 @@ def test_initialisation_with_binary_pcm():
 
 def test_initialisation_with_pauli_strings():
     """
-    Test the initialization of StabiliserCode using Pauli stabilizer strings.
+    Test the initialization of StabilizerCode using Pauli stabilizer strings.
 
-    This test ensures that the StabiliserCode correctly parses Pauli strings,
+    This test ensures that the StabilizerCode correctly parses Pauli strings,
     constructs the corresponding parity check matrix, and initializes the
     number of physical and logical qubits appropriately.
     """
-    # Initialize StabiliserCode with Pauli stabilizer strings
-    temp_code = StabiliserCode(stabilisers=pauli_strs)
+    # Initialize StabilizerCode with Pauli stabilizer strings
+    temp_code = StabilizerCode(stabilizers=pauli_strs)
 
     # Check if the name attribute is correctly set
-    assert temp_code.name == "stabiliser code", "StabiliserCode name mismatch."
+    assert temp_code.name == "stabilizer code", "StabilizerCode name mismatch."
 
     # Verify that the Pauli stabilizers match the input
     assert (
-        temp_code.pauli_stabilisers == pauli_strs
+        temp_code.pauli_stabilizers == pauli_strs
     ).all(), "Pauli stabilizers mismatch."
 
     # Verify that the parity check matrix matches the expected binary PCM
@@ -77,71 +77,71 @@ def test_initialisation_with_pauli_strings():
 
 def test_initialisation_invalid_type():
     """
-    Negative test for initializing StabiliserCode with an invalid input type.
+    Negative test for initializing StabilizerCode with an invalid input type.
 
-    This test checks whether the StabiliserCode correctly raises a TypeError
+    This test checks whether the StabilizerCode correctly raises a TypeError
     when initialized with an unsupported data type (e.g., a string).
     """
-    # Attempt to initialize StabiliserCode with an invalid type and expect a TypeError
+    # Attempt to initialize StabilizerCode with an invalid type and expect a TypeError
     with pytest.raises(
         TypeError,
-        match="Please provide either a parity check matrix or a list of Pauli stabilisers.",
+        match="Please provide either a parity check matrix or a list of Pauli stabilizers.",
     ):
-        temp_code = StabiliserCode(stabilisers="not a numpy array")
+        temp_code = StabilizerCode(stabilizers="not a numpy array")
 
 
 def test_wrong_pcm_shape():
     """
-    Negative test for initializing StabiliserCode with a parity check matrix of incorrect shape.
+    Negative test for initializing StabilizerCode with a parity check matrix of incorrect shape.
 
-    This test verifies that the StabiliserCode raises a ValueError when the
+    This test verifies that the StabilizerCode raises a ValueError when the
     provided parity check matrix has an odd number of columns, which is invalid.
     """
     # Define a parity check matrix with an odd number of columns
     wrong_pcm = np.array([[0, 1, 1], [1, 1, 0]])
 
-    # Attempt to initialize StabiliserCode with the wrong PCM shape and expect a ValueError
+    # Attempt to initialize StabilizerCode with the wrong PCM shape and expect a ValueError
     with pytest.raises(
         ValueError, match="The parity check matrix must have an even number of columns."
     ):
-        temp_code = StabiliserCode(stabilisers=wrong_pcm)
+        temp_code = StabilizerCode(stabilizers=wrong_pcm)
 
 
-def test_non_commuting_stabilisers():
+def test_non_commuting_stabilizers():
     """
-    Negative test for initializing StabiliserCode with non-commuting stabilizers.
+    Negative test for initializing StabilizerCode with non-commuting stabilizers.
 
-    This test ensures that the StabiliserCode raises a ValueError when the
+    This test ensures that the StabilizerCode raises a ValueError when the
     provided stabilizer generators do not commute, which violates the stabilizer
     formalism requirements.
     """
     # Define non-commuting Pauli stabilizer strings
-    non_commuting_stabilisers = np.array([["XXXX"], ["ZIII"]])
+    non_commuting_stabilizers = np.array([["XXXX"], ["ZIII"]])
 
-    # Attempt to initialize StabiliserCode with non-commuting Pauli strings and expect a ValueError
-    with pytest.raises(ValueError, match="The stabilisers do not commute."):
-        temp_code = StabiliserCode(stabilisers=non_commuting_stabilisers)
+    # Attempt to initialize StabilizerCode with non-commuting Pauli strings and expect a ValueError
+    with pytest.raises(ValueError, match="The stabilizers do not commute."):
+        temp_code = StabilizerCode(stabilizers=non_commuting_stabilizers)
 
     # Define a binary parity check matrix that corresponds to non-commuting stabilizers
     non_commuting_pcm = np.array([[1, 1, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0]])
 
-    # Attempt to initialize StabiliserCode with the non-commuting PCM and expect a ValueError
-    with pytest.raises(ValueError, match="The stabilisers do not commute."):
-        temp_code = StabiliserCode(stabilisers=non_commuting_pcm)
+    # Attempt to initialize StabilizerCode with the non-commuting PCM and expect a ValueError
+    with pytest.raises(ValueError, match="The stabilizers do not commute."):
+        temp_code = StabilizerCode(stabilizers=non_commuting_pcm)
 
 
 def test_invalid_logical_operator_basis():
     """
-    Test the validation of the logical operator basis in StabiliserCode.
+    Test the validation of the logical operator basis in StabilizerCode.
 
-    This test checks whether the StabiliserCode correctly identifies a valid
+    This test checks whether the StabilizerCode correctly identifies a valid
     and an invalid logical operator basis.
     """
     # Define valid Pauli stabilizer strings
     stabs = np.array([["ZZZZ"], ["XXXX"]])
 
-    # Initialize StabiliserCode with valid stabilizers
-    qcode = StabiliserCode(stabilisers=stabs)
+    # Initialize StabilizerCode with valid stabilizers
+    qcode = StabilizerCode(stabilizers=stabs)
 
     # Check the shape of logical operators (expected to be (4, 8))
     assert qcode.logicals.shape == (
@@ -163,16 +163,16 @@ def test_invalid_logical_operator_basis():
 
 def test_compute_exact_code_distance():
     """
-    Test the computation of the exact code distance in StabiliserCode.
+    Test the computation of the exact code distance in StabilizerCode.
 
-    This test verifies that the StabiliserCode correctly computes the distance
+    This test verifies that the StabilizerCode correctly computes the distance
     of a simple \([[4, 2, 2]]\) quantum code.
     """
     # Define Pauli stabilizer strings for a \([[4, 2, 2]]\) code
     stabs = np.array([["ZZZZ"], ["XXXX"]])
 
-    # Initialize StabiliserCode with the stabilizers
-    qcode = StabiliserCode(stabilisers=stabs)
+    # Initialize StabilizerCode with the stabilizers
+    qcode = StabilizerCode(stabilizers=stabs)
 
     # erase precomputed distance
     qcode.d = None

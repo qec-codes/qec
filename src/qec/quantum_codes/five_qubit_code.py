@@ -1,8 +1,8 @@
 import numpy as np
-from qec.stabilizer_code.stabilizer_code import StabiliserCode
+from qec.stabilizer_code.stabilizer_code import StabilizerCode
 
 
-class FiveQubitCode(StabiliserCode):
+class FiveQubitCode(StabilizerCode):
     """
     Five-Qubit Quantum Error-Correcting Code.
 
@@ -23,7 +23,7 @@ class FiveQubitCode(StabiliserCode):
 
     Inherits
     --------
-    StabiliserCode
+    StabilizerCode
         The base class providing functionalities for stabilizer-based quantum
         error-correcting codes, including initialization, distance computation,
         and parameter retrieval.
@@ -59,10 +59,10 @@ class FiveQubitCode(StabiliserCode):
             commutation relations required for a valid stabilizer code.
         """
         # Define the Pauli stabilizer generators for the five-qubit code
-        pauli_stabilisers = [["XZZXI"], ["IXZZX"], ["XIXZZ"], ["ZXIXZ"]]
+        pauli_stabilizers = [["XZZXI"], ["IXZZX"], ["XIXZZ"], ["ZXIXZ"]]
 
-        # Initialize the StabiliserCode with the defined stabilizers and a custom name
-        super().__init__(stabilisers=pauli_stabilisers, name="5-Qubit Code")
+        # Initialize the StabilizerCode with the defined stabilizers and a custom name
+        super().__init__(stabilizers=pauli_stabilizers, name="5-Qubit Code")
 
         # Set the distance attribute specific to the five-qubit code
         self.d = 3

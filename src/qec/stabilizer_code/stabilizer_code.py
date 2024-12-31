@@ -14,26 +14,26 @@ from qec.utils.binary_pauli_utils import (
 )
 
 
-class StabiliserCode(object):
+class StabilizerCode(object):
     """
-    A quantum stabiliser code, which defines and manipulates stabiliser generators,
+    A quantum stabilizer code, which defines and manipulates stabilizer generators,
     computes logical operators, and stores parameters such as the number of physical qubits
     and the number of logical qubits.
 
     Parameters
     ----------
-    stabilisers : np.typing.ArrayLike or scipy.sparse.spmatrix or list
+    stabilizers : np.typing.ArrayLike or scipy.sparse.spmatrix or list
         Either a binary parity check matrix (with an even number of columns),
-        or a list of Pauli strings that specify the stabilisers of the code.
+        or a list of Pauli strings that specify the stabilizers of the code.
     name : str, optional
-        A name for the code. Defaults to "stabiliser code".
+        A name for the code. Defaults to "stabilizer code".
 
     Attributes
     ----------
     name : str
         The name of the code.
     h : scipy.sparse.spmatrix
-        The binary parity check matrix representation of the stabilisers.
+        The binary parity check matrix representation of the stabilizers.
     n : int
         The number of physical qubits in the code.
     k : int
@@ -45,28 +45,28 @@ class StabiliserCode(object):
 
     """
 
-    def __init__(self, stabilisers: np.typing.ArrayLike, name: str = None):
+    def __init__(self, stabilizers: np.typing.ArrayLike, name: str = None):
         """
-        Construct a StabiliserCode instance from either a parity check matrix or a list of
-        Pauli stabilisers.
+        Construct a StabilizerCode instance from either a parity check matrix or a list of
+        Pauli stabilizers.
 
         Parameters
         ----------
-        stabilisers : np.typing.ArrayLike or scipy.sparse.spmatrix or list
+        stabilizers : np.typing.ArrayLike or scipy.sparse.spmatrix or list
             Either a binary parity check matrix (with an even number of columns),
-            or a list of Pauli strings that specify the stabilisers of the code.
+            or a list of Pauli strings that specify the stabilizers of the code.
         name : str, optional
-            A name for the code. If None, it defaults to "stabiliser code".
+            A name for the code. If None, it defaults to "stabilizer code".
 
         Raises
         ------
         TypeError
-            If `stabilisers` is not an array-like, sparse matrix, or list of Pauli strings.
+            If `stabilizers` is not an array-like, sparse matrix, or list of Pauli strings.
         ValueError
             If the parity check matrix does not have an even number of columns,
-            or the stabilisers do not mutually commute.
+            or the stabilizers do not mutually commute.
         """
-        self.name = name if name else "stabiliser code"
+        self.name = name if name else "stabilizer code"
 
         self.h = None
         self.n = None
@@ -74,19 +74,19 @@ class StabiliserCode(object):
         self.d = None
         self.logicals = None
 
-        if isinstance(stabilisers, list):
-            stabilisers = np.array(stabilisers)
+        if isinstance(stabilizers, list):
+            stabilizers = np.array(stabilizers)
 
-        if not isinstance(stabilisers, (np.ndarray, scipy.sparse.spmatrix)):
+        if not isinstance(stabilizers, (np.ndarray, scipy.sparse.spmatrix)):
             raise TypeError(
-                "Please provide either a parity check matrix or a list of Pauli stabilisers."
+                "Please provide either a parity check matrix or a list of Pauli stabilizers."
             )
 
-        if stabilisers.dtype.kind in {"U", "S"}:
-            self.h = pauli_str_to_binary_pcm(stabilisers)
+        if stabilizers.dtype.kind in {"U", "S"}:
+            self.h = pauli_str_to_binary_pcm(stabilizers)
         else:
-            if stabilisers.shape[1] % 2 == 0:
-                self.h = convert_to_binary_scipy_sparse(stabilisers)
+            if stabilizers.shape[1] % 2 == 0:
+                self.h = convert_to_binary_scipy_sparse(stabilizers)
             else:
                 raise ValueError(
                     "The parity check matrix must have an even number of columns."
@@ -94,9 +94,9 @@ class StabiliserCode(object):
 
         self.n = self.h.shape[1] // 2
 
-        # Check that stabilisers commute
+        # Check that stabilizers commute
         if not self.check_stabilizers_commute():
-            raise ValueError("The stabilisers do not commute.")
+            raise ValueError("The stabilizers do not commute.")
 
         # Compute the number of logical qubits
         self.k = self.n - ldpc.mod2.rank(self.h, method="dense")
@@ -105,43 +105,43 @@ class StabiliserCode(object):
         self.logicals = self.compute_logical_basis()
 
     @property
-    def pauli_stabilisers(self):
+    def pauli_stabilizers(self):
         """
-        Get or set the stabilisers in Pauli string format.
+        Get or set the stabilizers in Pauli string format.
 
         Returns
         -------
         np.ndarray
-            An array of Pauli strings representing the stabilisers.
+            An array of Pauli strings representing the stabilizers.
         """
         return binary_pcm_to_pauli_str(self.h)
 
-    @pauli_stabilisers.setter
-    def pauli_stabilisers(self, pauli_stabilisers: np.ndarray):
+    @pauli_stabilizers.setter
+    def pauli_stabilizers(self, pauli_stabilizers: np.ndarray):
         """
-        Set the stabilisers using Pauli strings.
+        Set the stabilizers using Pauli strings.
 
         Parameters
         ----------
-        pauli_stabilisers : np.ndarray
-            An array of Pauli strings representing the stabilisers.
+        pauli_stabilizers : np.ndarray
+            An array of Pauli strings representing the stabilizers.
 
         Raises
         ------
         AssertionError
-            If the newly set stabilisers do not commute.
+            If the newly set stabilizers do not commute.
         """
-        self.h = pauli_str_to_binary_pcm(pauli_stabilisers)
-        assert self.check_stabilizers_commute(), "The stabilisers do not commute."
+        self.h = pauli_str_to_binary_pcm(pauli_stabilizers)
+        assert self.check_stabilizers_commute(), "The stabilizers do not commute."
 
     def check_stabilizers_commute(self) -> bool:
         """
-        Check whether the current set of stabilisers mutually commute.
+        Check whether the current set of stabilizers mutually commute.
 
         Returns
         -------
         bool
-            True if all stabilisers commute, otherwise False.
+            True if all stabilizers commute, otherwise False.
         """
         return check_binary_pauli_matrices_commute(self.h, self.h)
 
@@ -158,7 +158,7 @@ class StabiliserCode(object):
         Notes
         -----
         This method uses the kernel of the parity check matrix to find operators that
-        commute with all stabilisers, and then identifies a subset that spans the space
+        commute with all stabilizers, and then identifies a subset that spans the space
         of logical operators.
         """
         kernel_h = ldpc.mod2.kernel(self.h)
@@ -194,7 +194,7 @@ class StabiliserCode(object):
         """
         Validate that the stored logical operators form a proper logical basis for the code.
 
-        Checks that they commute with the stabilisers, pairwise anti-commute (in the symplectic
+        Checks that they commute with the stabilizers, pairwise anti-commute (in the symplectic
         sense), and have full rank.
 
         Returns
@@ -205,7 +205,7 @@ class StabiliserCode(object):
         try:
             assert check_binary_pauli_matrices_commute(
                 self.h, self.logicals
-            ), "Logical operators do not commute with stabilisers."
+            ), "Logical operators do not commute with stabilizers."
 
             logical_product = symplectic_product(self.logicals, self.logicals)
             logical_product.eliminate_zeros()
@@ -232,7 +232,7 @@ class StabiliserCode(object):
     ) -> Tuple[Optional[int], float]:
         """
         Compute the distance of the code by searching through linear combinations of
-        logical operators and stabilisers, returning a tuple of the minimal Hamming weight
+        logical operators and stabilizers, returning a tuple of the minimal Hamming weight
         found and the fraction of logical operators considered before timing out.
 
         Parameters
@@ -249,9 +249,9 @@ class StabiliserCode(object):
 
         Notes
         -----
-        - We compute the row span of both the stabilisers and the logical operators.
-        - For every logical operator in the logical span, we add (mod 2) each stabiliser
-        in the stabiliser span to form candidate logical operators.
+        - We compute the row span of both the stabilizers and the logical operators.
+        - For every logical operator in the logical span, we add (mod 2) each stabilizer
+        in the stabilizer span to form candidate logical operators.
         - We compute the Hamming weight of each candidate operator (i.e. how many qubits
         are acted upon by the operator).
         - We track the minimal Hamming weight encountered. If `timeout` is exceeded,
@@ -259,13 +259,13 @@ class StabiliserCode(object):
 
         Examples
         --------
-        >>> code = StabiliserCode(["XZZX", "ZZXX"])
+        >>> code = StabilizerCode(["XZZX", "ZZXX"])
         >>> dist, fraction = code.compute_exact_code_distance(timeout=1.0)
         >>> print(dist, fraction)
         """
         start_time = time.time()
 
-        stabiliser_span = ldpc.mod2.row_span(self.h)[1:]
+        stabilizer_span = ldpc.mod2.row_span(self.h)[1:]
         logical_span = ldpc.mod2.row_span(self.logicals)[1:]
 
         if self.d is None:
@@ -274,15 +274,15 @@ class StabiliserCode(object):
             distance = self.d
 
         logicals_considered = 0
-        total_logical_operators = stabiliser_span.shape[0] * logical_span.shape[0]
+        total_logical_operators = stabilizer_span.shape[0] * logical_span.shape[0]
 
         for logical in logical_span:
             if time.time() - start_time > timeout:
                 break
-            for stabiliser in stabiliser_span:
+            for stabilizer in stabilizer_span:
                 if time.time() - start_time > timeout:
                     break
-                candidate_logical = logical + stabiliser
+                candidate_logical = logical + stabilizer
                 candidate_logical.data %= 2
 
                 hamming_weight = binary_pauli_hamming_weight(candidate_logical)[0]
@@ -313,7 +313,7 @@ class StabiliserCode(object):
 
     def save_code(self, save_dense: bool = False):
         """
-        Save the stabiliser code to disk.
+        Save the stabilizer code to disk.
 
         Parameters
         ----------
@@ -325,28 +325,28 @@ class StabiliserCode(object):
 
     def load_code(self):
         """
-        Load the stabiliser code from a saved file.
+        Load the stabilizer code from a saved file.
         """
         pass
 
     def __repr__(self):
         """
-        Return an unambiguous string representation of the StabiliserCode instance.
+        Return an unambiguous string representation of the StabilizerCode instance.
 
         Returns
         -------
         str
             An unambiguous representation for debugging and development.
         """
-        return f"Name: {self.name}, Class: Stabiliser Code"
+        return f"Name: {self.name}, Class: Stabilizer Code"
 
     def __str__(self):
         """
-        Return a string describing the stabiliser code, including its parameters.
+        Return a string describing the stabilizer code, including its parameters.
 
         Returns
         -------
         str
             A human-readable string with the name, n, k, and d parameters of the code.
         """
-        return f"< Stabiliser Code, Name: {self.name}, Parameters: [[{self.n}, {self.k}, {self.d}]] >"
+        return f"< Stabilizer Code, Name: {self.name}, Parameters: [[{self.n}, {self.k}, {self.d}]] >"
