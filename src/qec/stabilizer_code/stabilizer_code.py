@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse
 import ldpc.mod2
 import time
+from typing import Tuple, Optional
 
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 from qec.utils.binary_pauli_utils import (
@@ -174,6 +175,17 @@ class StabiliserCode(object):
         logical_stack = scipy.sparse.vstack([self.h, swapped_kernel])
         p_rows = ldpc.mod2.pivot_rows(logical_stack)
 
+        self.logicals = logical_stack[p_rows[self.n - self.k :]]
+        basis_minimum_hamming_weight = np.min(binary_pauli_hamming_weight(self.logicals))
+        
+        #update distance based on the minimum hamming weight of the logical operators in this basis
+        if self.d is None:
+            self.d = basis_minimum_hamming_weight
+        elif basis_minimum_hamming_weight < self.d:
+            self.d = basis_minimum_hamming_weight
+        else:
+            pass
+
         return logical_stack[p_rows[self.n - self.k :]]
 
     def check_valid_logical_basis(self) -> bool:
@@ -213,13 +225,11 @@ class StabiliserCode(object):
 
         return True
 
-    def compute_exact_code_distance(self, timeout: float = 0.5) -> int:
+    def compute_exact_code_distance(self, timeout: float = 0.5) -> Tuple[Optional[int], float]:
         """
         Compute the distance of the code by searching through linear combinations of
-        logical operators and stabilisers, returning the minimal Hamming weight found.
-        This function attempts an exhaustive (exact) search, but will stop early if
-        the given `timeout` (in seconds) is reached, returning the lowest distance
-        found so far.
+        logical operators and stabilisers, returning a tuple of the minimal Hamming weight
+        found and the fraction of logical operators considered before timing out.
 
         Parameters
         ----------
@@ -228,62 +238,63 @@ class StabiliserCode(object):
 
         Returns
         -------
-        int
-            The best-known distance of the code (possibly exact if the search completed
-            within the `timeout`).
+        Tuple[Optional[int], float]
+            A tuple containing:
+            - The best-known distance of the code as an integer (or `None` if no distance was found).
+            - The fraction of logical combinations considered before the search ended.
 
         Notes
         -----
         - We compute the row span of both the stabilisers and the logical operators.
         - For every logical operator in the logical span, we add (mod 2) each stabiliser
-          in the stabiliser span to form candidate logical operators.
+        in the stabiliser span to form candidate logical operators.
         - We compute the Hamming weight of each candidate operator (i.e. how many qubits
-          are acted upon by the operator).
+        are acted upon by the operator).
         - We track the minimal Hamming weight encountered. If `timeout` is exceeded,
-          we immediately return the best distance found so far.
+        we immediately return the best distance found so far.
 
         Examples
         --------
         >>> code = StabiliserCode(["XZZX", "ZZXX"])
-        >>> dist = code.compute_exact_code_distance(timeout=1.0)
-        >>> print(dist)
+        >>> dist, fraction = code.compute_exact_code_distance(timeout=1.0)
+        >>> print(dist, fraction)
         """
         start_time = time.time()
 
-        # Convert the row span to a list for iteration. Skipping index 0 if it is the zero row.
         stabiliser_span = ldpc.mod2.row_span(self.h)[1:]
         logical_span = ldpc.mod2.row_span(self.logicals)[1:]
 
-        distance = np.inf
+        if self.d is None:
+            distance = np.inf
+        else:
+            distance = self.d
+            
+        logicals_considered = 0
+        total_logical_operators = stabiliser_span.shape[0] * logical_span.shape[0]
 
-        # We iterate over each logical row in the logical span.
         for logical in logical_span:
-            # Check if we've exceeded the timeout.
             if time.time() - start_time > timeout:
                 break
-
-            # For each stabiliser in the stabiliser span, we form a candidate logical operator
-            # by adding them (mod 2). This ensures we explore all possible linear combos.
             for stabiliser in stabiliser_span:
-                # Check again inside the nested loop to avoid unnecessary computation.
                 if time.time() - start_time > timeout:
                     break
-
                 candidate_logical = logical + stabiliser
-                candidate_logical.data %= 2  # Ensure mod-2 arithmetic.
+                candidate_logical.data %= 2
 
-                # Calculate the Hamming weight (number of qubits acted upon).
-                # Here, the candidate log matrix has just one row in the row-span representation.
-                # So, we take [0] to get the single row's weight.
                 hamming_weight = binary_pauli_hamming_weight(candidate_logical)[0]
                 if hamming_weight < distance:
                     distance = hamming_weight
+                logicals_considered += 1
 
-        # Store the best distance found so far (even if the search was interrupted).
         self.d = distance
+        fraction_considered = logicals_considered / total_logical_operators
 
-        # Return the integer value, or a large number if none found.
-        return int(distance) if distance != np.inf else None
+        return (
+            (int(distance), fraction_considered) 
+            if distance != np.inf 
+            else (None, fraction_considered)
+        )
+
 
     def get_code_parameters(self) -> tuple:
         """

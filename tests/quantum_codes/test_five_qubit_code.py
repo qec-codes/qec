@@ -13,6 +13,7 @@ def test_params():
 
 def test_print():
     qcode = FiveQubitCode()
+    print(qcode)
     qcode.compute_exact_code_distance()
     print(qcode)
     print(qcode.pauli_stabilisers)

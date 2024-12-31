@@ -1182,7 +1182,7 @@ def test_16_1_6_code():
     qcode = StabiliserCode(stabilisers=stabiliser_matrix)
 
     # Compute the exact code distance
-    qcode.compute_exact_code_distance()
+    d, fraction_considered = qcode.compute_exact_code_distance()
 
     # Retrieve the code parameters: n (number of physical qubits), k (number of logical qubits), d (distance)
     n, k, d = qcode.get_code_parameters()
@@ -1191,3 +1191,8 @@ def test_16_1_6_code():
     assert n == 16, f"Expected n=16, but got n={n}"
     assert k == 1, f"Expected k=1, but got k={k}"
     assert d == 6, f"Expected d=6, but got d={d}"
+
+    print(qcode)
+    print(qcode.pauli_stabilisers)
+    print(fraction_considered)
+
