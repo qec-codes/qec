@@ -162,6 +162,11 @@ class StabiliserCode(object):
         """
         kernel_h = ldpc.mod2.kernel(self.h)
 
+        # Sort the rows of the kernel by weight
+        row_weights = np.diff(kernel_h.indptr)
+        sorted_rows = np.argsort(row_weights)
+        kernel_h = kernel_h[sorted_rows, :]
+
         swapped_kernel = scipy.sparse.hstack(
             [kernel_h[:, self.n :], kernel_h[:, : self.n]]
         )
