@@ -278,7 +278,7 @@ class StabiliserCode(object):
         self.d = distance
 
         # Return the integer value, or a large number if none found.
-        return int(distance) if distance != np.inf else 0
+        return int(distance) if distance != np.inf else None
 
     def save_code(self, save_dense: bool = False):
         """
