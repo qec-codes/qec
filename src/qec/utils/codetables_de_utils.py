@@ -27,9 +27,9 @@ def get_codetables_de_matrix(q, n, k, output_json_path=None, write_to_file=False
     q : int
         The field size (e.g. 2, 4, etc.).
     n : int
-        The length of the code (number of physical qudits).
+        The length of the code (number of physical qubits).
     k : int
-        The dimension of the code (number of logical qudits).
+        The dimension of the code (number of logical qubits).
     output_json_path : str or None, optional
         File path to which the resulting dictionary will be written if
         ``write_to_file`` is set to True. If None and ``write_to_file`` is True,

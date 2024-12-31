@@ -17,9 +17,9 @@ class CodeTablesDE(StabilizerCode):
     Parameters
     ----------
     n : int
-        Length of the code (number of physical qudits).
+        Length of the code (number of physical qubits).
     k : int
-        Dimension of the code (number of logical qudits).
+        Dimension of the code (number of logical qubits).
 
     Attributes
     ----------
@@ -56,9 +56,9 @@ class CodeTablesDE(StabilizerCode):
         Parameters
         ----------
         n : int
-            Length of the code (number of physical qudits).
+            Length of the code (number of physical qubits).
         k : int
-            Dimension of the code (number of logical qudits).
+            Dimension of the code (number of logical qubits).
 
         Notes
         -----
