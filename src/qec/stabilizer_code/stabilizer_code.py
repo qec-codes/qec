@@ -5,7 +5,6 @@ from ldpc import BpOsdDecoder
 import ldpc.mod2
 import time
 from typing import Tuple, Optional, Union, Sequence
-import itertools
 
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 from qec.utils.binary_pauli_utils import (
