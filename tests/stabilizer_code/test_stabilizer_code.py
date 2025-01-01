@@ -203,7 +203,7 @@ def test_estimate_min_distance():
 
     print(qcode.logical_basis_weights())
 
-    qcode.estimate_min_distance(timeout_seconds=0.25,reduce_logical_basis=True)
+    qcode.estimate_min_distance(timeout_seconds=0.25, reduce_logical_basis=True)
 
     print(qcode.logical_basis_weights())
     # print(qcode.logicals.toarray())

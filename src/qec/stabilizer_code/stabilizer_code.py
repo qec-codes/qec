@@ -46,7 +46,11 @@ class StabilizerCode(object):
         A basis for the logical operators of the code.
     """
 
-    def __init__(self, stabilizers: Union[np.ndarray, scipy.sparse.spmatrix, list], name: str = None):
+    def __init__(
+        self,
+        stabilizers: Union[np.ndarray, scipy.sparse.spmatrix, list],
+        name: str = None,
+    ):
         """
         Construct a StabilizerCode instance from either a parity check matrix or a list of
         Pauli stabilizers.
@@ -170,13 +174,13 @@ class StabilizerCode(object):
         kernel_h = kernel_h[sorted_rows, :]
 
         swapped_kernel = scipy.sparse.hstack(
-            [kernel_h[:, self.n:], kernel_h[:, :self.n]]
+            [kernel_h[:, self.n :], kernel_h[:, : self.n]]
         )
 
         logical_stack = scipy.sparse.vstack([self.h, swapped_kernel])
         p_rows = ldpc.mod2.pivot_rows(logical_stack)
 
-        self.logicals = logical_stack[p_rows[self.h.shape[0]:]]
+        self.logicals = logical_stack[p_rows[self.h.shape[0] :]]
         basis_minimum_hamming_weight = np.min(
             binary_pauli_hamming_weight(self.logicals)
         )
@@ -189,7 +193,7 @@ class StabilizerCode(object):
         else:
             pass
 
-        return logical_stack[p_rows[self.h.shape[0]:]]
+        return logical_stack[p_rows[self.h.shape[0] :]]
 
     def check_valid_logical_basis(self) -> bool:
         """
@@ -353,7 +357,8 @@ class StabilizerCode(object):
         return f"< Stabilizer Code, Name: {self.name}, Parameters: [[{self.n}, {self.k}, {self.d}]] >"
 
     def reduce_logical_operator_basis(
-        self, candidate_logicals: Union[Sequence, np.ndarray, scipy.sparse.spmatrix] = []
+        self,
+        candidate_logicals: Union[Sequence, np.ndarray, scipy.sparse.spmatrix] = [],
     ):
         """
         Reduce the logical operator basis to include lower-weight logicals.
@@ -371,7 +376,9 @@ class StabilizerCode(object):
                     scipy.sparse.csr_matrix(candidate_logicals)
                 )
 
-            assert check_binary_pauli_matrices_commute(candidate_logicals,self.h), "Candidate logicals do not commute with stabilizers."
+            assert check_binary_pauli_matrices_commute(
+                candidate_logicals, self.h
+            ), "Candidate logicals do not commute with stabilizers."
 
             # Stack the candidate logicals with the existing logicals
             temp1 = scipy.sparse.vstack([candidate_logicals, self.logicals]).tocsr()
@@ -386,7 +393,7 @@ class StabilizerCode(object):
 
             # Perform row reduction to find a new logical basis
             p_rows = ldpc.mod2.pivot_rows(temp1)
-            self.logicals = temp1[p_rows[:2*self.k]]
+            self.logicals = temp1[p_rows[: 2 * self.k]]
 
     def estimate_min_distance(
         self,
@@ -473,7 +480,7 @@ class StabilizerCode(object):
                 min_distance = w
             if w <= min_distance:
                 if reduce_logical_basis:
-                    lc = np.hstack([candidate[self.n: ], candidate[: self.n]])
+                    lc = np.hstack([candidate[self.n :], candidate[: self.n]])
                     candidate_logicals.append(lc)
 
         # 2) Randomly search for better representatives of logical operators
@@ -488,7 +495,9 @@ class StabilizerCode(object):
                 # (with probability p, set the corresponding row in the syndrome to 1)
                 random_syndrome = np.zeros(stack.shape[0], dtype=np.uint8)
                 while True:
-                    random_mask = np.random.choice([0, 1], size=self.logicals.shape[0], p=[1 - p, p])
+                    random_mask = np.random.choice(
+                        [0, 1], size=self.logicals.shape[0], p=[1 - p, p]
+                    )
                     if np.any(random_mask):
                         break
                 for idx, bit in enumerate(random_mask):
@@ -502,13 +511,12 @@ class StabilizerCode(object):
                     min_distance = w
                 if w <= min_distance:
                     if reduce_logical_basis:
-                        lc = np.hstack([candidate[self.n: ], candidate[: self.n]])
+                        lc = np.hstack([candidate[self.n :], candidate[: self.n]])
                         candidate_logicals.append(lc)
 
                 pbar.set_description(
                     f"Estimating distance: min-weight found <= {min_distance}, time: {elapsed:.1f}/{timeout_seconds:.1f}s"
                 )
-
 
         # 3) If requested, reduce the logical operator basis to include lower-weight operators
         if reduce_logical_basis and len(candidate_logicals) > 0:
@@ -517,7 +525,7 @@ class StabilizerCode(object):
         # Update and return the estimated distance
         self.d = min_distance
         return min_distance
-    
+
     def logical_basis_weights(self):
         """
         Return the Hamming weights of the logical operators in the current basis.
