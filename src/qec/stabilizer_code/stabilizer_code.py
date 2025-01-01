@@ -369,8 +369,10 @@ class StabilizerCode(object):
             # Convert candidates to a sparse matrix if they aren't already
             if not isinstance(candidate_logicals, scipy.sparse.spmatrix):
                 candidate_logicals = scipy.sparse.csr_matrix(
-                    np.array(candidate_logicals)
+                    scipy.sparse.csr_matrix(candidate_logicals)
                 )
+
+            assert check_binary_pauli_matrices_commute(candidate_logicals,self.h), "Candidate logicals do not commute with stabilizers."
 
             # Stack the candidate logicals with the existing logicals
             temp1 = scipy.sparse.vstack([candidate_logicals, self.logicals]).tocsr()
@@ -383,12 +385,9 @@ class StabilizerCode(object):
             sorted_rows = np.argsort(row_weights)
             temp1 = temp1[sorted_rows, :]
 
-            # Combine with the stabilizer matrix
-            temp = scipy.sparse.vstack([self.h, temp1]).tocsr()
-
             # Perform row reduction to find a new logical basis
-            p_rows = ldpc.mod2.pivot_rows(temp)
-            self.logicals = temp[p_rows[self.h.shape[0]: self.h.shape[0] + 2*self.k]]
+            p_rows = ldpc.mod2.pivot_rows(temp1)
+            self.logicals = temp1[p_rows[:2*self.k]]
 
     def estimate_min_distance(
         self,
@@ -473,8 +472,10 @@ class StabilizerCode(object):
             w = np.count_nonzero(candidate[: self.n] | candidate[self.n :])
             if w < min_distance:
                 min_distance = w
+            if w <= min_distance:
                 if reduce_logical_basis:
-                    candidate_logicals.append(candidate)
+                    lc = np.hstack([candidate[self.n: ], candidate[: self.n]])
+                    candidate_logicals.append(lc)
 
         # 2) Randomly search for better representatives of logical operators
         start_time = time.time()
@@ -496,15 +497,19 @@ class StabilizerCode(object):
                         random_syndrome[self.h.shape[0] + idx] = 1
 
                 candidate = bp_osd.decode(random_syndrome)
+
                 w = np.count_nonzero(candidate[: self.n] | candidate[self.n :])
                 if w < min_distance:
                     min_distance = w
+                if w <= min_distance:
                     if reduce_logical_basis:
-                        candidate_logicals.append(candidate)
+                        lc = np.hstack([candidate[self.n: ], candidate[: self.n]])
+                        candidate_logicals.append(lc)
 
                 pbar.set_description(
                     f"Estimating distance: min-weight found <= {min_distance}, time: {elapsed:.1f}/{timeout_seconds:.1f}s"
                 )
+
 
         # 3) If requested, reduce the logical operator basis to include lower-weight operators
         if reduce_logical_basis and len(candidate_logicals) > 0:

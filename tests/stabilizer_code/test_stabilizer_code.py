@@ -196,11 +196,20 @@ def test_compute_exact_code_distance():
 
 
 def test_estimate_min_distance():
-    qcode = CodeTablesDE(n=30, k=2)
-    
+    qcode = CodeTablesDE(n=20, k=1)
     # erase precomputed distance
+    target_d = qcode.d
     qcode.d = None
+
+    print(qcode.logical_basis_weights())
 
     qcode.estimate_min_distance(timeout_seconds=0.25,reduce_logical_basis=True)
 
-    assert qcode.d == 10
+    print(qcode.logical_basis_weights())
+    # print(qcode.logicals.toarray())
+
+    assert qcode.check_valid_logical_basis()
+
+    print(qcode)
+
+    assert qcode.d == target_d
