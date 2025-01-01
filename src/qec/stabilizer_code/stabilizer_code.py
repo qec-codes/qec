@@ -13,6 +13,9 @@ from qec.utils.binary_pauli_utils import (
     binary_pauli_hamming_weight,
 )
 
+from tqdm import tqdm
+from ldpc import BpOsdDecoder
+
 
 class StabilizerCode(object):
     """
@@ -298,6 +301,121 @@ class StabilizerCode(object):
             if distance != np.inf
             else (None, fraction_considered)
         )
+
+    def estimate_min_distance(
+        self,
+        timeout_seconds: float = 0.25,
+        p: float = 0.25,
+        max_iter: int = 10,
+        error_rate: float = 0.1,
+        bp_method: str = "ms",
+        schedule: str = "parallel",
+        ms_scaling_factor: float = 1.0,
+        osd_method: str = "osd_0",
+        osd_order: int = 0,
+    ) -> int:
+        """
+        Estimate the minimum distance of the stabilizer code using a BP+OSD decoder-based search.
+
+        Parameters
+        ----------
+        timeout_seconds : float, optional
+            The time limit (in seconds) for searching random linear combinations.
+        p : float, optional
+            Probability used to randomly include or exclude each row (stabilizer or logical)
+            when generating trial logical operators.
+        max_iter : int, optional
+            Maximum number of BP decoder iterations.
+        error_rate : float, optional
+            Crossover probability for the BP+OSD decoder.
+        bp_method : str, optional
+            Belief Propagation method (e.g., "ms" for min-sum).
+        schedule : str, optional
+            Update schedule for BP (e.g., "parallel").
+        ms_scaling_factor : float, optional
+            Scaling factor for min-sum updates.
+        osd_method : str, optional
+            Order-statistic decoding method (e.g., "osd_0").
+        osd_order : int, optional
+            OSD order.
+
+        Returns
+        -------
+        int
+            The best-known estimate of the code distance found within the time limit.
+        """
+        if self.logicals is None:
+            self.logicals = self.compute_logical_basis()
+
+        # Build a stacked matrix of stabilizers and logicals
+        # Stabilizers: rows 0..(h.shape[0]-1)
+        # Logicals: rows h.shape[0]..(h.shape[0] + logicals.shape[0] - 1)
+        stack = scipy.sparse.vstack([self.h, self.logicals]).tocsr()
+
+        # Initial distance estimate from the current logicals
+        # min_distance = self.h.shape[1]  # upper bound: acts on all qubits
+        # for i in range(self.logicals.shape[0]):
+        #     w = np.count_nonzero(self.logicals.getrow(i).toarray())
+        #     if w < min_distance:
+        #         min_distance = w
+
+        if self.d is None:
+            min_distance = np.min(binary_pauli_hamming_weight(self.logicals))
+        else:
+            min_distance = self.d
+
+        # Set up BP+OSD decoder
+        bp_osd = BpOsdDecoder(
+            stack,
+            error_rate=error_rate,
+            max_iter=max_iter,
+            bp_method=bp_method,
+            schedule=schedule,
+            ms_scaling_factor=ms_scaling_factor,
+            osd_method=osd_method,
+            osd_order=osd_order,
+        )
+
+        # 1) First, try each logical operator individually
+        for i in range(self.logicals.shape[0]):
+            dummy_syndrome = np.zeros(stack.shape[0], dtype=np.uint8)
+            dummy_syndrome[self.h.shape[0] + i] = 1  # pick exactly one logical operator
+            candidate = bp_osd.decode(dummy_syndrome)
+            w = np.count_nonzero(candidate[: self.n] | candidate[self.n :])
+            if w < min_distance:
+                min_distance = w
+
+        # 2) Randomly search for better representatives of logical operators
+        start_time = time.time()
+        with tqdm(total=timeout_seconds, desc="Estimating distance") as pbar:
+            while time.time() - start_time < timeout_seconds:
+                elapsed = time.time() - start_time
+                pbar.update(elapsed - pbar.n)
+
+                # Randomly pick a combination of logical rows
+                # (with probability p, set the corresponding row in the syndrome to 1)
+                random_syndrome = np.zeros(stack.shape[0], dtype=np.uint8)
+                while True:
+                    random_mask = np.random.choice([0, 1], size=self.logicals.shape[0], p=[1 - p, p])
+                    if np.any(random_mask):
+                        break
+                for idx, bit in enumerate(random_mask):
+                    if bit == 1:
+                        random_syndrome[self.h.shape[0] + idx] = 1
+
+                candidate = bp_osd.decode(random_syndrome)
+                w = np.count_nonzero(candidate[: self.n] | candidate[self.n :])
+                if w < min_distance:
+                    min_distance = w
+
+                pbar.set_description(
+                    f"Estimating distance: min-weight found <= {min_distance}, time: {elapsed:.1f}/{timeout_seconds:.1f}s"
+                )
+
+        # Update and return
+        self.d = min_distance
+        return min_distance
+
 
     def get_code_parameters(self) -> tuple:
         """
