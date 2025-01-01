@@ -377,14 +377,7 @@ class StabilizerCode(object):
 
             # Compute the Hamming weight over GF4 (number of qubits with non-identity operators)
             # Split into X and Z parts
-            X_part = temp1[:, :self.n]
-            Z_part = temp1[:, self.n:]
-
-            # Perform element-wise maximum to simulate GF4 logical OR
-            logical_or = X_part.maximum(Z_part)
-
-            # Count the number of qubits with non-zero operators (Hamming weight over GF4)
-            row_weights = logical_or.getnnz(axis=1)
+            row_weights = binary_pauli_hamming_weight(temp1).flatten()
 
             # Sort the rows by Hamming weight (ascending)
             sorted_rows = np.argsort(row_weights)
@@ -395,7 +388,7 @@ class StabilizerCode(object):
 
             # Perform row reduction to find a new logical basis
             p_rows = ldpc.mod2.pivot_rows(temp)
-            self.logicals = temp[p_rows[self.h.shape[0]: self.h.shape[0] + self.k]]
+            self.logicals = temp[p_rows[self.h.shape[0]: self.h.shape[0] + 2*self.k]]
 
     def estimate_min_distance(
         self,
@@ -520,3 +513,14 @@ class StabilizerCode(object):
         # Update and return the estimated distance
         self.d = min_distance
         return min_distance
+    
+    def logical_basis_weights(self):
+        """
+        Return the Hamming weights of the logical operators in the current basis.
+
+        Returns
+        -------
+        np.ndarray
+            An array of integers representing the Hamming weights of the logical operators.
+        """
+        return binary_pauli_hamming_weight(self.logicals).flatten()
