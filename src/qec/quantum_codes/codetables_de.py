@@ -90,5 +90,5 @@ class CodeTablesDE(StabilizerCode):
         self.url = ct_dict["url"]
 
         # Update distance if the reported upper bound is smaller than the default
-        if int(ct_dict["d_upper"]) < self.d:
-            self.d = int(ct_dict["d_upper"])
+        if int(ct_dict["d_upper"]) < self.code_distance:
+            self.code_distance = int(ct_dict["d_upper"])

@@ -35,11 +35,11 @@ def test_initialisation_with_binary_pcm():
     ).all(), "Pauli stabilizers mismatch."
 
     # Verify that the parity check matrix matches the input
-    assert (temp_code.h.toarray() == binary_pcm).all(), "Parity check matrix mismatch."
+    assert (temp_code.stabilizer_matrix.toarray() == binary_pcm).all(), "Parity check matrix mismatch."
 
     # Verify the number of physical qubits (n) and logical qubits (k)
-    assert temp_code.n == 4, f"Expected n=4, but got n={temp_code.n}"
-    assert temp_code.k == 2, f"Expected k=2, but got k={temp_code.k}"
+    assert temp_code.physical_qubit_count == 4, f"Expected n=4, but got n={temp_code.physical_qubit_count}"
+    assert temp_code.logical_qubit_count == 2, f"Expected k=2, but got k={temp_code.logical_qubit_count}"
 
     # Uncomment the following line if you want to test the distance (d)
     # assert temp_code.d == 2, f"Expected d=2, but got d={temp_code.d}"
@@ -65,11 +65,11 @@ def test_initialisation_with_pauli_strings():
     ).all(), "Pauli stabilizers mismatch."
 
     # Verify that the parity check matrix matches the expected binary PCM
-    assert (temp_code.h.toarray() == binary_pcm).all(), "Parity check matrix mismatch."
+    assert (temp_code.stabilizer_matrix.toarray() == binary_pcm).all(), "Parity check matrix mismatch."
 
     # Verify the number of physical qubits (n) and logical qubits (k)
-    assert temp_code.n == 4, f"Expected n=4, but got n={temp_code.n}"
-    assert temp_code.k == 2, f"Expected k=2, but got k={temp_code.k}"
+    assert temp_code.physical_qubit_count == 4, f"Expected n=4, but got n={temp_code.physical_qubit_count}"
+    assert temp_code.logical_qubit_count == 2, f"Expected k=2, but got k={temp_code.logical_qubit_count}"
 
     # Uncomment the following line if you want to test the distance (d)
     # assert temp_code.d == 2, f"Expected d=2, but got d={temp_code.d}"
@@ -144,16 +144,16 @@ def test_invalid_logical_operator_basis():
     qcode = StabilizerCode(stabilizers=stabs)
 
     # Check the shape of logical operators (expected to be (4, 8))
-    assert qcode.logicals.shape == (
+    assert qcode.logical_operator_basis.shape == (
         4,
         8,
-    ), f"Expected logicals shape (4,8), got {qcode.logicals.shape}"
+    ), f"Expected logicals shape (4,8), got {qcode.logical_operator_basis.shape}"
 
     # Verify that the current logical basis is valid
     assert qcode.check_valid_logical_basis(), "Logical operator basis should be valid."
 
     # Assign an invalid logical operator basis
-    qcode.logicals = np.array([[1, 0, 0, 0, 1, 0, 0, 0], [0, 1, 0, 0, 0, 1, 0, 0]])
+    qcode.logical_operator_basis = np.array([[1, 0, 0, 0, 1, 0, 0, 0], [0, 1, 0, 0, 0, 1, 0, 0]])
 
     # Verify that the updated logical basis is invalid
     assert (
@@ -166,7 +166,7 @@ def test_compute_exact_code_distance():
     Test the computation of the exact code distance in StabilizerCode.
 
     This test verifies that the StabilizerCode correctly computes the distance
-    of a simple \([[4, 2, 2]]\) quantum code.
+    of a [[4, 2, 2]] quantum detection code.
     """
     # Define Pauli stabilizer strings for a \([[4, 2, 2]]\) code
     stabs = np.array([["ZZZZ"], ["XXXX"]])
@@ -175,13 +175,13 @@ def test_compute_exact_code_distance():
     qcode = StabilizerCode(stabilizers=stabs)
 
     # erase precomputed distance
-    qcode.d = None
+    qcode.code_distance = None
 
     # Compute the exact code distance
     qcode.compute_exact_code_distance()
 
     # Verify that the computed distance matches the expected value
-    assert qcode.d == 2, f"Expected distance d=2, but got d={qcode.d}"
+    assert qcode.code_distance == 2, f"Expected distance d=2, but got d={qcode.code_distance}"
 
 
 def test_compute_exact_code_distance():
@@ -192,14 +192,14 @@ def test_compute_exact_code_distance():
     # Compute the exact code distance
     qcode.compute_exact_code_distance()
 
-    assert qcode.d == 4
+    assert qcode.code_distance == 4
 
 
 def test_estimate_min_distance():
     qcode = CodeTablesDE(n=20, k=1)
     # erase precomputed distance
-    target_d = qcode.d
-    qcode.d = None
+    target_d = qcode.code_distance
+    qcode.code_distance = None
 
     print(qcode.logical_basis_weights())
 
@@ -212,4 +212,4 @@ def test_estimate_min_distance():
 
     print(qcode)
 
-    assert qcode.d == target_d
+    assert qcode.code_distance == target_d

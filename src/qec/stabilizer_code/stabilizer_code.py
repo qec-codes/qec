@@ -34,13 +34,13 @@ class StabilizerCode(object):
     ----------
     name : str
         The name of the code.
-    h : scipy.sparse.spmatrix
+    stabilizer_matrix : scipy.sparse.spmatrix
         The binary parity check matrix representation of the stabilizers.
-    n : int
+    phyical_qubit_count : int
         The number of physical qubits in the code.
-    k : int
+    logical_qubit_count : int
         The number of logical qubits in the code.
-    d : int
+    code_distance : int
         (Not computed by default) The distance of the code, if known or computed.
     logicals : scipy.sparse.spmatrix or None
         A basis for the logical operators of the code.
@@ -73,11 +73,11 @@ class StabilizerCode(object):
         """
         self.name = name if name else "stabilizer code"
 
-        self.h = None
-        self.n = None
-        self.k = None
-        self.d = None
-        self.logicals = None
+        self.stabilizer_matrix = None
+        self.physical_qubit_count = None
+        self.logical_qubit_count = None
+        self.code_distance = None
+        self.logical_operator_basis = None
 
         if isinstance(stabilizers, list):
             stabilizers = np.array(stabilizers)
@@ -88,26 +88,26 @@ class StabilizerCode(object):
             )
 
         if isinstance(stabilizers, np.ndarray) and stabilizers.dtype.kind in {"U", "S"}:
-            self.h = pauli_str_to_binary_pcm(stabilizers)
+            self.stabilizer_matrix = pauli_str_to_binary_pcm(stabilizers)
         else:
             if stabilizers.shape[1] % 2 == 0:
-                self.h = convert_to_binary_scipy_sparse(stabilizers)
+                self.stabilizer_matrix = convert_to_binary_scipy_sparse(stabilizers)
             else:
                 raise ValueError(
                     "The parity check matrix must have an even number of columns."
                 )
 
-        self.n = self.h.shape[1] // 2
+        self.physical_qubit_count = self.stabilizer_matrix.shape[1] // 2
 
         # Check that stabilizers commute
         if not self.check_stabilizers_commute():
             raise ValueError("The stabilizers do not commute.")
 
         # Compute the number of logical qubits
-        self.k = self.n - ldpc.mod2.rank(self.h, method="dense")
+        self.logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(self.stabilizer_matrix, method="dense")
 
         # Compute a basis for the logical operators of the code
-        self.logicals = self.compute_logical_basis()
+        self.logical_operator_basis = self.compute_logical_basis()
 
     @property
     def pauli_stabilizers(self):
@@ -119,7 +119,7 @@ class StabilizerCode(object):
         np.ndarray
             An array of Pauli strings representing the stabilizers.
         """
-        return binary_pcm_to_pauli_str(self.h)
+        return binary_pcm_to_pauli_str(self.stabilizer_matrix)
 
     @pauli_stabilizers.setter
     def pauli_stabilizers(self, pauli_stabilizers: np.ndarray):
@@ -136,8 +136,9 @@ class StabilizerCode(object):
         AssertionError
             If the newly set stabilizers do not commute.
         """
-        self.h = pauli_str_to_binary_pcm(pauli_stabilizers)
-        assert self.check_stabilizers_commute(), "The stabilizers do not commute."
+        self.stabilizer_matrix = pauli_str_to_binary_pcm(pauli_stabilizers)
+        if not self.check_stabilizers_commute():
+            raise ValueError("The stabilizers do not commute.")
 
     def check_stabilizers_commute(self) -> bool:
         """
@@ -148,7 +149,7 @@ class StabilizerCode(object):
         bool
             True if all stabilizers commute, otherwise False.
         """
-        return check_binary_pauli_matrices_commute(self.h, self.h)
+        return check_binary_pauli_matrices_commute(self.stabilizer_matrix, self.stabilizer_matrix)
 
     def compute_logical_basis(self) -> scipy.sparse.spmatrix:
         """
@@ -166,7 +167,7 @@ class StabilizerCode(object):
         commute with all stabilizers, and then identifies a subset that spans the space
         of logical operators.
         """
-        kernel_h = ldpc.mod2.kernel(self.h)
+        kernel_h = ldpc.mod2.kernel(self.stabilizer_matrix)
 
         # Sort the rows of the kernel by weight
         row_weights = np.diff(kernel_h.indptr)
@@ -174,26 +175,26 @@ class StabilizerCode(object):
         kernel_h = kernel_h[sorted_rows, :]
 
         swapped_kernel = scipy.sparse.hstack(
-            [kernel_h[:, self.n :], kernel_h[:, : self.n]]
+            [kernel_h[:, self.physical_qubit_count :], kernel_h[:, : self.physical_qubit_count]]
         )
 
-        logical_stack = scipy.sparse.vstack([self.h, swapped_kernel])
+        logical_stack = scipy.sparse.vstack([self.stabilizer_matrix, swapped_kernel])
         p_rows = ldpc.mod2.pivot_rows(logical_stack)
 
-        self.logicals = logical_stack[p_rows[self.h.shape[0] :]]
+        self.logical_operator_basis = logical_stack[p_rows[self.stabilizer_matrix.shape[0] :]]
         basis_minimum_hamming_weight = np.min(
-            binary_pauli_hamming_weight(self.logicals)
+            binary_pauli_hamming_weight(self.logical_operator_basis)
         )
 
         # Update distance based on the minimum hamming weight of the logical operators in this basis
-        if self.d is None:
-            self.d = basis_minimum_hamming_weight
-        elif basis_minimum_hamming_weight < self.d:
-            self.d = basis_minimum_hamming_weight
+        if self.code_distance is None:
+            self.code_distance = basis_minimum_hamming_weight
+        elif basis_minimum_hamming_weight < self.code_distance:
+            self.code_distance = basis_minimum_hamming_weight
         else:
             pass
 
-        return logical_stack[p_rows[self.h.shape[0] :]]
+        return logical_stack[p_rows[self.stabilizer_matrix.shape[0] :]]
 
     def check_valid_logical_basis(self) -> bool:
         """
@@ -209,21 +210,21 @@ class StabilizerCode(object):
         """
         try:
             assert check_binary_pauli_matrices_commute(
-                self.h, self.logicals
+                self.stabilizer_matrix, self.logical_operator_basis
             ), "Logical operators do not commute with stabilizers."
 
-            logical_product = symplectic_product(self.logicals, self.logicals)
+            logical_product = symplectic_product(self.logical_operator_basis, self.logical_operator_basis)
             logical_product.eliminate_zeros()
             assert (
                 not logical_product.nnz == 0
             ), "The logical operators do not anti-commute with one another."
 
             assert (
-                ldpc.mod2.rank(self.logicals, method="dense") == 2 * self.k
+                ldpc.mod2.rank(self.logical_operator_basis, method="dense") == 2 * self.logical_qubit_count
             ), "The logical operators do not form a basis for the code."
 
             assert (
-                self.logicals.shape[0] == 2 * self.k
+                self.logical_operator_basis.shape[0] == 2 * self.logical_qubit_count
             ), "The logical operators are not linearly independent."
 
         except AssertionError as e:
@@ -270,13 +271,13 @@ class StabilizerCode(object):
         """
         start_time = time.time()
 
-        stabilizer_span = ldpc.mod2.row_span(self.h)[1:]
-        logical_span = ldpc.mod2.row_span(self.logicals)[1:]
+        stabilizer_span = ldpc.mod2.row_span(self.stabilizer_matrix)[1:]
+        logical_span = ldpc.mod2.row_span(self.logical_operator_basis)[1:]
 
-        if self.d is None:
+        if self.code_distance is None:
             distance = np.inf
         else:
-            distance = self.d
+            distance = self.code_distance
 
         logicals_considered = 0
         total_logical_operators = stabilizer_span.shape[0] * logical_span.shape[0]
@@ -295,7 +296,7 @@ class StabilizerCode(object):
                     distance = hamming_weight
                 logicals_considered += 1
 
-        self.d = distance
+        self.code_distance = distance
         fraction_considered = logicals_considered / total_logical_operators
 
         return (
@@ -314,7 +315,7 @@ class StabilizerCode(object):
             A tuple of integers representing the number of physical qubits, logical qubits,
             and the distance of the code.
         """
-        return self.n, self.k, self.d
+        return self.physical_qubit_count, self.logical_qubit_count, self.code_distance
 
     def save_code(self, save_dense: bool = False):
         """
@@ -354,7 +355,7 @@ class StabilizerCode(object):
         str
             A human-readable string with the name, n, k, and d parameters of the code.
         """
-        return f"< Stabilizer Code, Name: {self.name}, Parameters: [[{self.n}, {self.k}, {self.d}]] >"
+        return f"< Stabilizer Code, Name: {self.name}, Parameters: [[{self.physical_qubit_count}, {self.logical_qubit_count}, {self.code_distance}]] >"
 
     def reduce_logical_operator_basis(
         self,
@@ -377,11 +378,11 @@ class StabilizerCode(object):
                 )
 
             assert check_binary_pauli_matrices_commute(
-                candidate_logicals, self.h
+                candidate_logicals, self.stabilizer_matrix
             ), "Candidate logicals do not commute with stabilizers."
 
             # Stack the candidate logicals with the existing logicals
-            temp1 = scipy.sparse.vstack([candidate_logicals, self.logicals]).tocsr()
+            temp1 = scipy.sparse.vstack([candidate_logicals, self.logical_operator_basis]).tocsr()
 
             # Compute the Hamming weight over GF4 (number of qubits with non-identity operators)
             # Split into X and Z parts
@@ -393,7 +394,7 @@ class StabilizerCode(object):
 
             # Perform row reduction to find a new logical basis
             p_rows = ldpc.mod2.pivot_rows(temp1)
-            self.logicals = temp1[p_rows[: 2 * self.k]]
+            self.logical_operator_basis = temp1[p_rows[: 2 * self.logical_qubit_count]]
 
     def estimate_min_distance(
         self,
@@ -440,19 +441,19 @@ class StabilizerCode(object):
         int
             The best-known estimate of the code distance found within the time limit.
         """
-        if self.logicals is None:
-            self.logicals = self.compute_logical_basis()
+        if self.logical_operator_basis is None:
+            self.logical_operator_basis = self.compute_logical_basis()
 
         # Build a stacked matrix of stabilizers and logicals
         # Stabilizers: rows 0..(h.shape[0]-1)
         # Logicals: rows h.shape[0]..(h.shape[0] + logicals.shape[0] - 1)
-        stack = scipy.sparse.vstack([self.h, self.logicals]).tocsr()
+        stack = scipy.sparse.vstack([self.stabilizer_matrix, self.logical_operator_basis]).tocsr()
 
         # Initial distance estimate from the current logicals
-        if self.d is None:
-            min_distance = np.min(binary_pauli_hamming_weight(self.logicals))
+        if self.code_distance is None:
+            min_distance = np.min(binary_pauli_hamming_weight(self.logical_operator_basis))
         else:
-            min_distance = self.d
+            min_distance = self.code_distance
 
         # Set up BP+OSD decoder
         bp_osd = BpOsdDecoder(
@@ -470,17 +471,17 @@ class StabilizerCode(object):
         candidate_logicals = []
 
         # 1) First, try each logical operator individually
-        for i in range(self.logicals.shape[0]):
+        for i in range(self.logical_operator_basis.shape[0]):
             dummy_syndrome = np.zeros(stack.shape[0], dtype=np.uint8)
-            dummy_syndrome[self.h.shape[0] + i] = 1  # pick exactly one logical operator
+            dummy_syndrome[self.stabilizer_matrix.shape[0] + i] = 1  # pick exactly one logical operator
             candidate = bp_osd.decode(dummy_syndrome)
             # Calculate symplectic weight: number of qubits where either X or Z is present
-            w = np.count_nonzero(candidate[: self.n] | candidate[self.n :])
+            w = np.count_nonzero(candidate[: self.physical_qubit_count] | candidate[self.physical_qubit_count :])
             if w < min_distance:
                 min_distance = w
             if w <= min_distance:
                 if reduce_logical_basis:
-                    lc = np.hstack([candidate[self.n :], candidate[: self.n]])
+                    lc = np.hstack([candidate[self.physical_qubit_count :], candidate[: self.physical_qubit_count]])
                     candidate_logicals.append(lc)
 
         # 2) Randomly search for better representatives of logical operators
@@ -496,22 +497,22 @@ class StabilizerCode(object):
                 random_syndrome = np.zeros(stack.shape[0], dtype=np.uint8)
                 while True:
                     random_mask = np.random.choice(
-                        [0, 1], size=self.logicals.shape[0], p=[1 - p, p]
+                        [0, 1], size=self.logical_operator_basis.shape[0], p=[1 - p, p]
                     )
                     if np.any(random_mask):
                         break
                 for idx, bit in enumerate(random_mask):
                     if bit == 1:
-                        random_syndrome[self.h.shape[0] + idx] = 1
+                        random_syndrome[self.stabilizer_matrix.shape[0] + idx] = 1
 
                 candidate = bp_osd.decode(random_syndrome)
 
-                w = np.count_nonzero(candidate[: self.n] | candidate[self.n :])
+                w = np.count_nonzero(candidate[: self.physical_qubit_count] | candidate[self.physical_qubit_count :])
                 if w < min_distance:
                     min_distance = w
                 if w <= min_distance:
                     if reduce_logical_basis:
-                        lc = np.hstack([candidate[self.n :], candidate[: self.n]])
+                        lc = np.hstack([candidate[self.physical_qubit_count :], candidate[: self.physical_qubit_count]])
                         candidate_logicals.append(lc)
 
                 pbar.set_description(
@@ -523,7 +524,7 @@ class StabilizerCode(object):
             self.reduce_logical_operator_basis(candidate_logicals)
 
         # Update and return the estimated distance
-        self.d = min_distance
+        self.code_distance = min_distance
         return min_distance
 
     def logical_basis_weights(self):
@@ -535,4 +536,4 @@ class StabilizerCode(object):
         np.ndarray
             An array of integers representing the Hamming weights of the logical operators.
         """
-        return binary_pauli_hamming_weight(self.logicals).flatten()
+        return binary_pauli_hamming_weight(self.logical_operator_basis).flatten()

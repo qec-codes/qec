@@ -55,6 +55,9 @@ def convert_to_binary_scipy_sparse(
     if not isinstance(matrix, scipy.sparse.spmatrix):
         matrix = scipy.sparse.csr_matrix(matrix, dtype=np.uint8)
 
+    if not matrix.dtype == np.uint8:
+        matrix = matrix.astype(np.uint8)
+
     if not np.all(np.isin(matrix.data, [0, 1])):
         raise ValueError("All elements of the input matrix must be binary.")
 
