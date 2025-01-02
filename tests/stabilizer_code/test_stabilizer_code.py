@@ -1,5 +1,6 @@
 import pytest
-import warnings
+import logging
+import scipy
 import numpy as np
 
 from qec.stabilizer_code.stabilizer_code import StabilizerCode
@@ -213,3 +214,24 @@ def test_estimate_min_distance():
     print(qcode)
 
     assert qcode.code_distance == target_d
+
+def test_check_valid_logical_basis_logging(caplog):
+    # Test case where logical operators do not commute with stabilizers
+    stabilizers = np.array([[1, 0, 0, 1], [0, 1, 1, 0]])
+    logical_operators = np.array([[1, 1, 0, 0], [0, 0, 1, 1]])
+    code = StabilizerCode(stabilizers=stabilizers)
+    code.logical_operator_basis = logical_operators
+
+    with caplog.at_level(logging.ERROR):
+        assert not code.check_valid_logical_basis()
+        assert "Logical operators do not commute with stabilizers." in caplog.text
+
+    # Test case where logical operators do not anti-commute with one another
+    stabilizers = np.array([[1, 0, 0, 1], [0, 1, 1, 0]])
+    logical_operators = np.array([[0, 1, 1, 0], [1, 0, 0, 1]])
+    code = StabilizerCode(stabilizers=stabilizers)
+    code.logical_operator_basis = logical_operators
+
+    with caplog.at_level(logging.ERROR):
+        assert not code.check_valid_logical_basis()
+        assert "The logical operators do not anti-commute with one another." in caplog.text

@@ -5,6 +5,9 @@ from ldpc import BpOsdDecoder
 import ldpc.mod2
 import time
 from typing import Tuple, Optional, Union, Sequence
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 from qec.utils.binary_pauli_utils import (
@@ -182,8 +185,13 @@ class StabilizerCode(object):
         p_rows = ldpc.mod2.pivot_rows(logical_stack)
 
         self.logical_operator_basis = logical_stack[p_rows[self.stabilizer_matrix.shape[0] :]]
+        
+        if self.logical_operator_basis.nnz == 0:
+            self.code_distance = np.inf
+            return self.logical_operator_basis
+        
         basis_minimum_hamming_weight = np.min(
-            binary_pauli_hamming_weight(self.logical_operator_basis)
+            binary_pauli_hamming_weight(self.logical_operator_basis).flatten()
         )
 
         # Update distance based on the minimum hamming weight of the logical operators in this basis
@@ -216,7 +224,7 @@ class StabilizerCode(object):
             logical_product = symplectic_product(self.logical_operator_basis, self.logical_operator_basis)
             logical_product.eliminate_zeros()
             assert (
-                not logical_product.nnz == 0
+                logical_product.nnz != 0
             ), "The logical operators do not anti-commute with one another."
 
             assert (
@@ -228,7 +236,7 @@ class StabilizerCode(object):
             ), "The logical operators are not linearly independent."
 
         except AssertionError as e:
-            print(e)
+            logging.error(e)
             return False
 
         return True
