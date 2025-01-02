@@ -107,7 +107,9 @@ class StabilizerCode(object):
             raise ValueError("The stabilizers do not commute.")
 
         # Compute the number of logical qubits
-        self.logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(self.stabilizer_matrix, method="dense")
+        self.logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(
+            self.stabilizer_matrix, method="dense"
+        )
 
         # Compute a basis for the logical operators of the code
         self.logical_operator_basis = self.compute_logical_basis()
@@ -152,7 +154,9 @@ class StabilizerCode(object):
         bool
             True if all stabilizers commute, otherwise False.
         """
-        return check_binary_pauli_matrices_commute(self.stabilizer_matrix, self.stabilizer_matrix)
+        return check_binary_pauli_matrices_commute(
+            self.stabilizer_matrix, self.stabilizer_matrix
+        )
 
     def compute_logical_basis(self) -> scipy.sparse.spmatrix:
         """
@@ -178,18 +182,23 @@ class StabilizerCode(object):
         kernel_h = kernel_h[sorted_rows, :]
 
         swapped_kernel = scipy.sparse.hstack(
-            [kernel_h[:, self.physical_qubit_count :], kernel_h[:, : self.physical_qubit_count]]
+            [
+                kernel_h[:, self.physical_qubit_count :],
+                kernel_h[:, : self.physical_qubit_count],
+            ]
         )
 
         logical_stack = scipy.sparse.vstack([self.stabilizer_matrix, swapped_kernel])
         p_rows = ldpc.mod2.pivot_rows(logical_stack)
 
-        self.logical_operator_basis = logical_stack[p_rows[self.stabilizer_matrix.shape[0] :]]
-        
+        self.logical_operator_basis = logical_stack[
+            p_rows[self.stabilizer_matrix.shape[0] :]
+        ]
+
         if self.logical_operator_basis.nnz == 0:
             self.code_distance = np.inf
             return self.logical_operator_basis
-        
+
         basis_minimum_hamming_weight = np.min(
             binary_pauli_hamming_weight(self.logical_operator_basis).flatten()
         )
@@ -221,14 +230,17 @@ class StabilizerCode(object):
                 self.stabilizer_matrix, self.logical_operator_basis
             ), "Logical operators do not commute with stabilizers."
 
-            logical_product = symplectic_product(self.logical_operator_basis, self.logical_operator_basis)
+            logical_product = symplectic_product(
+                self.logical_operator_basis, self.logical_operator_basis
+            )
             logical_product.eliminate_zeros()
             assert (
                 logical_product.nnz != 0
             ), "The logical operators do not anti-commute with one another."
 
             assert (
-                ldpc.mod2.rank(self.logical_operator_basis, method="dense") == 2 * self.logical_qubit_count
+                ldpc.mod2.rank(self.logical_operator_basis, method="dense")
+                == 2 * self.logical_qubit_count
             ), "The logical operators do not form a basis for the code."
 
             assert (
@@ -390,7 +402,9 @@ class StabilizerCode(object):
             ), "Candidate logicals do not commute with stabilizers."
 
             # Stack the candidate logicals with the existing logicals
-            temp1 = scipy.sparse.vstack([candidate_logicals, self.logical_operator_basis]).tocsr()
+            temp1 = scipy.sparse.vstack(
+                [candidate_logicals, self.logical_operator_basis]
+            ).tocsr()
 
             # Compute the Hamming weight over GF4 (number of qubits with non-identity operators)
             # Split into X and Z parts
@@ -455,11 +469,15 @@ class StabilizerCode(object):
         # Build a stacked matrix of stabilizers and logicals
         # Stabilizers: rows 0..(h.shape[0]-1)
         # Logicals: rows h.shape[0]..(h.shape[0] + logicals.shape[0] - 1)
-        stack = scipy.sparse.vstack([self.stabilizer_matrix, self.logical_operator_basis]).tocsr()
+        stack = scipy.sparse.vstack(
+            [self.stabilizer_matrix, self.logical_operator_basis]
+        ).tocsr()
 
         # Initial distance estimate from the current logicals
         if self.code_distance is None:
-            min_distance = np.min(binary_pauli_hamming_weight(self.logical_operator_basis))
+            min_distance = np.min(
+                binary_pauli_hamming_weight(self.logical_operator_basis)
+            )
         else:
             min_distance = self.code_distance
 
@@ -481,15 +499,25 @@ class StabilizerCode(object):
         # 1) First, try each logical operator individually
         for i in range(self.logical_operator_basis.shape[0]):
             dummy_syndrome = np.zeros(stack.shape[0], dtype=np.uint8)
-            dummy_syndrome[self.stabilizer_matrix.shape[0] + i] = 1  # pick exactly one logical operator
+            dummy_syndrome[self.stabilizer_matrix.shape[0] + i] = (
+                1  # pick exactly one logical operator
+            )
             candidate = bp_osd.decode(dummy_syndrome)
             # Calculate symplectic weight: number of qubits where either X or Z is present
-            w = np.count_nonzero(candidate[: self.physical_qubit_count] | candidate[self.physical_qubit_count :])
+            w = np.count_nonzero(
+                candidate[: self.physical_qubit_count]
+                | candidate[self.physical_qubit_count :]
+            )
             if w < min_distance:
                 min_distance = w
             if w <= min_distance:
                 if reduce_logical_basis:
-                    lc = np.hstack([candidate[self.physical_qubit_count :], candidate[: self.physical_qubit_count]])
+                    lc = np.hstack(
+                        [
+                            candidate[self.physical_qubit_count :],
+                            candidate[: self.physical_qubit_count],
+                        ]
+                    )
                     candidate_logicals.append(lc)
 
         # 2) Randomly search for better representatives of logical operators
@@ -515,12 +543,20 @@ class StabilizerCode(object):
 
                 candidate = bp_osd.decode(random_syndrome)
 
-                w = np.count_nonzero(candidate[: self.physical_qubit_count] | candidate[self.physical_qubit_count :])
+                w = np.count_nonzero(
+                    candidate[: self.physical_qubit_count]
+                    | candidate[self.physical_qubit_count :]
+                )
                 if w < min_distance:
                     min_distance = w
                 if w <= min_distance:
                     if reduce_logical_basis:
-                        lc = np.hstack([candidate[self.physical_qubit_count :], candidate[: self.physical_qubit_count]])
+                        lc = np.hstack(
+                            [
+                                candidate[self.physical_qubit_count :],
+                                candidate[: self.physical_qubit_count],
+                            ]
+                        )
                         candidate_logicals.append(lc)
 
                 pbar.set_description(

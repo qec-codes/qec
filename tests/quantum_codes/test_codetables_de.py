@@ -31,10 +31,10 @@ def test_k1_codes():
 
 def test_14_2_5_code():
     """
-    Test the CodeTablesDE class for a quantum code with 14 physical qubits, 
+    Test the CodeTablesDE class for a quantum code with 14 physical qubits,
     2 logical qubits, and a distance of 5.
 
-    This test initializes a CodeTablesDE object with the specified parameters 
+    This test initializes a CodeTablesDE object with the specified parameters
     and checks if the code parameters are correctly set to (14, 2, 5).
 
     Assertions:

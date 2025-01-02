@@ -74,7 +74,9 @@ class CodeTablesDE(StabilizerCode):
             if the site indicates that such a code does not exist.
         """
         # Retrieve code data from codetables.de
-        ct_dict = get_codetables_de_matrix(q=4, n=physical_qubit_count, k=logical_qubit_count)
+        ct_dict = get_codetables_de_matrix(
+            q=4, n=physical_qubit_count, k=logical_qubit_count
+        )
 
         # Construct the stabilizer matrix in CSR format
         # The matrix is 2*n columns wide, as is typical for GF(4) stabilizers.

@@ -36,11 +36,17 @@ def test_initialisation_with_binary_pcm():
     ).all(), "Pauli stabilizers mismatch."
 
     # Verify that the parity check matrix matches the input
-    assert (temp_code.stabilizer_matrix.toarray() == binary_pcm).all(), "Parity check matrix mismatch."
+    assert (
+        temp_code.stabilizer_matrix.toarray() == binary_pcm
+    ).all(), "Parity check matrix mismatch."
 
     # Verify the number of physical qubits (n) and logical qubits (k)
-    assert temp_code.physical_qubit_count == 4, f"Expected n=4, but got n={temp_code.physical_qubit_count}"
-    assert temp_code.logical_qubit_count == 2, f"Expected k=2, but got k={temp_code.logical_qubit_count}"
+    assert (
+        temp_code.physical_qubit_count == 4
+    ), f"Expected n=4, but got n={temp_code.physical_qubit_count}"
+    assert (
+        temp_code.logical_qubit_count == 2
+    ), f"Expected k=2, but got k={temp_code.logical_qubit_count}"
 
     # Uncomment the following line if you want to test the distance (d)
     # assert temp_code.code_distance == 2, f"Expected d=2, but got d={temp_code.code_distance}"
@@ -66,11 +72,17 @@ def test_initialisation_with_pauli_strings():
     ).all(), "Pauli stabilizers mismatch."
 
     # Verify that the parity check matrix matches the expected binary PCM
-    assert (temp_code.stabilizer_matrix.toarray() == binary_pcm).all(), "Parity check matrix mismatch."
+    assert (
+        temp_code.stabilizer_matrix.toarray() == binary_pcm
+    ).all(), "Parity check matrix mismatch."
 
     # Verify the number of physical qubits (n) and logical qubits (k)
-    assert temp_code.physical_qubit_count == 4, f"Expected n=4, but got n={temp_code.physical_qubit_count}"
-    assert temp_code.logical_qubit_count == 2, f"Expected k=2, but got k={temp_code.logical_qubit_count}"
+    assert (
+        temp_code.physical_qubit_count == 4
+    ), f"Expected n=4, but got n={temp_code.physical_qubit_count}"
+    assert (
+        temp_code.logical_qubit_count == 2
+    ), f"Expected k=2, but got k={temp_code.logical_qubit_count}"
 
     # Uncomment the following line if you want to test the distance (d)
     # assert temp_code.code_distance == 2, f"Expected d=2, but got d={temp_code.code_distance}"
@@ -154,7 +166,9 @@ def test_invalid_logical_operator_basis():
     assert qcode.check_valid_logical_basis(), "Logical operator basis should be valid."
 
     # Assign an invalid logical operator basis
-    qcode.logical_operator_basis = np.array([[1, 0, 0, 0, 1, 0, 0, 0], [0, 1, 0, 0, 0, 1, 0, 0]])
+    qcode.logical_operator_basis = np.array(
+        [[1, 0, 0, 0, 1, 0, 0, 0], [0, 1, 0, 0, 0, 1, 0, 0]]
+    )
 
     # Verify that the updated logical basis is invalid
     assert (
@@ -182,7 +196,9 @@ def test_compute_exact_code_distance():
     qcode.compute_exact_code_distance()
 
     # Verify that the computed distance matches the expected value
-    assert qcode.code_distance == 2, f"Expected distance d=2, but got d={qcode.code_distance}"
+    assert (
+        qcode.code_distance == 2
+    ), f"Expected distance d=2, but got d={qcode.code_distance}"
 
 
 def test_compute_exact_code_distance():
@@ -215,6 +231,7 @@ def test_estimate_min_distance():
 
     assert qcode.code_distance == target_d
 
+
 def test_check_valid_logical_basis_logging(caplog):
     # Test case where logical operators do not commute with stabilizers
     stabilizers = np.array([[1, 0, 0, 1], [0, 1, 1, 0]])
@@ -234,4 +251,6 @@ def test_check_valid_logical_basis_logging(caplog):
 
     with caplog.at_level(logging.ERROR):
         assert not code.check_valid_logical_basis()
-        assert "The logical operators do not anti-commute with one another." in caplog.text
+        assert (
+            "The logical operators do not anti-commute with one another." in caplog.text
+        )
