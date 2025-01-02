@@ -18,7 +18,7 @@ class FiveQubitCode(StabilizerCode):
 
     Attributes
     ----------
-    d : int
+    code_distance : int
         The distance of the quantum code. For the five-qubit code, this is set to 3.
 
     Inherits
@@ -31,11 +31,11 @@ class FiveQubitCode(StabilizerCode):
     Examples
     --------
     >>> five_qubit = FiveQubitCode()
-    >>> five_qubit.n
+    >>> five_qubit.phyiscal_qubit_count
     5
-    >>> five_qubit.k
+    >>> five_qubit.logical_qubit_count
     1
-    >>> five_qubit.d
+    >>> five_qubit.code_distance
     3
     """
 
@@ -65,4 +65,4 @@ class FiveQubitCode(StabilizerCode):
         super().__init__(stabilizers=pauli_stabilizers, name="5-Qubit Code")
 
         # Set the distance attribute specific to the five-qubit code
-        self.d = 3
+        self.code_distance = 3

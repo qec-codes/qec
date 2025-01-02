@@ -16,9 +16,9 @@ class CodeTablesDE(StabilizerCode):
 
     Parameters
     ----------
-    n : int
+    physical_qubit_count : int
         Length of the code (number of physical qubits).
-    k : int
+    logical_qubit_count : int
         Dimension of the code (number of logical qubits).
 
     Attributes
@@ -27,7 +27,7 @@ class CodeTablesDE(StabilizerCode):
         Name assigned to this code instance. Defaults to "CodeTablesDE".
     url : str
         The URL from which this code's data was retrieved.
-    d : int
+    code_distance : int
         The code's minimum distance. This is updated if the reported upper bound
         from the codetables.de website is smaller than the base class default.
 
@@ -44,7 +44,7 @@ class CodeTablesDE(StabilizerCode):
       maintained by Markus Grassl.
     """
 
-    def __init__(self, n: int, k: int):
+    def __init__(self, physical_qubit_count: int, logical_qubit_count: int):
         """
         Initialise a code from Markus Grassl's codetables.de website with `q=4`, `n`, and `k`.
 
@@ -62,7 +62,7 @@ class CodeTablesDE(StabilizerCode):
 
         Notes
         -----
-        - `d_upper` from the query result is used to potentially update `self.d`
+        - `d_upper` from the query result is used to potentially update `self.code_distance`
           if it is smaller than the default distance assigned by `StabilizerCode`.
         - Since this code is defined over GF(4), `q` is hardcoded as 4.
         - Data is retrieved from Markus Grassl's website (https://codetables.de).
@@ -74,7 +74,7 @@ class CodeTablesDE(StabilizerCode):
             if the site indicates that such a code does not exist.
         """
         # Retrieve code data from codetables.de
-        ct_dict = get_codetables_de_matrix(q=4, n=n, k=k)
+        ct_dict = get_codetables_de_matrix(q=4, n=physical_qubit_count, k=logical_qubit_count)
 
         # Construct the stabilizer matrix in CSR format
         # The matrix is 2*n columns wide, as is typical for GF(4) stabilizers.

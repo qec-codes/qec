@@ -42,7 +42,7 @@ def test_initialisation_with_binary_pcm():
     assert temp_code.logical_qubit_count == 2, f"Expected k=2, but got k={temp_code.logical_qubit_count}"
 
     # Uncomment the following line if you want to test the distance (d)
-    # assert temp_code.d == 2, f"Expected d=2, but got d={temp_code.d}"
+    # assert temp_code.code_distance == 2, f"Expected d=2, but got d={temp_code.code_distance}"
 
 
 def test_initialisation_with_pauli_strings():
@@ -72,7 +72,7 @@ def test_initialisation_with_pauli_strings():
     assert temp_code.logical_qubit_count == 2, f"Expected k=2, but got k={temp_code.logical_qubit_count}"
 
     # Uncomment the following line if you want to test the distance (d)
-    # assert temp_code.d == 2, f"Expected d=2, but got d={temp_code.d}"
+    # assert temp_code.code_distance == 2, f"Expected d=2, but got d={temp_code.code_distance}"
 
 
 def test_initialisation_invalid_type():
@@ -185,9 +185,9 @@ def test_compute_exact_code_distance():
 
 
 def test_compute_exact_code_distance():
-    qcode = CodeTablesDE(n=10, k=1)
+    qcode = CodeTablesDE(physical_qubit_count=10, logical_qubit_count=1)
     # erase precomputed distance
-    qcode.d = None
+    qcode.code_distance = None
 
     # Compute the exact code distance
     qcode.compute_exact_code_distance()
@@ -196,7 +196,7 @@ def test_compute_exact_code_distance():
 
 
 def test_estimate_min_distance():
-    qcode = CodeTablesDE(n=20, k=1)
+    qcode = CodeTablesDE(physical_qubit_count=20, logical_qubit_count=1)
     # erase precomputed distance
     target_d = qcode.code_distance
     qcode.code_distance = None

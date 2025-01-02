@@ -26,4 +26,4 @@ def test_print():
 def test_distance():
     qcode = FiveQubitCode()
     qcode.compute_exact_code_distance()
-    assert qcode.d == 3
+    assert qcode.code_distance == 3
