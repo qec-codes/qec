@@ -1,6 +1,5 @@
 import pytest
 import logging
-import scipy
 import numpy as np
 
 from qec.stabilizer_code.stabilizer_code import StabilizerCode
@@ -100,7 +99,7 @@ def test_initialisation_invalid_type():
         TypeError,
         match="Please provide either a parity check matrix or a list of Pauli stabilizers.",
     ):
-        temp_code = StabilizerCode(stabilizers="not a numpy array")
+        StabilizerCode(stabilizers="not a numpy array")
 
 
 def test_wrong_pcm_shape():
@@ -117,7 +116,7 @@ def test_wrong_pcm_shape():
     with pytest.raises(
         ValueError, match="The parity check matrix must have an even number of columns."
     ):
-        temp_code = StabilizerCode(stabilizers=wrong_pcm)
+        StabilizerCode(stabilizers=wrong_pcm)
 
 
 def test_non_commuting_stabilizers():
@@ -133,14 +132,14 @@ def test_non_commuting_stabilizers():
 
     # Attempt to initialize StabilizerCode with non-commuting Pauli strings and expect a ValueError
     with pytest.raises(ValueError, match="The stabilizers do not commute."):
-        temp_code = StabilizerCode(stabilizers=non_commuting_stabilizers)
+        StabilizerCode(stabilizers=non_commuting_stabilizers)
 
     # Define a binary parity check matrix that corresponds to non-commuting stabilizers
     non_commuting_pcm = np.array([[1, 1, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0]])
 
     # Attempt to initialize StabilizerCode with the non-commuting PCM and expect a ValueError
     with pytest.raises(ValueError, match="The stabilizers do not commute."):
-        temp_code = StabilizerCode(stabilizers=non_commuting_pcm)
+        StabilizerCode(stabilizers=non_commuting_pcm)
 
 
 def test_invalid_logical_operator_basis():

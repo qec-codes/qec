@@ -1,5 +1,3 @@
-import numpy as np
-import scipy
 from qec.quantum_codes import CodeTablesDE
 
 

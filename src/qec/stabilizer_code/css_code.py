@@ -1,5 +1,3 @@
-import numpy as np
-import scipy
 from qec.stabilizer_code import StabilizerCode
 
 

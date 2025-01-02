@@ -1,5 +1,3 @@
-import numpy as np
-import scipy
 from qec.stabilizer_code import StabilizerCode
 
 from qec.utils.codetables_de_utils import get_codetables_de_matrix, pcm_to_csr_matrix
