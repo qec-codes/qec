@@ -1,3 +1,12 @@
+from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
+from qec.utils.binary_pauli_utils import (
+    symplectic_product,
+    check_binary_pauli_matrices_commute,
+    pauli_str_to_binary_pcm,
+    binary_pcm_to_pauli_str,
+    binary_pauli_hamming_weight,
+)
+
 import numpy as np
 import scipy.sparse
 from tqdm import tqdm
@@ -8,15 +17,6 @@ from typing import Tuple, Optional, Union, Sequence
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
-
-from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
-from qec.utils.binary_pauli_utils import (
-    symplectic_product,
-    check_binary_pauli_matrices_commute,
-    pauli_str_to_binary_pcm,
-    binary_pcm_to_pauli_str,
-    binary_pauli_hamming_weight,
-)
 
 
 class StabilizerCode(object):
