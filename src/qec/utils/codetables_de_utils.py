@@ -1,9 +1,13 @@
+import logging
+# Suppress debug and info messages from urllib3 and requests libraries
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+
 from scipy.sparse import csr_matrix
 
 import requests
 from bs4 import BeautifulSoup
 import json
-
 
 def get_codetables_de_matrix(q, n, k, output_json_path=None, write_to_file=False):
     """
