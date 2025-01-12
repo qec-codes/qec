@@ -8,7 +8,7 @@ on:
 
 jobs:
   publish:
-    name: Build and Publish bp_osd
+    name: Build and Publish qec package to PyPI
     runs-on: ubuntu-latest
 
     steps:
