@@ -1,5 +1,6 @@
 import numpy as np
 import scipy
+import scipy.sparse
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 
@@ -320,10 +321,6 @@ def check_binary_pauli_matrices_commute(
     symplectic_product_result = symplectic_product(mat1, mat2)
     symplectic_product_result.eliminate_zeros()
     return not np.any(symplectic_product_result.data)
-
-
-import numpy as np
-import scipy.sparse
 
 
 def binary_pauli_hamming_weight(
