@@ -244,12 +244,13 @@ def symplectic_product(
     """
     Compute the symplectic product of two binary matrices in CSR format.
 
-    The input matrices are first converted to binary sparse format (modulo 2)
-    and then partitioned into `x` and `z` components. The symplectic product
-    is computed as (a_x * b_z^T + a_z * b_x^T) mod 2. This function is
-    particularly useful for calculating commutation between Pauli operators,
-    where a result of 0 indicates commuting operators, and 1 indicates
-    anti-commuting operators.
+    The input matrices (A,B) are first converted to binary sparse format (modulo 2)
+    and then partitioned into `x` and `z` components, where x and z have the same shape:
+
+        A = (a_x|a_z)
+        B = (b_x|b_z)
+
+    Then the symplectic product is computed as: (a_x * b_z^T + a_z * b_x^T) mod 2.
 
     Parameters
     ----------
@@ -272,11 +273,15 @@ def symplectic_product(
     AssertionError
         If the number of columns of `a` (and `b`) is not even.
 
+    Notes
+    -----
+    This function is particularly useful for calculating commutation between Pauli operators,
+    where a result of 0 indicates commuting operators, and 1 indicates anti-commuting operators.
+
     Examples
     --------
     >>> import numpy as np
     >>> from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
-    >>> # Create dummy binary data
     >>> a_data = np.array([[1, 0, 0, 1],
     ...                    [0, 1, 1, 0],
     ...                    [1, 1, 0, 0]], dtype=int)
@@ -286,31 +291,24 @@ def symplectic_product(
     >>> # Compute symplectic product
     >>> sp = symplectic_product(a_data, b_data)
     >>> sp.toarray()
-    array([[1, 0, 0],
-           [0, 1, 0],
-           [1, 0, 0]], dtype=int8)
+    array([[0, 0, 0],
+           [0, 0, 0],
+           [1, 1, 1]], dtype=int8)
     """
-    # Convert the input arrays to binary sparse format (mod 2).
+
     a = convert_to_binary_scipy_sparse(a)
     b = convert_to_binary_scipy_sparse(b)
 
-    # Ensure both matrices have the same shape.
-    assert (
-        a.shape[1] == b.shape[1]
-    ), "Input matrices must have the same number of columns."
-    # Ensure the number of columns is even (we split them into x and z parts).
+    assert (a.shape[1] == b.shape[1]), "Input matrices must have the same number of columns."
     assert a.shape[1] % 2 == 0, "Input matrices must have an even number of columns."
 
-    # Determine the half-size (number of x/z columns).
     n = a.shape[1] // 2
 
-    # Partition each matrix into x and z components.
     ax = a[:, :n]
     az = a[:, n:]
     bx = b[:, :n]
     bz = b[:, n:]
 
-    # Compute partial products (mod 2).
     sp = ax @ bz.T + az @ bx.T
     sp.data %= 2
 
