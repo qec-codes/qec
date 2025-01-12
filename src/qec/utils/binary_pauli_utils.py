@@ -157,9 +157,9 @@ def pauli_str_to_binary_pcm(
     n_qubits = len(pauli_strings[0, 0])
 
     for i, string in enumerate(pauli_strings):
-        if len(string) != n_qubits:
+        if len(string[0]) != n_qubits:
             raise ValueError("The Pauli strings do not have equal length.")
-        for j, char in enumerate(pauli_strings[0]):
+        for j, char in enumerate(string[0]):
             if char == "I":
                 continue
             elif char == "X":
