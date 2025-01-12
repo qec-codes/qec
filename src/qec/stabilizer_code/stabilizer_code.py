@@ -45,7 +45,7 @@ class StabilizerCode(object):
         The number of logical qubits in the code.
     code_distance : int
         (Not computed by default) The distance of the code, if known or computed.
-    logicals : scipy.sparse.spmatrix or None
+    logical_operator_basis : scipy.sparse.spmatrix or None
         A basis for the logical operators of the code.
     """
 
