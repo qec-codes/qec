@@ -183,31 +183,31 @@ def pauli_str_to_binary_pcm(
 
 def binary_pcm_to_pauli_str(binary_pcm: np.typing.ArrayLike) -> np.ndarray:
     """
-    Convert a binary PCM (with 2*n_qubits columns) back into an array of Pauli strings (N x 1).
+    Convert a binary (M x 2*N) PCM corresponding to M stabilisers acting on N physical qubits,
+    back into an array (M x 1) of Pauli strings that have length N.
 
-    For each qubit j, columns [j, j + n_qubits] encode:
-      - (0, 0) => 'I'
-      - (1, 0) => 'X'
-      - (0, 1) => 'Z'
-      - (1, 1) => 'Y'
+    For each qubit j, columns (j | j + N) of the PCM encode:
+      - (0|0) => 'I'
+      - (1|0) => 'X'
+      - (0|1) => 'Z'
+      - (1|1) => 'Y'
 
     Parameters
     ----------
     binary_pcm : ArrayLike
-        Binary matrix of shape (N, 2*n_qubits) containing 0/1 values, in dense
-        or any SciPy sparse matrix format.
+        Binary matrix of shape (M, 2*N), in dense or any SciPy sparse matrix format.
 
     Returns
     -------
     np.ndarray
-        Array of shape (N, 1), where each element is a string of Pauli operators.
+        Array of shape (M, 1), where each element is a string of Pauli operators with length N.
 
     Examples
     --------
     >>> import numpy as np
     >>> from scipy.sparse import scipy.sparse.csr_matrix
-    >>> pcm = np.array([[1, 0, 0, 1, 0, 1],
-    ...                 [1, 1, 0, 0, 1, 0]], dtype=np.uint8)
+    >>> pcm = np.array([[1, 0, 0, 0, 0, 1],
+    ...                 [1, 1, 0, 1, 1, 0]], dtype=np.uint8)
     >>> pauli_str_to_return = binary_pcm_to_pauli_str(pcm)
     >>> pauli_str_to_return
     array([['XIZ'],
