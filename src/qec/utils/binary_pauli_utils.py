@@ -99,27 +99,27 @@ def pauli_str_to_binary_pcm(
     pauli_strings: np.typing.ArrayLike,
 ) -> scipy.sparse.csr_matrix:
     """
-    Convert an array of Pauli strings (N x 1) into a binary parity-check matrix (PCM).
+    Convert an (M x 1) array of Pauli strings, where each string has length N, corresponding to the number of physical qubits, into a binary parity-check matrix (PCM) with dimensions (M x 2*N).
 
     The mapping for each qubit j in the string is:
-      - 'I' => no bits
-      - 'X' => column j
-      - 'Z' => column j + n_qubits
-      - 'Y' => columns j and j + n_qubits
+      - 'I' => (0|0)
+      - 'X' => (1|0)
+      - 'Z' => (0|1)
+      - 'Y' => (1|1)
+    where the first element (a),  in (a|b) is at column j and the second element (b) is at column j + N.
 
     Parameters
     ----------
     pauli_strings : ArrayLike
-        Array of shape (N, 1), where each element is a string of Pauli operators
+        Array of shape (M, 1), where each element is a string of Pauli operators
         ('I', 'X', 'Y', 'Z'). Can be dense or any SciPy sparse matrix format with
         an object/string dtype.
 
     Returns
     -------
     scipy.sparse.csr_matrix
-        Binary parity-check matrix of shape (N, 2*n_qubits) in CSR format, where
-        n_qubits is the length of each Pauli string.
-
+        Binary parity-check matrix of shape (M, 2*N) in CSR format, where M is the number of stabilisers and
+        N is the number of physical qubits.
     Raises
     ------
     ValueError
@@ -131,9 +131,10 @@ def pauli_str_to_binary_pcm(
     >>> paulis = np.array([["XIZ"], ["YYI"]], dtype=object)
     >>> pcm = pauli_str_to_binary_pcm(paulis)
     >>> pcm.toarray()
-    array([[1, 0, 0, 1, 0, 1],
-           [1, 1, 0, 0, 1, 0]], dtype=uint8)
+    array([[1, 0, 0, 0, 0, 1],
+           [1, 1, 0, 1, 1, 0]], dtype=uint8)
     """
+
     if scipy.sparse.issparse(pauli_strings):
         if pauli_strings.dtype == object:
             mat_coo = pauli_strings.tocoo(copy=False)
@@ -145,17 +146,20 @@ def pauli_str_to_binary_pcm(
             pauli_strings = pauli_strings.toarray()
 
     pauli_strings = np.asanyarray(pauli_strings, dtype=str)
+
     if pauli_strings.size == 0:
         return scipy.sparse.csr_matrix((0, 0))
 
     row_ids = []
     col_ids = []
-    n_rows = pauli_strings.shape[0]
+
+    m_stabilisers = pauli_strings.shape[0]
     n_qubits = len(pauli_strings[0, 0])
 
-    for i in range(n_rows):
-        row_string = pauli_strings[i, 0]
-        for j, char in enumerate(row_string):
+    for i, string in enumerate(pauli_strings):
+        if len(string) != n_qubits:
+            raise ValueError("The Pauli strings do not have equal length.")
+        for j, char in enumerate(pauli_strings[0]):
             if char == "I":
                 continue
             elif char == "X":
@@ -171,8 +175,9 @@ def pauli_str_to_binary_pcm(
                 raise ValueError(f"Invalid Pauli character '{char}' encountered.")
 
     data = np.ones(len(row_ids), dtype=np.uint8)
+
     return scipy.sparse.csr_matrix(
-        (data, (row_ids, col_ids)), shape=(n_rows, 2 * n_qubits), dtype=np.uint8
+        (data, (row_ids, col_ids)), shape=(m_stabilisers, 2 * n_qubits), dtype=np.uint8
     )
 
 
