@@ -299,7 +299,9 @@ def symplectic_product(
     a = convert_to_binary_scipy_sparse(a)
     b = convert_to_binary_scipy_sparse(b)
 
-    assert (a.shape[1] == b.shape[1]), "Input matrices must have the same number of columns."
+    assert (
+        a.shape[1] == b.shape[1]
+    ), "Input matrices must have the same number of columns."
     assert a.shape[1] % 2 == 0, "Input matrices must have an even number of columns."
 
     n = a.shape[1] // 2

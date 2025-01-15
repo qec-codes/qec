@@ -177,7 +177,7 @@ class StabilizerCode(object):
         kernel_h = ldpc.mod2.kernel(self.stabilizer_matrix)
 
         # Sort the rows of the kernel by weight
-        row_weights = np.diff(kernel_h.indptr)
+        row_weights = kernel_h.getnnz(axis=1)
         sorted_rows = np.argsort(row_weights)
         kernel_h = kernel_h[sorted_rows, :]
 
@@ -377,6 +377,165 @@ class StabilizerCode(object):
         """
         return f"< Stabilizer Code, Name: {self.name}, Parameters: [[{self.physical_qubit_count}, {self.logical_qubit_count}, {self.code_distance}]] >"
 
+    def estimate_min_distance(
+        self,
+        timeout_seconds: float = 0.25,
+        p: float = 0.25,
+        reduce_logical_basis: bool = False,
+        decoder: Optional[BpOsdDecoder] = None,
+    ) -> int:
+        """
+        Estimate the minimum distance of the stabilizer code using a BP+OSD decoder-based search.
+
+        Parameters
+        ----------
+        timeout_seconds : float
+            Time limit in seconds for the search. Default: 0.25
+        p : float
+            Probability for including each logical operator in trial combinations. Default: 0.25
+        reduce_logical_basis : bool
+            Whether to attempt reducing logical operator basis. Default: False
+        decoder : Optional[BpOsdDecoder]
+            Pre-configured BP+OSD decoder. If None, initialises with default settings.
+
+        Returns
+        -------
+        int
+            Best estimate of code distance found within time limit
+        """
+        if self.logical_operator_basis is None:
+            self.logical_operator_basis = self.compute_logical_basis()
+
+        # Initial setup of decoder and parameters
+        bp_osd, stack, full_rank_stabilizer_matrix, min_distance, max_distance = (
+            self._setup_distance_estimation_decoder(decoder)
+        )
+
+        # Initialize storage for candidate logicals and tracking
+        candidate_logicals = []
+        weight_one_syndromes_searched = 0
+
+        # Main search loop
+        start_time = time.time()
+        with tqdm(total=timeout_seconds, desc="Estimating distance") as pbar:
+            while time.time() - start_time < timeout_seconds:
+                # Update progress bar
+                elapsed = time.time() - start_time
+                pbar.update(elapsed - pbar.n)
+
+                # Initialize an empty dummy syndrome
+                dummy_syndrome = np.zeros(stack.shape[0], dtype=np.uint8)
+
+                if weight_one_syndromes_searched < self.logical_operator_basis.shape[0]:
+                    # Try each logical operator individually first
+                    dummy_syndrome[
+                        full_rank_stabilizer_matrix.shape[0]
+                        + weight_one_syndromes_searched
+                    ] = 1
+                    weight_one_syndromes_searched += 1
+                else:
+                    # Randomly pick a combination of logical rows
+                    while True:
+                        random_mask = np.random.choice(
+                            [0, 1],
+                            size=self.logical_operator_basis.shape[0],
+                            p=[1 - p, p],
+                        )
+                        if np.any(random_mask):
+                            break
+                    for idx, bit in enumerate(random_mask):
+                        if bit == 1:
+                            dummy_syndrome[self.stabilizer_matrix.shape[0] + idx] = 1
+
+                candidate = bp_osd.decode(dummy_syndrome)
+                w = np.count_nonzero(
+                    candidate[: self.physical_qubit_count]
+                    | candidate[self.physical_qubit_count :]
+                )
+
+                if w < min_distance:
+                    min_distance = w
+                if w < max_distance and reduce_logical_basis:
+                    lc = np.hstack(
+                        [
+                            candidate[self.physical_qubit_count :],
+                            candidate[: self.physical_qubit_count],
+                        ]
+                    )
+                    candidate_logicals.append(lc)
+
+                # Reduce logical operator basis if we have enough candidates
+                if (
+                    len(candidate_logicals) >= self.logical_qubit_count
+                    and reduce_logical_basis
+                ):
+                    self._reduce_logical_operator_basis(candidate_logicals)
+                    (
+                        bp_osd,
+                        stack,
+                        full_rank_stabilizer_matrix,
+                        min_distance,
+                        max_distance,
+                    ) = self._setup_distance_estimation_decoder(decoder)
+                    candidate_logicals = []
+                    weight_one_syndromes_searched = 0
+
+                pbar.set_description(
+                    f"Estimating distance: min-weight found <= {min_distance}, "
+                    f"basis weights: {self.logical_basis_weights()}"
+                )
+
+        # Final basis reduction if needed
+        if reduce_logical_basis and candidate_logicals:
+            self._reduce_logical_operator_basis(candidate_logicals)
+
+        self.code_distance = min_distance
+        return min_distance
+
+    def _setup_distance_estimation_decoder(
+        self, decoder: Optional[BpOsdDecoder] = None
+    ) -> Tuple[BpOsdDecoder, scipy.sparse.spmatrix, scipy.sparse.spmatrix, int, int]:
+        """
+        Set up decoder and initial parameters.
+
+        Parameters
+        ----------
+        decoder : Optional[BpOsdDecoder]
+            Pre-configured decoder. If None, initialises with default settings.
+
+        Returns
+        -------
+        Tuple[BpOsdDecoder, scipy.sparse.spmatrix, scipy.sparse.spmatrix, int, int]
+            Returns (decoder, stack matrix, full rank stabilizer matrix, min distance, max distance)
+        """
+        # Remove redundant rows from stabilizer matrix
+        p_rows = ldpc.mod2.pivot_rows(self.stabilizer_matrix)
+        full_rank_stabilizer_matrix = self.stabilizer_matrix[p_rows]
+
+        # Build a stacked matrix of stabilizers and logicals
+        stack = scipy.sparse.vstack(
+            [full_rank_stabilizer_matrix, self.logical_operator_basis]
+        ).tocsr()
+
+        # Initial distance estimate from current logicals
+        min_distance = np.min(binary_pauli_hamming_weight(self.logical_operator_basis))
+        max_distance = np.max(self.logical_basis_weights())
+
+        # Set up BP+OSD decoder if not provided
+        if decoder is None:
+            decoder = BpOsdDecoder(
+                stack,
+                error_rate=0.1,
+                max_iter=10,
+                bp_method="ms",
+                schedule="parallel",
+                ms_scaling_factor=1.0,
+                osd_method="osd_0",
+                osd_order=0,
+            )
+
+        return decoder, stack, full_rank_stabilizer_matrix, min_distance, max_distance
+
     def _reduce_logical_operator_basis(
         self,
         candidate_logicals: Union[Sequence, np.ndarray, scipy.sparse.spmatrix] = [],
@@ -419,183 +578,6 @@ class StabilizerCode(object):
             # Perform row reduction to find a new logical basis
             p_rows = ldpc.mod2.pivot_rows(temp1)
             self.logical_operator_basis = temp1[p_rows[stabilizer_rank:]]
-
-    def estimate_min_distance(
-        self,
-        timeout_seconds: float = 0.25,
-        p: float = 0.25,
-        max_iter: int = 10,
-        error_rate: float = 0.1,
-        bp_method: str = "ms",
-        schedule: str = "parallel",
-        ms_scaling_factor: float = 1.0,
-        osd_method: str = "osd_0",
-        osd_order: int = 0,
-        reduce_logical_basis: bool = False,
-    ) -> int:
-        """
-        Estimate the minimum distance of the stabilizer code using a BP+OSD decoder-based search.
-
-        Parameters
-        ----------
-        timeout_seconds : float, optional
-            The time limit (in seconds) for searching random linear combinations.
-        p : float, optional
-            Probability used to randomly include or exclude each logical operator
-            when generating trial logical operators.
-        max_iter : int, optional
-            Maximum number of BP decoder iterations.
-        error_rate : float, optional
-            Crossover probability for the BP+OSD decoder.
-        bp_method : str, optional
-            Belief Propagation method (e.g., "ms" for min-sum).
-        schedule : str, optional
-            Update schedule for BP (e.g., "parallel").
-        ms_scaling_factor : float, optional
-            Scaling factor for min-sum updates.
-        osd_method : str, optional
-            Order-statistic decoding method (e.g., "osd_0").
-        osd_order : int, optional
-            OSD order.
-        reduce_logical_basis : bool, optional
-            If True, attempts to reduce the logical operator basis to include lower-weight operators.
-
-        Returns
-        -------
-        int
-            The best-known estimate of the code distance found within the time limit.
-        """
-        if self.logical_operator_basis is None:
-            self.logical_operator_basis = self.compute_logical_basis()
-
-        def decoder_setup():
-            # # Remove redundnant rows from stabilizer matrix
-            p_rows = ldpc.mod2.pivot_rows(self.stabilizer_matrix)
-            full_rank_stabilizer_matrix = self.stabilizer_matrix[p_rows]
-            # full_rank_stabilizer_matrix = self.stabilizer_matrix
-
-            # Build a stacked matrix of stabilizers and logicals
-            stack = scipy.sparse.vstack(
-                [full_rank_stabilizer_matrix, self.logical_operator_basis]
-            ).tocsr()
-
-            # Initial distance estimate from the current logicals
-
-            min_distance = np.min(
-                binary_pauli_hamming_weight(self.logical_operator_basis)
-            )
-
-            max_distance = np.max(self.logical_basis_weights())
-
-            # Set up BP+OSD decoder
-            bp_osd = BpOsdDecoder(
-                stack,
-                error_rate=error_rate,
-                max_iter=max_iter,
-                bp_method=bp_method,
-                schedule=schedule,
-                ms_scaling_factor=ms_scaling_factor,
-                osd_method=osd_method,
-                osd_order=osd_order,
-            )
-
-            return (
-                bp_osd,
-                stack,
-                full_rank_stabilizer_matrix,
-                min_distance,
-                max_distance,
-            )
-
-        # setup the decoder
-        bp_osd, stack, full_rank_stabilizer_matrix, min_distance, max_distance = (
-            decoder_setup()
-        )
-
-        # List to store candidate logical operators for basis reduction
-        candidate_logicals = []
-
-        # 2) Randomly search for better representatives of logical operators
-        start_time = time.time()
-        with tqdm(total=timeout_seconds, desc="Estimating distance") as pbar:
-            weight_one_syndromes_searched = 0
-            while time.time() - start_time < timeout_seconds:
-                elapsed = time.time() - start_time
-                # Update progress bar based on elapsed time
-                pbar.update(elapsed - pbar.n)
-
-                # Initialize an empty dummy syndrome
-                dummy_syndrome = np.zeros(stack.shape[0], dtype=np.uint8)
-
-                if weight_one_syndromes_searched < self.logical_operator_basis.shape[0]:
-                    dummy_syndrome[
-                        full_rank_stabilizer_matrix.shape[0]
-                        + weight_one_syndromes_searched
-                    ] = 1  # pick exactly one logical operator
-                    weight_one_syndromes_searched += 1
-
-                else:
-                    # Randomly pick a combination of logical rows
-                    # (with probability p, set the corresponding row in the syndrome to 1)
-                    while True:
-                        random_mask = np.random.choice(
-                            [0, 1],
-                            size=self.logical_operator_basis.shape[0],
-                            p=[1 - p, p],
-                        )
-                        if np.any(random_mask):
-                            break
-                    for idx, bit in enumerate(random_mask):
-                        if bit == 1:
-                            dummy_syndrome[self.stabilizer_matrix.shape[0] + idx] = 1
-
-                candidate = bp_osd.decode(dummy_syndrome)
-
-                w = np.count_nonzero(
-                    candidate[: self.physical_qubit_count]
-                    | candidate[self.physical_qubit_count :]
-                )
-
-                if w < min_distance:
-                    min_distance = w
-                if w < max_distance:
-                    if reduce_logical_basis:
-                        lc = np.hstack(
-                            [
-                                candidate[self.physical_qubit_count :],
-                                candidate[: self.physical_qubit_count],
-                            ]
-                        )
-                        candidate_logicals.append(lc)
-
-                # 3) If requested, reduce the logical operator basis to include lower-weight operators
-                if (
-                    len(candidate_logicals) >= self.logical_qubit_count
-                    and reduce_logical_basis
-                ):
-                    self._reduce_logical_operator_basis(candidate_logicals)
-                    (
-                        bp_osd,
-                        stack,
-                        full_rank_stabilizer_matrix,
-                        min_distance,
-                        max_distance,
-                    ) = decoder_setup()
-                    candidate_logicals = []
-                    weight_one_syndromes_searched = 0
-
-                pbar.set_description(
-                    f"Estimating distance: min-weight found <= {min_distance}, basis weights: {self.logical_basis_weights()}"
-                )
-
-        if reduce_logical_basis and len(candidate_logicals) > 0:
-            self._reduce_logical_operator_basis(candidate_logicals)
-            candidate_logicals = []
-            weight_one_syndromes_searched = 0
-            max_distance = np.max(self.logical_basis_weights())
-
-        # Update and return the estimated distance
-        self.code_distance = min_distance
 
     def logical_basis_weights(self):
         """
