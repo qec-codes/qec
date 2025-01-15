@@ -10,7 +10,7 @@ from ldpc import BpOsdDecoder
 from tqdm import tqdm
 import time
 import logging
-from typing import Optional
+from typing import Optional, Sequence
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -182,7 +182,7 @@ class CSSCode(StabilizerCode):
 
     # TODO: Add a function to save the logical operator basis to a file
 
-    def check_valid_logical_xz_basis(self) -> bool:
+    def check_valid_logical_basis(self) -> bool:
         """
         Validate that the stored logical operators form a proper logical basis for the code.
 
@@ -408,7 +408,7 @@ class CSSCode(StabilizerCode):
         Returns
         -------
         int
-            Best estimate of code distance found within time limit.
+            Best estimate of code distance found within the time limit.
         """
         start_time = time.time()
 
@@ -419,13 +419,13 @@ class CSSCode(StabilizerCode):
         ):
             self.compute_logical_basis()
 
-        # Setup decoders for X and Z logical operators
-        bp_osd_x, x_stack, _, x_min_distance, x_max_distance = (
+        # Setup decoders and parameters for both X and Z
+        bp_osd_z, x_stack, full_rank_x, x_min_distance, x_max_distance = (
             self._setup_distance_estimation_decoder(
                 self.x_stabilizer_matrix, self.x_logical_operator_basis, decoder
             )
         )
-        bp_osd_z, z_stack, _, z_min_distance, z_max_distance = (
+        bp_osd_x, z_stack, full_rank_z, z_min_distance, z_max_distance = (
             self._setup_distance_estimation_decoder(
                 self.z_stabilizer_matrix, self.z_logical_operator_basis, decoder
             )
@@ -434,56 +434,105 @@ class CSSCode(StabilizerCode):
         candidate_logicals_x = []
         candidate_logicals_z = []
 
-        # Search loop
+        x_weight_one_searched = 0
+        z_weight_one_searched = 0
+
         with tqdm(total=timeout_seconds, desc="Estimating distance") as pbar:
             while time.time() - start_time < timeout_seconds:
                 elapsed = time.time() - start_time
                 pbar.update(elapsed - pbar.n)
 
-                # Generate random logical combinations for X
-                dummy_syndrome_x = (
-                    self._generate_random_logical_combination_for_distance_estimation(
-                        x_stack, p, self.x_stabilizer_matrix.shape[0]
-                    )
-                )
-                candidate_x = bp_osd_x.decode(dummy_syndrome_x)
-                x_weight = np.count_nonzero(candidate_x)
+                if np.random.rand() < 0.5:
+                    # X Logical operators
+                    if x_weight_one_searched < self.z_logical_operator_basis.shape[0]:
+                        dummy_syndrome_x = np.zeros(z_stack.shape[0], dtype=np.uint8)
+                        dummy_syndrome_x[
+                            full_rank_z.shape[0] + x_weight_one_searched
+                        ] = 1
+                        x_weight_one_searched += 1
+                    else:
+                        dummy_syndrome_x = self._generate_random_logical_combination_for_distance_estimation(
+                            z_stack, p, self.z_stabilizer_matrix.shape[0]
+                        )
 
-                if x_weight < x_min_distance:
-                    x_min_distance = x_weight
+                    candidate_x = bp_osd_x.decode(dummy_syndrome_x)
+                    x_weight = np.count_nonzero(candidate_x)
+                    if x_weight < x_min_distance:
+                        x_min_distance = x_weight
 
-                if x_weight < x_max_distance and reduce_logical_basis:
-                    candidate_logicals_x.append(candidate_x)
+                    if x_weight < x_max_distance and reduce_logical_basis:
+                        candidate_logicals_x.append(candidate_x)
 
-                # Generate random logical combinations for Z
-                dummy_syndrome_z = (
-                    self._generate_random_logical_combination_for_distance_estimation(
-                        z_stack, p, self.z_stabilizer_matrix.shape[0]
-                    )
-                )
-                candidate_z = bp_osd_z.decode(dummy_syndrome_z)
-                z_weight = np.count_nonzero(candidate_z)
+                        # Reduce X logical operator basis independently
+                        if len(candidate_logicals_x) >= 5:
+                            self._reduce_logical_operator_basis(
+                                candidate_logicals_x, []
+                            )
+                            (
+                                bp_osd_x,
+                                z_stack,
+                                full_rank_z,
+                                z_min_distance,
+                                z_max_distance,
+                            ) = self._setup_distance_estimation_decoder(
+                                self.z_stabilizer_matrix,
+                                self.z_logical_operator_basis,
+                                decoder,
+                            )
+                            candidate_logicals_x = []
+                            x_weight_one_searched = 0
 
-                if z_weight < z_min_distance:
-                    z_min_distance = z_weight
+                else:
+                    # Z Logical operators
+                    if z_weight_one_searched < self.x_logical_operator_basis.shape[0]:
+                        dummy_syndrome_z = np.zeros(x_stack.shape[0], dtype=np.uint8)
+                        dummy_syndrome_z[
+                            full_rank_x.shape[0] + z_weight_one_searched
+                        ] = 1
+                        z_weight_one_searched += 1
+                    else:
+                        dummy_syndrome_z = self._generate_random_logical_combination_for_distance_estimation(
+                            x_stack, p, self.x_stabilizer_matrix.shape[0]
+                        )
 
-                if z_weight < z_max_distance and reduce_logical_basis:
-                    candidate_logicals_z.append(candidate_z)
+                    candidate_z = bp_osd_z.decode(dummy_syndrome_z)
+                    z_weight = np.count_nonzero(candidate_z)
+                    if z_weight < z_min_distance:
+                        z_min_distance = z_weight
 
-                # Update progress bar description
+                    if z_weight < z_max_distance and reduce_logical_basis:
+                        candidate_logicals_z.append(candidate_z)
+
+                        # Reduce Z logical operator basis independently
+                        if len(candidate_logicals_z) >= 5:
+                            self._reduce_logical_operator_basis(
+                                [], candidate_logicals_z
+                            )
+                            (
+                                bp_osd_z,
+                                x_stack,
+                                full_rank_x,
+                                x_min_distance,
+                                x_max_distance,
+                            ) = self._setup_distance_estimation_decoder(
+                                self.x_stabilizer_matrix,
+                                self.x_logical_operator_basis,
+                                decoder,
+                            )
+                            candidate_logicals_z = []
+                            z_weight_one_searched = 0
+
+                x_weights, z_weights = self.logical_basis_weights()
                 pbar.set_description(
-                    f"Estimating distance: dx <= {x_min_distance}, dz <= {z_min_distance}"
+                    f"Estimating distance: dx <= {x_min_distance}, dz <= {z_min_distance}, x-weights: {np.mean(x_weights):.2f}, z-weights: {np.mean(z_weights):.2f}"
                 )
 
-        # Update distances and reduce logical bases if applicable
+        self._reduce_logical_operator_basis(candidate_logicals_x, candidate_logicals_z)
+
+        # Update distances
         self.x_code_distance = x_min_distance
         self.z_code_distance = z_min_distance
         self.code_distance = min(x_min_distance, z_min_distance)
-
-        if reduce_logical_basis:
-            self._reduce_logical_operator_basis(
-                candidate_logicals_x, candidate_logicals_z
-            )
 
         return self.code_distance
 
@@ -569,28 +618,140 @@ class CSSCode(StabilizerCode):
 
         return dummy_syndrome
 
+    def _reduce_logical_operator_basis(
+        self,
+        candidate_logicals_x: Union[Sequence, np.ndarray, scipy.sparse.spmatrix] = [],
+        candidate_logicals_z: Union[Sequence, np.ndarray, scipy.sparse.spmatrix] = [],
+    ):
+        """
+        Reduce the logical operator bases (for X and Z) to include lower-weight logicals.
+
+        Parameters
+        ----------
+        candidate_logicals_x : Union[Sequence, np.ndarray, scipy.sparse.spmatrix], optional
+            A list or array of candidate X logical operators to consider for reducing the X basis.
+            Defaults to an empty list.
+        candidate_logicals_z : Union[Sequence, np.ndarray, scipy.sparse.spmatrix], optional
+            A list or array of candidate Z logical operators to consider for reducing the Z basis.
+            Defaults to an empty list.
+        """
+        # Reduce X logical operator basis
+        if candidate_logicals_x:
+            # Convert candidates to a sparse matrix if they aren't already
+            if not isinstance(candidate_logicals_x, scipy.sparse.spmatrix):
+                candidate_logicals_x = scipy.sparse.csr_matrix(candidate_logicals_x)
+
+            # Stack the candidate X logicals with the existing X logicals
+            temp_x = scipy.sparse.vstack(
+                [candidate_logicals_x, self.x_logical_operator_basis]
+            ).tocsr()
+
+            # Calculate Hamming weights for sorting
+            x_row_weights = temp_x.getnnz(axis=1)
+            sorted_x_rows = np.argsort(x_row_weights)
+            temp_x = temp_x[sorted_x_rows, :]
+
+            # Add the X stabilizer matrix to the top of the stack
+            temp_x = scipy.sparse.vstack([self.x_stabilizer_matrix, temp_x]).tocsr()
+
+            # Determine rank of the X stabilizer matrix
+            rank_hx = ldpc.mod2.rank(self.x_stabilizer_matrix)
+
+            # Perform row reduction to find a new X logical basis
+            pivots_x = ldpc.mod2.pivot_rows(temp_x)
+            self.x_logical_operator_basis = temp_x[pivots_x[rank_hx:], :]
+
+        # Reduce Z logical operator basis
+        if candidate_logicals_z:
+            # Convert candidates to a sparse matrix if they aren't already
+            if not isinstance(candidate_logicals_z, scipy.sparse.spmatrix):
+                candidate_logicals_z = scipy.sparse.csr_matrix(candidate_logicals_z)
+
+            # Stack the candidate Z logicals with the existing Z logicals
+            temp_z = scipy.sparse.vstack(
+                [candidate_logicals_z, self.z_logical_operator_basis]
+            ).tocsr()
+
+            # Calculate Hamming weights for sorting
+            z_row_weights = temp_z.getnnz(axis=1)
+            sorted_z_rows = np.argsort(z_row_weights)
+            temp_z = temp_z[sorted_z_rows, :]
+
+            # Add the Z stabilizer matrix to the top of the stack
+            temp_z = scipy.sparse.vstack([self.z_stabilizer_matrix, temp_z]).tocsr()
+
+            # Determine rank of the Z stabilizer matrix
+            rank_hz = ldpc.mod2.rank(self.z_stabilizer_matrix)
+
+            # Perform row reduction to find a new Z logical basis
+            pivots_z = ldpc.mod2.pivot_rows(temp_z)
+            self.z_logical_operator_basis = temp_z[pivots_z[rank_hz:], :]
+
     def fix_logical_operators(self, fix_logical: str = "X"):
+        """
+        Create a canonical basis of logical operators where X-logical and Z-logical operators pairwise anticommute.
+
+        Parameters
+        ----------
+        fix_logical : str, optional
+            Specify which logical operator basis to fix. "X" adjusts Z-logicals based on X-logicals, and "Z" adjusts
+            X-logicals based on Z-logicals. Default is "X".
+
+        Raises
+        ------
+        TypeError
+            If `fix_logical` is not a string.
+        ValueError
+            If `fix_logical` is not "X" or "Z".
+
+        Returns
+        -------
+        bool
+            True if the logical operator basis is valid after fixing; False otherwise.
+
+        Notes
+        -----
+        This method ensures that the symplectic product of the logical bases results in the identity matrix.
+        If any issues occur during the adjustment, the method logs an error.
+        """
         if not isinstance(fix_logical, str):
             raise TypeError("fix_logical parameter must be a string")
 
         if fix_logical.lower() == "x":
             temp = self.z_logical_operator_basis @ self.x_logical_operator_basis.T
             temp.data = temp.data % 2
-            temp = ldpc.mod2.inverse(temp)
+            temp = scipy.sparse.csr_matrix(ldpc.mod2.inverse(temp), dtype=np.uint8)
             self.z_logical_operator_basis = temp @ self.z_logical_operator_basis
             self.z_logical_operator_basis.data = self.z_logical_operator_basis.data % 2
 
         elif fix_logical.lower() == "z":
             temp = self.x_logical_operator_basis @ self.z_logical_operator_basis.T
             temp.data = temp.data % 2
-            temp = ldpc.mod2.inverse(temp)
+            temp = scipy.sparse.csr_matrix(ldpc.mod2.inverse(temp), dtype=np.uint8)
             self.x_logical_operator_basis = temp @ self.x_logical_operator_basis
             self.x_logical_operator_basis.data = self.x_logical_operator_basis.data % 2
         else:
             raise ValueError("Invalid fix_logical parameter")
 
-    @property
-    def logical_operator_weights(self) -> Tuple[np.ndarray, np.ndarray]:
+        try:
+            assert self.check_valid_logical_basis()
+        except AssertionError:
+            logging.error("Logical basis is not valid after fixing logical operators.")
+            return False
+
+        try:
+            lx_lz = self.x_logical_operator_basis @ self.z_logical_operator_basis.T
+            lx_lz.data = lx_lz.data % 2
+            assert (
+                lx_lz != scipy.sparse.eye(self.logical_qubit_count, format="csr")
+            ).nnz == 0
+        except AssertionError:
+            logging.error("Logical basis is not valid after fixing logical operators.")
+            return False
+
+        return True
+
+    def logical_basis_weights(self) -> Tuple[np.ndarray, np.ndarray]:
         x_weights = []
         z_weights = []
         for i in range(self.logical_qubit_count):

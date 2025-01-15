@@ -133,9 +133,7 @@ def test_invalid_logical_xz_basis():
     ), f"Expected logical qubit count to be 1, got {qcode.logical_qubit_count}."
 
     # Verify that the current logical basis is valid
-    assert (
-        qcode.check_valid_logical_xz_basis()
-    ), "Logical operator basis should be valid."
+    assert qcode.check_valid_logical_basis(), "Logical operator basis should be valid."
 
     # Assign an invalid logical operator basis
     qcode.x_logical_operator_basis = convert_to_binary_scipy_sparse(
@@ -147,7 +145,7 @@ def test_invalid_logical_xz_basis():
 
     # Verify that the updated logical basis is invalid
     assert (
-        not qcode.check_valid_logical_xz_basis()
+        not qcode.check_valid_logical_basis()
     ), "Logical operator basis should be invalid."
 
 
@@ -172,7 +170,7 @@ def test_check_valid_logical_xz_basis_logging1(caplog):
     code.z_logical_operator_basis = z_logical_operators
 
     with caplog.at_level(logging.ERROR):
-        assert not code.check_valid_logical_xz_basis()
+        assert not code.check_valid_logical_basis()
         print(caplog.text)
         assert "Z logical operators do not commute with X stabilizers." in caplog.text
 
@@ -198,7 +196,7 @@ def test_check_valid_logical_xz_basis_logging2(caplog):
     code.z_logical_operator_basis = z_logical_operators
 
     with caplog.at_level(logging.ERROR):
-        assert not code.check_valid_logical_xz_basis()
+        assert not code.check_valid_logical_basis()
         print(caplog.text)
         assert "X logical operators do not commute with Z stabilizers." in caplog.text
 
@@ -223,7 +221,7 @@ def test_check_valid_logical_xz_basis_logging3(caplog):
     code.z_logical_operator_basis = z_logical_operators
 
     with caplog.at_level(logging.ERROR):
-        assert not code.check_valid_logical_xz_basis()
+        assert not code.check_valid_logical_basis()
         assert "Logical operators do not pairwise anticommute." in caplog.text
         assert "Logical operators do not pairwise anticommute." in caplog.text
 
@@ -327,7 +325,11 @@ def test_steane_code_estimate_distance():
     steane = CSSCode(hx, hz, name="Steane")
 
     # Estimate minimum distance with a timeout
-    estimated_distance = steane.estimate_min_distance()
+    estimated_distance = steane.estimate_min_distance(
+        timeout_seconds=0.25, reduce_logical_basis=True
+    )
+
+    assert steane.check_valid_logical_basis(), "Logical basis should be valid"
 
     # Verify the code parameters
     assert steane.physical_qubit_count == 7, "Should have 7 physical qubits"
