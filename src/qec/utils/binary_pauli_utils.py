@@ -1,5 +1,6 @@
 import numpy as np
 import scipy
+import scipy.sparse
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 
@@ -98,27 +99,27 @@ def pauli_str_to_binary_pcm(
     pauli_strings: np.typing.ArrayLike,
 ) -> scipy.sparse.csr_matrix:
     """
-    Convert an array of Pauli strings (N x 1) into a binary parity-check matrix (PCM).
+    Convert an (M x 1) array of Pauli strings, where each string has length N, corresponding to the number of physical qubits, into a binary parity-check matrix (PCM) with dimensions (M x 2*N).
 
     The mapping for each qubit j in the string is:
-      - 'I' => no bits
-      - 'X' => column j
-      - 'Z' => column j + n_qubits
-      - 'Y' => columns j and j + n_qubits
+      - 'I' => (0|0)
+      - 'X' => (1|0)
+      - 'Z' => (0|1)
+      - 'Y' => (1|1)
+    where the first element (a),  in (a|b) is at column j and the second element (b) is at column j + N.
 
     Parameters
     ----------
     pauli_strings : ArrayLike
-        Array of shape (N, 1), where each element is a string of Pauli operators
+        Array of shape (M, 1), where each element is a string of Pauli operators
         ('I', 'X', 'Y', 'Z'). Can be dense or any SciPy sparse matrix format with
         an object/string dtype.
 
     Returns
     -------
     scipy.sparse.csr_matrix
-        Binary parity-check matrix of shape (N, 2*n_qubits) in CSR format, where
-        n_qubits is the length of each Pauli string.
-
+        Binary parity-check matrix of shape (M, 2*N) in CSR format, where M is the number of stabilisers and
+        N is the number of physical qubits.
     Raises
     ------
     ValueError
@@ -130,9 +131,10 @@ def pauli_str_to_binary_pcm(
     >>> paulis = np.array([["XIZ"], ["YYI"]], dtype=object)
     >>> pcm = pauli_str_to_binary_pcm(paulis)
     >>> pcm.toarray()
-    array([[1, 0, 0, 1, 0, 1],
-           [1, 1, 0, 0, 1, 0]], dtype=uint8)
+    array([[1, 0, 0, 0, 0, 1],
+           [1, 1, 0, 1, 1, 0]], dtype=uint8)
     """
+
     if scipy.sparse.issparse(pauli_strings):
         if pauli_strings.dtype == object:
             mat_coo = pauli_strings.tocoo(copy=False)
@@ -144,17 +146,20 @@ def pauli_str_to_binary_pcm(
             pauli_strings = pauli_strings.toarray()
 
     pauli_strings = np.asanyarray(pauli_strings, dtype=str)
+
     if pauli_strings.size == 0:
         return scipy.sparse.csr_matrix((0, 0))
 
     row_ids = []
     col_ids = []
-    n_rows = pauli_strings.shape[0]
+
+    m_stabilisers = pauli_strings.shape[0]
     n_qubits = len(pauli_strings[0, 0])
 
-    for i in range(n_rows):
-        row_string = pauli_strings[i, 0]
-        for j, char in enumerate(row_string):
+    for i, string in enumerate(pauli_strings):
+        if len(string[0]) != n_qubits:
+            raise ValueError("The Pauli strings do not have equal length.")
+        for j, char in enumerate(string[0]):
             if char == "I":
                 continue
             elif char == "X":
@@ -170,38 +175,39 @@ def pauli_str_to_binary_pcm(
                 raise ValueError(f"Invalid Pauli character '{char}' encountered.")
 
     data = np.ones(len(row_ids), dtype=np.uint8)
+
     return scipy.sparse.csr_matrix(
-        (data, (row_ids, col_ids)), shape=(n_rows, 2 * n_qubits), dtype=np.uint8
+        (data, (row_ids, col_ids)), shape=(m_stabilisers, 2 * n_qubits), dtype=np.uint8
     )
 
 
 def binary_pcm_to_pauli_str(binary_pcm: np.typing.ArrayLike) -> np.ndarray:
     """
-    Convert a binary PCM (with 2*n_qubits columns) back into an array of Pauli strings (N x 1).
+    Convert a binary (M x 2*N) PCM corresponding to M stabilisers acting on N physical qubits,
+    back into an array (M x 1) of Pauli strings that have length N.
 
-    For each qubit j, columns [j, j + n_qubits] encode:
-      - (0, 0) => 'I'
-      - (1, 0) => 'X'
-      - (0, 1) => 'Z'
-      - (1, 1) => 'Y'
+    For each qubit j, columns (j | j + N) of the PCM encode:
+      - (0|0) => 'I'
+      - (1|0) => 'X'
+      - (0|1) => 'Z'
+      - (1|1) => 'Y'
 
     Parameters
     ----------
     binary_pcm : ArrayLike
-        Binary matrix of shape (N, 2*n_qubits) containing 0/1 values, in dense
-        or any SciPy sparse matrix format.
+        Binary matrix of shape (M, 2*N), in dense or any SciPy sparse matrix format.
 
     Returns
     -------
     np.ndarray
-        Array of shape (N, 1), where each element is a string of Pauli operators.
+        Array of shape (M, 1), where each element is a string of Pauli operators with length N.
 
     Examples
     --------
     >>> import numpy as np
     >>> from scipy.sparse import scipy.sparse.csr_matrix
-    >>> pcm = np.array([[1, 0, 0, 1, 0, 1],
-    ...                 [1, 1, 0, 0, 1, 0]], dtype=np.uint8)
+    >>> pcm = np.array([[1, 0, 0, 0, 0, 1],
+    ...                 [1, 1, 0, 1, 1, 0]], dtype=np.uint8)
     >>> pauli_str_to_return = binary_pcm_to_pauli_str(pcm)
     >>> pauli_str_to_return
     array([['XIZ'],
@@ -238,12 +244,13 @@ def symplectic_product(
     """
     Compute the symplectic product of two binary matrices in CSR format.
 
-    The input matrices are first converted to binary sparse format (modulo 2)
-    and then partitioned into `x` and `z` components. The symplectic product
-    is computed as (a_x * b_z^T + a_z * b_x^T) mod 2. This function is
-    particularly useful for calculating commutation between Pauli operators,
-    where a result of 0 indicates commuting operators, and 1 indicates
-    anti-commuting operators.
+    The input matrices (A,B) are first converted to binary sparse format (modulo 2)
+    and then partitioned into `x` and `z` components, where x and z have the same shape:
+
+        A = (a_x|a_z)
+        B = (b_x|b_z)
+
+    Then the symplectic product is computed as: (a_x * b_z^T + a_z * b_x^T) mod 2.
 
     Parameters
     ----------
@@ -266,11 +273,15 @@ def symplectic_product(
     AssertionError
         If the number of columns of `a` (and `b`) is not even.
 
+    Notes
+    -----
+    This function is particularly useful for calculating commutation between Pauli operators,
+    where a result of 0 indicates commuting operators, and 1 indicates anti-commuting operators.
+
     Examples
     --------
     >>> import numpy as np
     >>> from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
-    >>> # Create dummy binary data
     >>> a_data = np.array([[1, 0, 0, 1],
     ...                    [0, 1, 1, 0],
     ...                    [1, 1, 0, 0]], dtype=int)
@@ -280,31 +291,24 @@ def symplectic_product(
     >>> # Compute symplectic product
     >>> sp = symplectic_product(a_data, b_data)
     >>> sp.toarray()
-    array([[1, 0, 0],
-           [0, 1, 0],
-           [1, 0, 0]], dtype=int8)
+    array([[0, 0, 0],
+           [0, 0, 0],
+           [1, 1, 1]], dtype=int8)
     """
-    # Convert the input arrays to binary sparse format (mod 2).
+
     a = convert_to_binary_scipy_sparse(a)
     b = convert_to_binary_scipy_sparse(b)
 
-    # Ensure both matrices have the same shape.
-    assert (
-        a.shape[1] == b.shape[1]
-    ), "Input matrices must have the same number of columns."
-    # Ensure the number of columns is even (we split them into x and z parts).
+    assert (a.shape[1] == b.shape[1]), "Input matrices must have the same number of columns."
     assert a.shape[1] % 2 == 0, "Input matrices must have an even number of columns."
 
-    # Determine the half-size (number of x/z columns).
     n = a.shape[1] // 2
 
-    # Partition each matrix into x and z components.
     ax = a[:, :n]
     az = a[:, n:]
     bx = b[:, :n]
     bz = b[:, n:]
 
-    # Compute partial products (mod 2).
     sp = ax @ bz.T + az @ bx.T
     sp.data %= 2
 
@@ -320,10 +324,6 @@ def check_binary_pauli_matrices_commute(
     symplectic_product_result = symplectic_product(mat1, mat2)
     symplectic_product_result.eliminate_zeros()
     return not np.any(symplectic_product_result.data)
-
-
-import numpy as np
-import scipy.sparse
 
 
 def binary_pauli_hamming_weight(

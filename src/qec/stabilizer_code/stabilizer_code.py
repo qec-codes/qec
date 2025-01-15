@@ -45,7 +45,7 @@ class StabilizerCode(object):
         The number of logical qubits in the code.
     code_distance : int
         (Not computed by default) The distance of the code, if known or computed.
-    logicals : scipy.sparse.spmatrix or None
+    logical_operator_basis : scipy.sparse.spmatrix or None
         A basis for the logical operators of the code.
     """
 
@@ -377,7 +377,7 @@ class StabilizerCode(object):
         """
         return f"< Stabilizer Code, Name: {self.name}, Parameters: [[{self.physical_qubit_count}, {self.logical_qubit_count}, {self.code_distance}]] >"
 
-    def reduce_logical_operator_basis(
+    def _reduce_logical_operator_basis(
         self,
         candidate_logicals: Union[Sequence, np.ndarray, scipy.sparse.spmatrix] = [],
     ):
@@ -573,7 +573,7 @@ class StabilizerCode(object):
                     len(candidate_logicals) >= self.logical_qubit_count
                     and reduce_logical_basis
                 ):
-                    self.reduce_logical_operator_basis(candidate_logicals)
+                    self._reduce_logical_operator_basis(candidate_logicals)
                     (
                         bp_osd,
                         stack,
@@ -589,7 +589,7 @@ class StabilizerCode(object):
                 )
 
         if reduce_logical_basis and len(candidate_logicals) > 0:
-            self.reduce_logical_operator_basis(candidate_logicals)
+            self._reduce_logical_operator_basis(candidate_logicals)
             candidate_logicals = []
             weight_one_syndromes_searched = 0
             max_distance = np.max(self.logical_basis_weights())
