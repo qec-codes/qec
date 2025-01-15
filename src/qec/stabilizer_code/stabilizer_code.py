@@ -177,7 +177,7 @@ class StabilizerCode(object):
         kernel_h = ldpc.mod2.kernel(self.stabilizer_matrix)
 
         # Sort the rows of the kernel by weight
-        row_weights = np.diff(kernel_h.indptr)
+        row_weights = kernel_h.getnnz(axis=1)
         sorted_rows = np.argsort(row_weights)
         kernel_h = kernel_h[sorted_rows, :]
 
