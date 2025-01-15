@@ -2,28 +2,26 @@ from qec.stabilizer_code import StabilizerCode
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 # Added / ammended from old code
-from typing import Union, Tuple, List, Sequence
+from typing import Union, Tuple, Sequence
 import numpy as np
 import ldpc.mod2
 import scipy
-import qec.utils
 from ldpc import BpOsdDecoder
-import itertools
 from tqdm import tqdm
 import time
-import os
-import pathlib
-import logging 
+import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
 
-ArrayLike = Union[Sequence, np.ndarray] # For functions that accept inputs that can either be NumPy arrays or other sequence-like objects
+ArrayLike = Union[
+    Sequence, np.ndarray
+]  # For functions that accept inputs that can either be NumPy arrays or other sequence-like objects
 
 
 class CSSCode(StabilizerCode):
     """
-    A class for generating and manipulating Calderbank-Shor-Steane (CSS) quantum error-correcting codes. 
+    A class for generating and manipulating Calderbank-Shor-Steane (CSS) quantum error-correcting codes.
 
     Prameters
     ---------
@@ -31,7 +29,7 @@ class CSSCode(StabilizerCode):
         The X-check matrix.
     z_stabilizer_matrix (hz): Union[np.ndarray, scipy.sparse.spmatrix]
         The Z-check matrix.
-    name: str, optional 
+    name: str, optional
         A name for this CSS code. Defaults to "CSS code".
 
     Attributes
@@ -40,25 +38,25 @@ class CSSCode(StabilizerCode):
         The X-check matrix.
     z_stabilizer_matrix (hz): Union[np.ndarray, scipy.sparse.spmatrix]
         The Z-check matrix.
-    name (str): 
+    name (str):
         A name for this CSS code.
     physical_qubit_count (N): int
         The number of physical qubits in the code.
-    logical_qubit_count (K): int 
-        The number of logical qubits in the code. Dimension of the code. 
+    logical_qubit_count (K): int
+        The number of logical qubits in the code. Dimension of the code.
     code_distance (d): int
         (Not computed by default) Minimum distance of the code.
     x_logical_operator_basis (lx): (Union[np.ndarray, scipy.sparse.spmatrix]
         Logical X operator basis.
-    z_logical_operator_basis (lz): (Union[np.ndarray, scipy.sparse.spmatrix] 
+    z_logical_operator_basis (lz): (Union[np.ndarray, scipy.sparse.spmatrix]
         Logical Z operator basis.
     """
 
     def __init__(
-            self,
-            x_stabilizer_matrix: Union[np.ndarray, scipy.sparse.spmatrix],
-            z_stabilizer_matrix: Union[np.ndarray, scipy.sparse.spmatrix],
-            name: str = None,
+        self,
+        x_stabilizer_matrix: Union[np.ndarray, scipy.sparse.spmatrix],
+        z_stabilizer_matrix: Union[np.ndarray, scipy.sparse.spmatrix],
+        name: str = None,
     ):
         """
         Initialise a new instance of the CSSCode class.
@@ -69,7 +67,7 @@ class CSSCode(StabilizerCode):
             The X-check matrix.
         z_stabilizer_matrix (hz): Union[np.ndarray, scipy.sparse.spmatrix]
             The Z-check matrix.
-        name: str, optional 
+        name: str, optional
             A name for this CSS code. Defaults to "CSS code".
         """
 
@@ -84,14 +82,16 @@ class CSSCode(StabilizerCode):
 
         # Check if the input matrices are NumPy arrays or SciPy sparse matrices
         if not isinstance(x_stabilizer_matrix, (np.ndarray, scipy.sparse.spmatrix)):
-            raise TypeError("Please provide x and z stabilizer matrices as either a numpy array or a scipy sparse matrix.")
+            raise TypeError(
+                "Please provide x and z stabilizer matrices as either a numpy array or a scipy sparse matrix."
+            )
 
         # Convert matrices to sparse representation and set them as class attributes (replaced the old code "convert_to_sparse")
-        self.x_stabilizer_matrix = convert_to_binary_scipy_sparse(x_stabilizer_matrix) 
-        self.z_stabilizer_matrix = convert_to_binary_scipy_sparse(z_stabilizer_matrix) 
+        self.x_stabilizer_matrix = convert_to_binary_scipy_sparse(x_stabilizer_matrix)
+        self.z_stabilizer_matrix = convert_to_binary_scipy_sparse(z_stabilizer_matrix)
 
         # Calculate the number of physical qubits from the matrix dimension
-        self.physical_qubit_count = self.x_stabilizer_matrix.shape[1]       
+        self.physical_qubit_count = self.x_stabilizer_matrix.shape[1]
 
         # Validate the number of qubits for both matrices
         try:
@@ -100,17 +100,19 @@ class CSSCode(StabilizerCode):
             raise ValueError(
                 f"Input matrices x_stabilizer_matrix and z_stabilizer_matrix must have the same number of columns.\
                               Current column count, x_stabilizer_matrix: {x_stabilizer_matrix.shape[1]}; z_stabilizer_matrix: {z_stabilizer_matrix.shape[1]}"
-            ) 
-        
+            )
+
         # Validate if the input matrices commute
         try:
-            assert not np.any((self.x_stabilizer_matrix @ self.z_stabilizer_matrix.T).data % 2)
+            assert not np.any(
+                (self.x_stabilizer_matrix @ self.z_stabilizer_matrix.T).data % 2
+            )
         except AssertionError:
             raise ValueError(
                 "Input matrices hx and hz do not commute. I.e. they do not satisfy\
                               the requirement that hx@hz.T = 0."
             )
-        
+
         # Compute a basis of the logical operators
         self.compute_logical_basis()
 
@@ -122,7 +124,7 @@ class CSSCode(StabilizerCode):
         -------
         Tuple[scipy.sparse.spmatrix, scipy.sparse.spmatrix]
             Logical X and Z operator bases (lx, lz).
-        
+
         Notes
         -----
         This method uses the kernel of the X and Z stabilizer matrices to find operators that commute with all the stabilizers,
@@ -136,7 +138,9 @@ class CSSCode(StabilizerCode):
         # Compute the kernel of hx
         ker_hx = ldpc.mod2.kernel(self.x_stabilizer_matrix)  # kernel of X-stabilisers
         # Sort the rows of ker_hx by weight
-        row_weights = np.diff(ker_hx.indptr) # Better performance to use: row_weights = ker_hx.getnnz(axis=1)?
+        row_weights = np.diff(
+            ker_hx.indptr
+        )  # Better performance to use: row_weights = ker_hx.getnnz(axis=1)?
         sorted_rows = np.argsort(row_weights)
         ker_hx = ker_hx[sorted_rows, :]
         # Z logicals are elements of ker_hx (that commute with all the X-stabilisers) that are not linear combinations of Z-stabilisers
@@ -151,7 +155,9 @@ class CSSCode(StabilizerCode):
         # Compute the kernel of hz
         ker_hz = ldpc.mod2.kernel(self.z_stabilizer_matrix)
         # Sort the rows of ker_hz by weight
-        row_weights = np.diff(ker_hz.indptr) # Better performance to use: row_weights = ker_hz.getnnz(axis=1)
+        row_weights = np.diff(
+            ker_hz.indptr
+        )  # Better performance to use: row_weights = ker_hz.getnnz(axis=1)
         sorted_rows = np.argsort(row_weights)
         ker_hz = ker_hz[sorted_rows, :]
         # X logicals are elements of ker_hz (that commute with all the Z-stabilisers) that are not linear combinations of X-stabilisers
@@ -175,13 +181,13 @@ class CSSCode(StabilizerCode):
                 self.dz = self.z_logical_operator_basis[i].nnz
         self.code_distance = np.min([self.dx, self.dz])
 
-        #FIXME: How does this differ from rank_hx and rank_hz descibed above (ldpc.mod2.rank())?
+        # FIXME: How does this differ from rank_hx and rank_hz descibed above (ldpc.mod2.rank())?
         # compute the hx and hz rank
         self.rank_hx = self.physical_qubit_count - ker_hx.shape[0]
         self.rank_hz = self.physical_qubit_count - ker_hz.shape[0]
 
         return (self.x_logical_operator_basis, self.z_logical_operator_basis)
-    
+
     # TODO: Add a function to save the logical operator basis to a file
 
     def check_valid_logical_xz_basis(self) -> bool:
@@ -197,38 +203,51 @@ class CSSCode(StabilizerCode):
         """
 
         # If logical bases are not computed yet, compute them
-        if self.x_logical_operator_basis is None or self.z_logical_operator_basis is None:
-            self.x_logical_operator_basis, self.z_logical_operator_basis = self.compute_logical_basis(self.x_stabilizer_matrix, self.z_stabilizer_matrix)
+        if (
+            self.x_logical_operator_basis is None
+            or self.z_logical_operator_basis is None
+        ):
+            self.x_logical_operator_basis, self.z_logical_operator_basis = (
+                self.compute_logical_basis(
+                    self.x_stabilizer_matrix, self.z_stabilizer_matrix
+                )
+            )
             self.logical_qubit_count = self.x_logical_operator_basis.shape[0]
-        
+
         try:
             # Test dimension
             assert (
-                self.logical_qubit_count == self.z_logical_operator_basis.shape[0] == self.x_logical_operator_basis.shape[0]
+                self.logical_qubit_count
+                == self.z_logical_operator_basis.shape[0]
+                == self.x_logical_operator_basis.shape[0]
             ), "Logical operator basis dimensions do not match."
 
             # Check logical basis linearly independent (i.e. full rank)
             assert (
-                ldpc.mod2.rank(self.x_logical_operator_basis) == self.logical_qubit_count
+                ldpc.mod2.rank(self.x_logical_operator_basis)
+                == self.logical_qubit_count
             ), "X logical operator basis is not full rank, and hence not linearly independent."
             assert (
-                ldpc.mod2.rank(self.z_logical_operator_basis) == self.logical_qubit_count
+                ldpc.mod2.rank(self.z_logical_operator_basis)
+                == self.logical_qubit_count
             ), "Z logical operator basis is not full rank, and hence not linearly independent."
 
             # Perform various tests to validate the logical bases
 
             # Check that the logical operators commute with the stabilizers
             try:
-                assert (
-                    not np.any((self.x_logical_operator_basis @ self.z_stabilizer_matrix.T).data % 2)
+                assert not np.any(
+                    (self.x_logical_operator_basis @ self.z_stabilizer_matrix.T).data
+                    % 2
                 ), "X logical operators do not commute with Z stabilizers."
             except AssertionError as e:
                 logging.error(e)
                 return False
 
             try:
-                assert (
-                    not np.any((self.z_logical_operator_basis @ self.x_stabilizer_matrix.T).data % 2)
+                assert not np.any(
+                    (self.z_logical_operator_basis @ self.x_stabilizer_matrix.T).data
+                    % 2
                 ), "Z logical operators do not commute with X stabilizers."
             except AssertionError as e:
                 logging.error(e)
@@ -254,12 +273,15 @@ class CSSCode(StabilizerCode):
             return False
 
         return True
-        
+
     # TODO: Add "compute_exact_code_distance" function to compute the exact code distance of the code
 
     # FIXME: Update to follow StabilizerCodes function format?
     def estimate_min_distance(
-        self, reduce_logical_basis: bool = False, timeout_seconds: float = 0.25, p: float = 0.25
+        self,
+        reduce_logical_basis: bool = False,
+        timeout_seconds: float = 0.25,
+        p: float = 0.25,
     ) -> int:
         """
         Estimate the minimum distance of the stabilizer code using a BP+OSD decoder-based search.
@@ -279,12 +301,17 @@ class CSSCode(StabilizerCode):
         int
             The best-known estimate of the code distance found within the time limit.
         """
-        
+
         start_time = time.time()
 
-        if self.x_logical_operator_basis is None or self.z_logical_operator_basis is None:
+        if (
+            self.x_logical_operator_basis is None
+            or self.z_logical_operator_basis is None
+        ):
             # Compute a basis of the logical operators
-            self.x_logical_operator_basis, self.z_logical_operator_basis = self.compute_logical_basis()
+            self.x_logical_operator_basis, self.z_logical_operator_basis = (
+                self.compute_logical_basis()
+            )
             # Calculate the dimension of the code
             self.logical_qubit_count = self.x_logical_operator_basis.shape[0]
 
@@ -313,8 +340,12 @@ class CSSCode(StabilizerCode):
         candidate_logicals_x = []
         candidate_logicals_z = []
 
-        x_stack = scipy.sparse.vstack([self.x_stabilizer_matrix, self.x_logical_operator_basis])
-        z_stack = scipy.sparse.vstack([self.z_stabilizer_matrix, self.z_logical_operator_basis])
+        x_stack = scipy.sparse.vstack(
+            [self.x_stabilizer_matrix, self.x_logical_operator_basis]
+        )
+        z_stack = scipy.sparse.vstack(
+            [self.z_stabilizer_matrix, self.z_logical_operator_basis]
+        )
 
         bp_osdx = BpOsdDecoder(
             x_stack,
@@ -339,7 +370,6 @@ class CSSCode(StabilizerCode):
         )
 
         for i in range(self.logical_qubit_count):
-
             dummy_syndrome_x = np.zeros(x_stack.shape[0], dtype=np.uint8)
             dummy_syndrome_z = np.zeros(z_stack.shape[0], dtype=np.uint8)
             dummy_syndrome_x[self.x_stabilizer_matrix.shape[0] + i] = 1
@@ -366,8 +396,12 @@ class CSSCode(StabilizerCode):
                 candidate_logicals_x, candidate_logicals_z
             )
 
-        logical_x_stack = scipy.sparse.vstack([self.x_stabilizer_matrix, self.x_logical_operator_basis])
-        logical_z_stack = scipy.sparse.vstack([self.z_stabilizer_matrix, self.z_logical_operator_basis])
+        logical_x_stack = scipy.sparse.vstack(
+            [self.x_stabilizer_matrix, self.x_logical_operator_basis]
+        )
+        logical_z_stack = scipy.sparse.vstack(
+            [self.z_stabilizer_matrix, self.z_logical_operator_basis]
+        )
 
         candidate_logicals_x = []
         candidate_logicals_z = []
@@ -375,33 +409,43 @@ class CSSCode(StabilizerCode):
         with tqdm(total=timeout_seconds) as pbar:
             while time.time() < timeout_seconds + start_time:
                 # Your loop content here
-                
+
                 # Calculate elapsed time and update progress bar
                 elapsed_time = time.time() - start_time
                 # Update progress bar with formatted elapsed time (1 decimal point)
                 # pbar.set_postfix_str(f"Time: {elapsed_time:.1f}s", refresh=True)
-                
+
                 # Update the progress bar by 1 (or any other logic for progress update)
                 pbar.update(elapsed_time - pbar.n)
 
-                pbar.set_description(f"dx<{self.dx}, dz<{self.dz}, Time: {elapsed_time:.1f}s/{timeout_seconds:.1f}s")
-
+                pbar.set_description(
+                    f"dx<{self.dx}, dz<{self.dz}, Time: {elapsed_time:.1f}s/{timeout_seconds:.1f}s"
+                )
 
                 # p = 0.25
-            
-                logical_op_indices_x = np.random.choice([0, 1], size=logical_x_stack.shape[0], p=[1-p, p])
+
+                logical_op_indices_x = np.random.choice(
+                    [0, 1], size=logical_x_stack.shape[0], p=[1 - p, p]
+                )
                 # to ensure it actually is a logical operator
-                logical_op_indices_x[self.x_stabilizer_matrix.shape[0] + np.random.randint(self.logical_qubit_count)] = 1
+                logical_op_indices_x[
+                    self.x_stabilizer_matrix.shape[0]
+                    + np.random.randint(self.logical_qubit_count)
+                ] = 1
                 logical_op_indices_x = np.nonzero(logical_op_indices_x)[0]
 
                 logical_op_x = np.zeros(logical_x_stack.shape[1], dtype=np.uint8)
 
                 for i in logical_op_indices_x:
-                    logical_op_x += (logical_x_stack.getrow(i).toarray().flatten().astype(np.uint8)) 
-                
+                    logical_op_x += (
+                        logical_x_stack.getrow(i).toarray().flatten().astype(np.uint8)
+                    )
+
                 logical_op_x = logical_op_x % 2
 
-                x_stack = scipy.sparse.vstack([self.x_stabilizer_matrix, logical_op_x]).astype(np.uint8)
+                x_stack = scipy.sparse.vstack(
+                    [self.x_stabilizer_matrix, logical_op_x]
+                ).astype(np.uint8)
 
                 # exit(22)
 
@@ -425,19 +469,28 @@ class CSSCode(StabilizerCode):
                 if logical_size < self.dz:
                     self.dz = logical_size
 
-                logical_op_indices_z = np.random.choice([0, 1], size=logical_z_stack.shape[0], p=[1-p, p])
+                logical_op_indices_z = np.random.choice(
+                    [0, 1], size=logical_z_stack.shape[0], p=[1 - p, p]
+                )
                 # to ensure it actually is a logical operator
-                logical_op_indices_z[self.z_stabilizer_matrix.shape[0] + np.random.randint(self.logical_qubit_count)] = 1
+                logical_op_indices_z[
+                    self.z_stabilizer_matrix.shape[0]
+                    + np.random.randint(self.logical_qubit_count)
+                ] = 1
                 logical_op_indices_z = np.nonzero(logical_op_indices_z)[0]
 
                 logical_op_z = np.zeros(logical_z_stack.shape[1], dtype=np.uint8)
 
                 for i in logical_op_indices_z:
-                    logical_op_z += (logical_z_stack.getrow(i).toarray().flatten().astype(np.uint8))
+                    logical_op_z += (
+                        logical_z_stack.getrow(i).toarray().flatten().astype(np.uint8)
+                    )
 
                 logical_op_z = logical_op_z % 2
 
-                z_stack = scipy.sparse.vstack([self.z_stabilizer_matrix, logical_op_z]).astype(np.uint8)
+                z_stack = scipy.sparse.vstack(
+                    [self.z_stabilizer_matrix, logical_op_z]
+                ).astype(np.uint8)
 
                 # exit(22)
 
@@ -461,16 +514,13 @@ class CSSCode(StabilizerCode):
                 if logical_size < self.dx:
                     self.dx = logical_size
 
-
                 if len(candidate_logicals_x) > self.logical_qubit_count:
                     if reduce_logical_basis:
                         self.reduce_logical_operator_basis(
                             candidate_logicals_x, candidate_logicals_z
                         )
-                
+
                 self.code_distance = np.min([self.dx, self.dz])
-
-
 
         if reduce_logical_basis:
             self.reduce_logical_operator_basis(
@@ -502,7 +552,9 @@ class CSSCode(StabilizerCode):
                 np.array(candidate_logicals_x)
             )
 
-            temp1 = scipy.sparse.vstack([candidate_logicals_x, self.x_logical_operator_basis]).tocsr()
+            temp1 = scipy.sparse.vstack(
+                [candidate_logicals_x, self.x_logical_operator_basis]
+            ).tocsr()
 
             row_weights = np.diff(temp1.indptr)
             sorted_rows = np.argsort(row_weights)
@@ -511,7 +563,9 @@ class CSSCode(StabilizerCode):
             temp = scipy.sparse.vstack([self.x_stabilizer_matrix, temp1]).tocsr()
 
             self.x_logical_operator_basis = temp[
-                ldpc.mod2.pivot_rows(temp)[self.rank_hx : self.rank_hx + self.logical_qubit_count]
+                ldpc.mod2.pivot_rows(temp)[
+                    self.rank_hx : self.rank_hx + self.logical_qubit_count
+                ]
             ]
 
         if len(candidate_logicals_z) != 0:
@@ -519,7 +573,9 @@ class CSSCode(StabilizerCode):
                 np.array(candidate_logicals_z)
             )
 
-            temp1 = scipy.sparse.vstack([candidate_logicals_z, self.z_logical_operator_basis]).tocsr()
+            temp1 = scipy.sparse.vstack(
+                [candidate_logicals_z, self.z_logical_operator_basis]
+            ).tocsr()
 
             row_weights = np.diff(temp1.indptr)
             sorted_rows = np.argsort(row_weights)
@@ -527,33 +583,30 @@ class CSSCode(StabilizerCode):
 
             temp = scipy.sparse.vstack([self.z_stabilizer_matrix, temp1]).tocsr()
             self.z_logical_operator_basis = temp[
-                ldpc.mod2.pivot_rows(temp)[self.rank_hz : self.rank_hz + self.logical_qubit_count]
+                ldpc.mod2.pivot_rows(temp)[
+                    self.rank_hz : self.rank_hz + self.logical_qubit_count
+                ]
             ]
 
     def fix_logical_operators(self, fix_logical: str = "X"):
-
-        if not isinstance(fix_logical,str):
+        if not isinstance(fix_logical, str):
             raise TypeError("fix_logical parameter must be a string")
 
         if fix_logical.lower() == "x":
-            temp = self.z_logical_operator_basis@self.x_logical_operator_basis.T
+            temp = self.z_logical_operator_basis @ self.x_logical_operator_basis.T
             temp.data = temp.data % 2
             temp = ldpc.mod2.inverse(temp)
-            self.z_logical_operator_basis = temp@self.z_logical_operator_basis
+            self.z_logical_operator_basis = temp @ self.z_logical_operator_basis
             self.z_logical_operator_basis.data = self.z_logical_operator_basis.data % 2
-  
 
         elif fix_logical.lower() == "z":
-            temp = self.x_logical_operator_basis@self.z_logical_operator_basis.T
+            temp = self.x_logical_operator_basis @ self.z_logical_operator_basis.T
             temp.data = temp.data % 2
             temp = ldpc.mod2.inverse(temp)
-            self.x_logical_operator_basis = temp@self.x_logical_operator_basis
+            self.x_logical_operator_basis = temp @ self.x_logical_operator_basis
             self.x_logical_operator_basis.data = self.x_logical_operator_basis.data % 2
         else:
             raise ValueError("Invalid fix_logical parameter")
-        
-        
-
 
     @property
     def logical_operator_weights(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -573,4 +626,3 @@ class CSSCode(StabilizerCode):
             str: String representation of the CSS code.
         """
         return f"{self.name} Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, dx<={self.dx}, dz<={self.dz}]]"
-      

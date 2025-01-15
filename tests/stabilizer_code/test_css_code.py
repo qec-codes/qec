@@ -2,25 +2,18 @@ import pytest
 import logging
 import numpy as np
 
-from qec.stabilizer_code.stabilizer_code import StabilizerCode
 from qec.stabilizer_code.css_code import CSSCode
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
-from qec.quantum_codes import CodeTablesDE
 
-# Define a binary parity check matrix for testing 
+# Define a binary parity check matrix for testing
 # Hamming (7, 4) code
-hamming_7_4 = np.array([
-            [1, 1, 1, 1, 0, 0, 0],
-            [1, 1, 0, 0, 1, 1, 0],
-            [1, 0, 1, 0, 1, 0, 1]
-        ], dtype=int)
+hamming_7_4 = np.array(
+    [[1, 1, 1, 1, 0, 0, 0], [1, 1, 0, 0, 1, 1, 0], [1, 0, 1, 0, 1, 0, 1]], dtype=int
+)
 # Repetition (5,1) code
-repetition_5_1 = np.array([
-            [1, 1, 0, 0, 0],
-            [0, 1, 1, 0, 0],
-            [0, 0, 1, 1, 0],
-            [0, 0, 0, 1, 1]
-        ], dtype=int)
+repetition_5_1 = np.array(
+    [[1, 1, 0, 0, 0], [0, 1, 1, 0, 0], [0, 0, 1, 1, 0], [0, 0, 0, 1, 1]], dtype=int
+)
 
 
 def test_initialisation_with_xz_stabilizers():
@@ -28,13 +21,15 @@ def test_initialisation_with_xz_stabilizers():
     Test the initialisation of a CSSCode object with x and z stabilizers.
 
     This verifies that the CSSCode correctly interprets an x and z stabilizer matrix,
-    sets the appropiate attributes, and initializes the number of physical and 
+    sets the appropiate attributes, and initializes the number of physical and
     logical qubits correctly.
     """
     # Initialize CSSCode with stabilizers
     x_stabilizer_matrix = hamming_7_4
     z_stabilizer_matrix = hamming_7_4
-    temp_code = CSSCode(x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix)
+    temp_code = CSSCode(
+        x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix
+    )
 
     # Chek if the name attribute is correctly set
     assert temp_code.name == "CSS code", "CSSCode name mismatch."
@@ -50,6 +45,7 @@ def test_initialisation_with_xz_stabilizers():
     # Uncomment the following line if you want to test the distance (d)
     # assert temp_code.code_distance == 3, f"Expected d=3, but got d={temp_code.code_distance}"
 
+
 def test_initialisation_with_xz_stabilizers_invalid_type():
     """
     Negative test for initializing CSSCode with an invalid input type.
@@ -62,7 +58,11 @@ def test_initialisation_with_xz_stabilizers_invalid_type():
         TypeError,
         match="Please provide x and z stabilizer matrices as either a numpy array or a scipy sparse matrix.",
     ):
-        CSSCode(x_stabilizer_matrix="not a numpy array", z_stabilizer_matrix="not a numpy array") # String input should raise TypeError
+        CSSCode(
+            x_stabilizer_matrix="not a numpy array",
+            z_stabilizer_matrix="not a numpy array",
+        )  # String input should raise TypeError
+
 
 # Test h_x and h_z inputs are of the same size? i.e. have the same block length (number of columns)
 # Note that the row dimension can differ, as h_x and h_z can have different number of stabilizers (rows)
@@ -83,7 +83,10 @@ def test_initialisation_with_xz_stabilizers_invalid_shape():
         match=f"Input matrices x_stabilizer_matrix and z_stabilizer_matrix must have the same number of columns.\
                               Current column count, x_stabilizer_matrix: {wrong_x.shape[1]}; z_stabilizer_matrix: {wrong_z.shape[1]}",
     ):
-        CSSCode(x_stabilizer_matrix=wrong_x, z_stabilizer_matrix=wrong_z) # Different column dimensions should raise ValueError
+        CSSCode(
+            x_stabilizer_matrix=wrong_x, z_stabilizer_matrix=wrong_z
+        )  # Different column dimensions should raise ValueError
+
 
 def test_initialization_with_non_commuting_xz_stabilizers():
     """
@@ -98,11 +101,15 @@ def test_initialization_with_non_commuting_xz_stabilizers():
     non_commuting_z = np.array([[1, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 1, 1, 0]])
 
     # Attempt to initialize StabilizerCode with non-commuting Pauli strings and expect a ValueError
-    with pytest.raises(ValueError, 
-                       match="Input matrices hx and hz do not commute. I.e. they do not satisfy\
-                              the requirement that hx@hz.T = 0."
+    with pytest.raises(
+        ValueError,
+        match="Input matrices hx and hz do not commute. I.e. they do not satisfy\
+                              the requirement that hx@hz.T = 0.",
     ):
-        CSSCode(x_stabilizer_matrix=non_commuting_x, z_stabilizer_matrix=non_commuting_z) # Non-commuting stabilizers should raise ValueError
+        CSSCode(
+            x_stabilizer_matrix=non_commuting_x, z_stabilizer_matrix=non_commuting_z
+        )  # Non-commuting stabilizers should raise ValueError
+
 
 def test_invalid_logical_xz_basis():
     """
@@ -116,7 +123,9 @@ def test_invalid_logical_xz_basis():
     z_stabilizer_matrix = hamming_7_4
 
     # Initialize CSSCode with valid stabilizers
-    qcode = CSSCode(x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix)
+    qcode = CSSCode(
+        x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix
+    )
 
     # Check the dimensions of the logical operator basis (i.e. the logical qubit count)
     assert qcode.logical_qubit_count == (
@@ -124,11 +133,17 @@ def test_invalid_logical_xz_basis():
     ), f"Expected logical qubit count to be 1, got {qcode.logical_qubit_count}."
 
     # Verify that the current logical basis is valid
-    assert qcode.check_valid_logical_xz_basis(), "Logical operator basis should be valid."
+    assert (
+        qcode.check_valid_logical_xz_basis()
+    ), "Logical operator basis should be valid."
 
     # Assign an invalid logical operator basis
-    qcode.x_logical_operator_basis = convert_to_binary_scipy_sparse(np.array([[1, 0, 0, 0, 0, 0, 0]]))
-    qcode.z_logical_operator_basis = convert_to_binary_scipy_sparse(np.array([[1, 0, 0, 0, 0, 0, 0]]))
+    qcode.x_logical_operator_basis = convert_to_binary_scipy_sparse(
+        np.array([[1, 0, 0, 0, 0, 0, 0]])
+    )
+    qcode.z_logical_operator_basis = convert_to_binary_scipy_sparse(
+        np.array([[1, 0, 0, 0, 0, 0, 0]])
+    )
 
     # Verify that the updated logical basis is invalid
     assert (
@@ -136,33 +151,73 @@ def test_invalid_logical_xz_basis():
     ), "Logical operator basis should be invalid."
 
 
-
-def test_check_valid_logical_xz_basis_logging(caplog):
+def test_check_valid_logical_xz_basis_logging1(caplog):
     # Test case where logical operators do not commute with stabilizers (using Steane code as CSSCode)
     x_stabilizer_matrix = hamming_7_4
     z_stabilizer_matrix = hamming_7_4
 
-    x_logical_operators = convert_to_binary_scipy_sparse(np.array([[1, 0, 0, 0, 0, 0, 0]]))
-    z_logical_operators = convert_to_binary_scipy_sparse(np.array([[1, 0, 0, 0, 0, 0, 0]]))
+    print(x_stabilizer_matrix)
 
-    code = CSSCode(x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix)
+    code = CSSCode(
+        x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix
+    )
 
+    x_logical_operators = convert_to_binary_scipy_sparse(
+        np.array([[1, 1, 1, 1, 0, 0, 0]])
+    )
+    z_logical_operators = convert_to_binary_scipy_sparse(
+        np.array([[1, 1, 0, 1, 0, 0, 0]])
+    )
     code.x_logical_operator_basis = x_logical_operators
     code.z_logical_operator_basis = z_logical_operators
 
     with caplog.at_level(logging.ERROR):
         assert not code.check_valid_logical_xz_basis()
-        assert "X logical operators do not commute with Z stabilizers." in caplog.text
+        print(caplog.text)
         assert "Z logical operators do not commute with X stabilizers." in caplog.text
 
+
+def test_check_valid_logical_xz_basis_logging2(caplog):
+    # Test case where logical operators do not commute with stabilizers (using Steane code as CSSCode)
+    x_stabilizer_matrix = hamming_7_4
+    z_stabilizer_matrix = hamming_7_4
+
+    print(x_stabilizer_matrix)
+
+    code = CSSCode(
+        x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix
+    )
+
+    x_logical_operators = convert_to_binary_scipy_sparse(
+        np.array([[1, 1, 0, 1, 0, 0, 0]])
+    )
+    z_logical_operators = convert_to_binary_scipy_sparse(
+        np.array([[1, 1, 1, 1, 0, 0, 0]])
+    )
+    code.x_logical_operator_basis = x_logical_operators
+    code.z_logical_operator_basis = z_logical_operators
+
+    with caplog.at_level(logging.ERROR):
+        assert not code.check_valid_logical_xz_basis()
+        print(caplog.text)
+        assert "X logical operators do not commute with Z stabilizers." in caplog.text
+
+
+def test_check_valid_logical_xz_basis_logging3(caplog):
     # Test case where logical operators do not anti-commute with one another
     x_stabilizer_matrix = hamming_7_4
     z_stabilizer_matrix = hamming_7_4
 
-    x_logical_operators = np.array([[1, 0, 0, 0, 0, 0, 0]])
-    z_logical_operators = np.array([[0, 1, 0, 0, 0, 0, 0]])
+    x_logical_operators = convert_to_binary_scipy_sparse(
+        np.array([[1, 1, 1, 1, 0, 0, 0]])
+    )
+    z_logical_operators = convert_to_binary_scipy_sparse(
+        np.array([[1, 1, 0, 0, 1, 1, 0]])
+    )
 
-    code = CSSCode(x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix)
+    code = CSSCode(
+        x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix
+    )
 
     code.x_logical_operator_basis = x_logical_operators
     code.z_logical_operator_basis = z_logical_operators
@@ -171,7 +226,8 @@ def test_check_valid_logical_xz_basis_logging(caplog):
         assert not code.check_valid_logical_xz_basis()
         assert "Logical operators do not pairwise anticommute." in caplog.text
         assert "Logical operators do not pairwise anticommute." in caplog.text
-    
+
+
 # TODO: Test estimate min code distance
 
 # TODO: Test exact code distance
@@ -189,14 +245,14 @@ def test_fix_logical_operators_invalid_input():
     z_stabilizer_matrix = hamming_7_4
 
     # Initialize CSSCode with valid stabilizers
-    qcode = CSSCode(x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix)
+    qcode = CSSCode(
+        x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix
+    )
 
     # Attempt to call fix_logical_operators with an invalid data type and expect a TypeError
-    with pytest.raises(
-        TypeError,
-        match="fix_logical parameter must be a string"
-    ):
+    with pytest.raises(TypeError, match="fix_logical parameter must be a string"):
         qcode.fix_logical_operators(fix_logical=1)
+
 
 def test_fix_logical_operators_invalid_parameters():
     """
@@ -210,14 +266,14 @@ def test_fix_logical_operators_invalid_parameters():
     z_stabilizer_matrix = hamming_7_4
 
     # Initialize CSSCode with valid stabilizers
-    qcode = CSSCode(x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix)
+    qcode = CSSCode(
+        x_stabilizer_matrix=x_stabilizer_matrix, z_stabilizer_matrix=z_stabilizer_matrix
+    )
 
     # Attempt to call fix_logical_operators with an invalid parameter and expect a ValueError
-    with pytest.raises(
-        ValueError,
-        match="Invalid fix_logical parameter"
-    ):
+    with pytest.raises(ValueError, match="Invalid fix_logical parameter"):
         qcode.fix_logical_operators(fix_logical="Y")
+
 
 # TODO: Complete test
 def test_fix_logical_operators():
