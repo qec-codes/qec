@@ -14,11 +14,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 
-ArrayLike = Union[
-    Sequence, np.ndarray
-]  # For functions that accept inputs that can either be NumPy arrays or other sequence-like objects
-
-
 class CSSCode(StabilizerCode):
     """
     A class for generating and manipulating Calderbank-Shor-Steane (CSS) quantum error-correcting codes.
@@ -531,17 +526,19 @@ class CSSCode(StabilizerCode):
         return self.code_distance
 
     def reduce_logical_operator_basis(
-        self, candidate_logicals_x: ArrayLike = [], candidate_logicals_z: ArrayLike = []
+        self,
+        candidate_logicals_x: np.typing.ArrayLike = [],
+        candidate_logicals_z: np.typing.ArrayLike = [],
     ):
         """
         Reduce the logical operator basis to include lower-weight logicals.
 
         Parameters
         ----------
-        candidate_logicals_x : ArrayLike, optional
+        candidate_logicals_x : np.typing.ArrayLike, optional
             An array of candidate logical x operators to be considered for reducing the basis.
             Defaults to an empty list.
-        candidate_logicals_z : ArrayLike, optional
+        candidate_logicals_z : np.typing.ArrayLike, optional
             An array of candidate logical z operators to be considered for reducing the basis.
             Defaults to an empty list.
 
