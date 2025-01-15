@@ -2,7 +2,7 @@ from qec.stabilizer_code import StabilizerCode
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 # Added / ammended from old code
-from typing import Union, Tuple, Sequence
+from typing import Union, Tuple
 import numpy as np
 import ldpc.mod2
 import scipy
