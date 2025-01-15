@@ -134,9 +134,7 @@ class CSSCode(StabilizerCode):
         # Compute the kernel of hx
         ker_hx = ldpc.mod2.kernel(self.x_stabilizer_matrix)  # kernel of X-stabilisers
         # Sort the rows of ker_hx by weight
-        row_weights = np.diff(
-            ker_hx.indptr
-        )  # Better performance to use: row_weights = ker_hx.getnnz(axis=1)?
+        row_weights = ker_hx.getnnz(axis=1)
         sorted_rows = np.argsort(row_weights)
         ker_hx = ker_hx[sorted_rows, :]
         # Z logicals are elements of ker_hx (that commute with all the X-stabilisers) that are not linear combinations of Z-stabilisers
@@ -151,9 +149,7 @@ class CSSCode(StabilizerCode):
         # Compute the kernel of hz
         ker_hz = ldpc.mod2.kernel(self.z_stabilizer_matrix)
         # Sort the rows of ker_hz by weight
-        row_weights = np.diff(
-            ker_hz.indptr
-        )  # Better performance to use: row_weights = ker_hz.getnnz(axis=1)
+        row_weights = ker_hz.getnnz(axis=1)
         sorted_rows = np.argsort(row_weights)
         ker_hz = ker_hz[sorted_rows, :]
         # X logicals are elements of ker_hz (that commute with all the Z-stabilisers) that are not linear combinations of X-stabilisers
