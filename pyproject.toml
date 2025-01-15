@@ -1,6 +1,6 @@
 [project]
 name = "qec"
-version = "0.2.0"
+version = "0.2.1"
 
 description = "Python Tools for Quantum Error Correction"
 readme = "README.md"
