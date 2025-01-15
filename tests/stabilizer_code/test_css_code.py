@@ -228,11 +228,6 @@ def test_check_valid_logical_xz_basis_logging3(caplog):
         assert "Logical operators do not pairwise anticommute." in caplog.text
 
 
-# TODO: Test estimate min code distance
-
-# TODO: Test exact code distance
-
-
 def test_fix_logical_operators_invalid_input():
     """
     Negative test for the fix_logical_operators method in CSSCode.
@@ -285,3 +280,60 @@ def test_fix_logical_operators():
     basis is invalid.
     """
     pass
+
+
+def test_steane_code_distance():
+    # Define the Hamming code parity check matrix for Steane code
+    # This is the [7,4,3] Hamming code
+    hx = np.array([[1, 1, 1, 0, 1, 0, 0], [1, 1, 0, 1, 0, 1, 0], [1, 0, 1, 1, 0, 0, 1]])
+
+    # In Steane code, hz is the same as hx
+    hz = hx
+
+    # Create the Steane code
+    steane = CSSCode(hx, hz, name="Steane")
+
+    # Compute exact distance with sufficient timeout
+    dx, dz, fraction = steane.compute_exact_code_distance()
+
+    # Verify the code parameters
+    assert steane.physical_qubit_count == 7, "Should have 7 physical qubits"
+    assert steane.logical_qubit_count == 1, "Should encode 1 logical qubit"
+
+    # Test the computed distances
+    assert dx == 3, f"X distance should be 3, got {dx}"
+    assert dz == 3, f"Z distance should be 3, got {dz}"
+    assert steane.code_distance == 3, "Code distance should be 3"
+
+    # Check that we completed the search
+    assert fraction == 1.0, "Should have completed the full search"
+
+    # Test timeout behavior
+    dx_quick, dz_quick, fraction_quick = steane.compute_exact_code_distance(
+        timeout=0.001
+    )
+    assert fraction_quick < 1.0, "Quick search should not complete"
+
+
+def test_steane_code_estimate_distance():
+    # Define the Hamming code parity check matrix for Steane code
+    # This is the [7,4,3] Hamming code
+    hx = np.array([[1, 1, 1, 0, 1, 0, 0], [1, 1, 0, 1, 0, 1, 0], [1, 0, 1, 1, 0, 0, 1]])
+
+    # In Steane code, hz is the same as hx
+    hz = hx
+
+    # Create the Steane code
+    steane = CSSCode(hx, hz, name="Steane")
+
+    # Estimate minimum distance with a timeout
+    estimated_distance = steane.estimate_min_distance()
+
+    # Verify the code parameters
+    assert steane.physical_qubit_count == 7, "Should have 7 physical qubits"
+    assert steane.logical_qubit_count == 1, "Should encode 1 logical qubit"
+
+    # Test the estimated distance
+    assert (
+        estimated_distance >= 3
+    ), f"Estimated distance should be at least 3, got {estimated_distance}"
