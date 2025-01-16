@@ -39,5 +39,15 @@ class HypergraphProductCode(CSSCode):
         # --------------------------------------------------------------------------
 
         super().__init__(self.x_stabilizer_matrix, self.z_stabilizer_matrix, self.name)
+    
+    def compute_exact_code_distance(self):
+        NotImplemented
+    
+    def estimate_min_distance(self):
+        NotImplemented
 
+    def compute_logical_basis(self):
+        NotImplemented
 
+    def __str__(self):
+         return f"{self.name} Hypergraphproduct Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, dx<={self.x_code_distance}, dz<={self.z_code_distance}]]"
