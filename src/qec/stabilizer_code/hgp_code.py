@@ -51,10 +51,11 @@ class HypergraphProductCode(CSSCode):
     \end{align}
 
     where  :math:`H_1` and  :math:`H_2` correspond to the parity check matrix of the first and second "seed" codes.
+    
+
     .. [1] J.-P. Tillich and G. Zemor, “Quantum LDPC Codes With Positive Rate and Minimum Distance Proportional to the Square Root of the Blocklength”, IEEE Transactions on Information Theory 60, 1193 (2014)
-
-
     """
+
     def __init__(
         self,
         seed_matrix_1 : Union[np.ndarray, scipy.sparse.spmatrix],
@@ -91,6 +92,23 @@ class HypergraphProductCode(CSSCode):
     
 
     def compute_exact_code_distance(self):
+        """
+        Computes the exact code distance of the HGP code.
+        
+        Returns
+        -------
+        int 
+            The distance of the code. 
+
+        Notes
+        -----
+        The distance of a HGP code is given as: 
+        
+        .. math::
+        \min(d_1, d_2, d_1^T, d_2^T)
+
+        corresponding to the distance of the seed codes and the distance of their transposes.
+        """
     
         rank_seed_m1 = ldpc.mod2.rank(self.seed_matrix_1)
         rank_seed_m2 = ldpc.mod2.rank(self.seed_matrix_2)
