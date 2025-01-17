@@ -1,6 +1,6 @@
 import numpy as np
 import scipy 
-from typing import Union
+from typing import Union, Tuple
 import ldpc.mod2 
 
 from qec.stabilizer_code.css_code import CSSCode
@@ -41,14 +41,14 @@ class HypergraphProductCode(CSSCode):
     
     .. math::
 
-    \begin{align}
-        H_{X} &= \begin{pmatrix}
-                    H_{1}\otimes I_{n_{2}} & \,\,I_{r_{1}}\otimes H_{2}^{T}
-                 \end{pmatrix}\tag*{(1)}\\
-        H_{Z} &= \begin{pmatrix}
-                    I_{n_{1}}\otimes H_{2} & \,\,H_{1}^{T}\otimes I_{r_{2}}
-                 \end{pmatrix}~, \tag*{(2)}
-    \end{align}
+        \begin{align}
+            H_{X} &= \begin{pmatrix}
+                        H_{1}\otimes I_{n_{2}} & \,\,I_{r_{1}}\otimes H_{2}^{T}
+                     \end{pmatrix}\tag*{(1)}\\
+            H_{Z} &= \begin{pmatrix}
+                        I_{n_{1}}\otimes H_{2} & \,\,H_{1}^{T}\otimes I_{r_{2}}
+                     \end{pmatrix}~, \tag*{(2)}
+        \end{align}
 
     where  :math:`H_1` and  :math:`H_2` correspond to the parity check matrix of the first and second "seed" codes.
     
@@ -91,7 +91,7 @@ class HypergraphProductCode(CSSCode):
         super().__init__(self.x_stabilizer_matrix, self.z_stabilizer_matrix, self.name)
     
 
-    def compute_exact_code_distance(self):
+    def compute_exact_code_distance(self) -> int:
         """
         Computes the exact code distance of the HGP code.
         
@@ -105,7 +105,8 @@ class HypergraphProductCode(CSSCode):
         The distance of a HGP code is given as: 
         
         .. math::
-        \min(d_1, d_2, d_1^T, d_2^T)
+
+            \min(d_1, d_2, d_1^T, d_2^T)
 
         corresponding to the distance of the seed codes and the distance of their transposes.
         """
@@ -143,7 +144,15 @@ class HypergraphProductCode(CSSCode):
         NotImplemented
 
 
-    def compute_logical_basis(self):
+    def compute_logical_basis(self) -> Tuple[scipy.sparse.spmatrix, scipy.sparse.spmatrix]:
+        """
+        Compute the logical operator basis for the given HGP code.
+
+        Returns
+        -------
+        Tuple[scipy.sparse.spmatrix, scipy.sparse.spmatrix]
+            Logical X and Z operator bases (lx, lz).
+        """
 
         ker_h1 = ldpc.mod2.kernel(self.seed_matrix_1)
         ker_h2 = ldpc.mod2.kernel(self.seed_matrix_2)
@@ -181,4 +190,13 @@ class HypergraphProductCode(CSSCode):
 
 
     def __str__(self):
-         return f"{self.name} Hypergraphproduct Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, dx<={self.x_code_distance}, dz<={self.z_code_distance}]]"
+        """
+        String representation of the HGP code. Includes the name and [[n, k, d]] properties of the code.
+
+        Returns
+        -------
+        str 
+            String representation of the HGP code. 
+        """
+    
+        return f"{self.name} Hypergraphproduct Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, D={self.code_distance}]]"
