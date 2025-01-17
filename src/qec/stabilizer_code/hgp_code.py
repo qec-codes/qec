@@ -7,6 +7,54 @@ from qec.stabilizer_code.css_code import CSSCode
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 class HypergraphProductCode(CSSCode):
+    """
+    Implements a Hypergraph Product (HGP) code - derived from two classical linear binary codes.
+    
+    Parameters
+    ----------
+    seed_matrix_1 : 
+        A classical linear binary code used as a "seed" in the HGP construction method.
+    seed_matrix_2 :
+        A classical linear binary code used as a "seed" in the HGP construction method.
+    name : str, default = None
+        The name of the code. If None, the name is set to: "Hypergraph product code" 
+    
+    Attributes
+    ----------
+    seed_matrix_1 : scipy.sparse.spmatrix
+        The input seed_matrix_1 stored as a scipy sparse matrix.
+    seed_matrix_2 : scipy.sparse.spmatrix
+        The input seed_matrix_2 stored as a scipy sparse matrix.
+    _n1 : int
+        Number of columns in seed_matrix_1
+    _n2 : int
+        Number of columns in seed_matrix_2
+    _m1 : int
+        Number of rows in seed_matrix_1 (the number of columns of it's transpose)
+    _m2 : int
+        Number of rows in seed_matrix_2 (the number of columns of it's transpose)
+    
+    Notes
+    -----
+
+    The X and Z stabilizer matrices are given by [1]_: 
+    
+    .. math::
+
+    \begin{align}
+        H_{X} &= \begin{pmatrix}
+                    H_{1}\otimes I_{n_{2}} & \,\,I_{r_{1}}\otimes H_{2}^{T}
+                 \end{pmatrix}\tag*{(1)}\\
+        H_{Z} &= \begin{pmatrix}
+                    I_{n_{1}}\otimes H_{2} & \,\,H_{1}^{T}\otimes I_{r_{2}}
+                 \end{pmatrix}~, \tag*{(2)}
+    \end{align}
+
+    where  :math:`H_1` and  :math:`H_2` correspond to the parity check matrix of the first and second "seed" codes.
+    .. [1] J.-P. Tillich and G. Zemor, “Quantum LDPC Codes With Positive Rate and Minimum Distance Proportional to the Square Root of the Blocklength”, IEEE Transactions on Information Theory 60, 1193 (2014)
+
+
+    """
     def __init__(
         self,
         seed_matrix_1 : Union[np.ndarray, scipy.sparse.spmatrix],
@@ -72,7 +120,6 @@ class HypergraphProductCode(CSSCode):
 
         return self.code_distance
        
-
 
     def estimate_min_distance(self):
         NotImplemented
