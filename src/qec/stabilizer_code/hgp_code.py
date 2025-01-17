@@ -1,6 +1,7 @@
 import numpy as np
 import scipy 
 from typing import Union
+import ldpc.mod2 
 
 from qec.stabilizer_code.css_code import CSSCode
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
@@ -47,7 +48,41 @@ class HypergraphProductCode(CSSCode):
         NotImplemented
 
     def compute_logical_basis(self):
-        NotImplemented
+
+        ker_h1 = ldpc.mod2.kernel(self.seed_matrix_1)
+        ker_h2 = ldpc.mod2.kernel(self.seed_matrix_2)
+        ker_h1T = ldpc.mod2.kernel(self.seed_matrix_1.T)
+        ker_h2T = ldpc.mod2.kernel(self.seed_matrix_2.T)
+
+        row_comp_h1 = ldpc.mod2.row_complement_basis(self.seed_matrix_1)
+        row_comp_h2 = ldpc.mod2.row_complement_basis(self.seed_matrix_2)
+        row_comp_h1T = ldpc.mod2.row_complement_basis(self.seed_matrix_1.T)
+        row_comp_h2T = ldpc.mod2.row_complement_basis(self.seed_matrix_2.T)
+
+        temp = scipy.sparse.kron(ker_h1, row_comp_h2)
+        lz1 = scipy.sparse.hstack([temp, scipy.sparse.csr_matrix((temp.shape[0], self._m1*self._m2), dtype=np.uint8)])
+
+        temp = scipy.sparse.kron(row_comp_h1T, ker_h2T)
+        lz2 = scipy.sparse.hstack([scipy.sparse.csr_matrix((temp.shape[0], self._n1*self._n2), dtype=np.uint8), temp])
+
+        self.z_logical_operator_basis = scipy.sparse.vstack([lz1, lz2])
+
+
+        temp = scipy.sparse.kron(row_comp_h1, ker_h2)
+        lx1 = scipy.sparse.hstack([temp, scipy.sparse.csr_matrix((temp.shape[0], self._m1*self._m2), dtype=np.uint8)])
+
+        temp = scipy.sparse.kron(ker_h1T, row_comp_h2T)
+        lx2 = scipy.sparse.hstack([scipy.sparse.csr_matrix((temp.shape[0], self._n1*self._n2), dtype=np.uint8), temp])
+
+        self.x_logical_operator_basis= scipy.sparse.vstack([lx1, lx2])
+        
+        # Follows the way it is done in CSSCode -> move it into __init__? 
+        #---------------------------------------------------------------- 
+        self.logical_qubit_count = self.x_logical_operator_basis.shape[0]
+        #---------------------------------------------------------------- 
+
+        return (self.x_logical_operator_basis, self.z_logical_operator_basis)
+
 
     def __str__(self):
          return f"{self.name} Hypergraphproduct Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, dx<={self.x_code_distance}, dz<={self.z_code_distance}]]"
