@@ -41,11 +41,42 @@ class HypergraphProductCode(CSSCode):
 
         super().__init__(self.x_stabilizer_matrix, self.z_stabilizer_matrix, self.name)
     
+
     def compute_exact_code_distance(self):
-        NotImplemented
     
+        rank_seed_m1 = ldpc.mod2.rank(self.seed_matrix_1)
+        rank_seed_m2 = ldpc.mod2.rank(self.seed_matrix_2)
+        
+        if self.seed_matrix_1.shape[1] != rank_seed_m1:
+            self.d1 = ldpc.mod2.compute_exact_code_distance(self.seed_matrix_1)
+        else:
+            self.d1 = np.inf
+
+        if self.seed_matrix_2.shape[1] != rank_seed_m2:
+            self.d2 = ldpc.mod2.compute_exact_code_distance(self.seed_matrix_2)
+        else:
+            self.d2 = np.inf
+        
+        # note: rank(A) = rank(A^T):
+        if self.seed_matrix_1.shape[0] != rank_seed_m1:
+            self.d1T = ldpc.mod2.compute_exact_code_distance(self.seed_matrix_1)
+        else:
+            self.d1T = np.inf
+
+        if self.seed_matrix_2.shape[0] != rank_seed_m2:
+            self.d2T = ldpc.mod2.compute_exact_code_distance(self.seed_matrix_1)
+        else:
+            self.d2T = np.inf
+
+        self.code_distance = min(self.d1, self.d2 , self.d1T, self.d2T)
+
+        return self.code_distance
+       
+
+
     def estimate_min_distance(self):
         NotImplemented
+
 
     def compute_logical_basis(self):
 
