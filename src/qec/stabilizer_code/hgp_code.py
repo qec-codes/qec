@@ -136,7 +136,7 @@ class HypergraphProductCode(CSSCode):
             self.d2T = np.inf
 
         self.x_code_distance = min(self.d1T, self.d2)
-        self.z_code_distance = min(self.d2, self.d1T)
+        self.z_code_distance = min(self.d1, self.d2T)
         self.code_distance = min(self.x_code_distance, self.z_code_distance)
 
         return self.code_distance
