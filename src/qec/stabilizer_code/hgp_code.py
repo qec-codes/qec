@@ -135,7 +135,9 @@ class HypergraphProductCode(CSSCode):
         else:
             self.d2T = np.inf
 
-        self.code_distance = min(self.d1, self.d2 , self.d1T, self.d2T)
+        self.x_code_distance = min(self.d1T, self.d2)
+        self.z_code_distance = min(self.d2, self.d1T)
+        self.code_distance = min(self.x_code_distance, self.z_code_distance)
 
         return self.code_distance
        
@@ -199,4 +201,6 @@ class HypergraphProductCode(CSSCode):
             String representation of the HGP code. 
         """
     
-        return f"{self.name} Hypergraphproduct Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, D={self.code_distance}]]"
+        return f"{self.name} Hypergraphproduct Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, dx={self.x_code_distance}, dz={self.z_code_distance}]]"
+
+
