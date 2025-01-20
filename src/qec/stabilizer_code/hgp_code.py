@@ -126,12 +126,12 @@ class HypergraphProductCode(CSSCode):
         
         # note: rank(A) = rank(A^T):
         if self.seed_matrix_1.shape[0] != rank_seed_m1:
-            self.d1T = ldpc.mod2.compute_exact_code_distance(self.seed_matrix_1)
+            self.d1T = ldpc.mod2.compute_exact_code_distance(self.seed_matrix_1.T)
         else:
             self.d1T = np.inf
 
         if self.seed_matrix_2.shape[0] != rank_seed_m2:
-            self.d2T = ldpc.mod2.compute_exact_code_distance(self.seed_matrix_1)
+            self.d2T = ldpc.mod2.compute_exact_code_distance(self.seed_matrix_2.T)
         else:
             self.d2T = np.inf
 
@@ -142,8 +142,39 @@ class HypergraphProductCode(CSSCode):
         return self.code_distance
        
 
-    def estimate_min_distance(self):
-        NotImplemented
+    def estimate_min_distance(self, timeout_seconds: float = 0.025) -> int:
+        """
+        Estimate the minimum X and Z distance of the Hgp code using a BP+OSD decoder based 
+        searched from the ldpc package. 
+        
+        Parameters
+        ----------
+        timeout_seconds : float, optional 
+            Time limit in seconds for the search. Default: 0.25 
+        
+        Returns
+        -------
+        int
+            Best estimate of the (overall) code distance found within time limit. 
+
+        Notes
+        -----
+        The search happens over 4 matrices, with the same given timeout_seconds for each. 
+        Hence the actual time the function should take to execute is ~ 4 x timeout_seconds. 
+
+        """
+        
+        d1_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_1, timeout_seconds, 0)
+        d1T_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_1.T, timeout_seconds, 0)
+        d2_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_2, timeout_seconds, 0)
+        d2T_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_2.T, timeout_seconds, 0)
+        
+        self.x_code_distance = min(d1T_min_estimate, d2_min_estimate)
+        self.z_code_distance = min(d1_min_estimate, d2T_min_estimate)
+        self.code_distance = min(self.x_code_distance, self.z_code_distance)
+
+        return self.code_distance
+
 
 
     def compute_logical_basis(self) -> Tuple[scipy.sparse.spmatrix, scipy.sparse.spmatrix]:
