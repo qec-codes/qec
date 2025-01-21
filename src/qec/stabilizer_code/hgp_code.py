@@ -209,7 +209,7 @@ class HypergraphProductCode(CSSCode):
         temp = scipy.sparse.kron(row_comp_h1T, ker_h2T)
         lz2 = scipy.sparse.hstack([scipy.sparse.csr_matrix((temp.shape[0], self._n1*self._n2), dtype=np.uint8), temp])
 
-        self.z_logical_operator_basis = scipy.sparse.vstack([lz1, lz2])
+        self.z_logical_operator_basis = scipy.sparse.vstack([lz1, lz2], dtype=np.uint8)
 
 
         temp = scipy.sparse.kron(row_comp_h1, ker_h2)
@@ -218,7 +218,7 @@ class HypergraphProductCode(CSSCode):
         temp = scipy.sparse.kron(ker_h1T, row_comp_h2T)
         lx2 = scipy.sparse.hstack([scipy.sparse.csr_matrix((temp.shape[0], self._n1*self._n2), dtype=np.uint8), temp])
 
-        self.x_logical_operator_basis= scipy.sparse.vstack([lx1, lx2])
+        self.x_logical_operator_basis= scipy.sparse.vstack([lx1, lx2], dtype = np.uint8)
         
         # Follows the way it is done in CSSCode -> move it into __init__? 
         #---------------------------------------------------------------- 
