@@ -2,6 +2,7 @@ import numpy as np
 import scipy 
 from typing import Union, Tuple
 import ldpc.mod2 
+import time
 
 from qec.stabilizer_code.css_code import CSSCode
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
@@ -144,30 +145,35 @@ class HypergraphProductCode(CSSCode):
 
     def estimate_min_distance(self, timeout_seconds: float = 0.025) -> int:
         """
-        Estimate the minimum X and Z distance of the Hgp code using a BP+OSD decoder based 
-        searched from the ldpc package. 
-        
-        Parameters
+        Estimate the minimum X and Z distance of the HGP code.        Parameters
         ----------
         timeout_seconds : float, optional 
-            Time limit in seconds for the search. Default: 0.25 
+            Time limit in seconds for the full search. Default: 0.25 
         
         Returns
         -------
         int
             Best estimate of the (overall) code distance found within time limit. 
 
-        Notes
-        -----
-        The search happens over 4 matrices, with the same given timeout_seconds for each. 
-        Hence the actual time the function should take to execute is ~ 4 x timeout_seconds. 
-
         """
-        
-        d1_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_1, timeout_seconds, 0)
-        d1T_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_1.T, timeout_seconds, 0)
-        d2_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_2, timeout_seconds, 0)
-        d2T_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_2.T, timeout_seconds, 0)
+
+        d1_timeout_seconds = timeout_seconds/4
+        d1_start_time = time.time()
+        d1_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_1, d1_timeout_seconds, 0)
+        d1_run_time = (time.time() - d1_start_time)
+    
+        d1T_timeout_seconds = (d1_timeout_seconds * 4 - d1_run_time)/3 if d1_run_time < d1_timeout_seconds else timeout_seconds/4
+        d1T_start_time = time.time()
+        d1T_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_1.T, d1T_timeout_seconds, 0)
+        d1T_run_time = (time.time() - d1T_start_time)
+
+        d2_timeout_seconds = (d1T_timeout_seconds * 3 - d1T_run_time)/2 if d1_run_time < d1_timeout_seconds else timeout_seconds/4
+        d2_start_time = time.time()
+        d2_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_2, d2_timeout_seconds, 0)
+        d2_run_time = (time.time() - d2_start_time)
+
+        d2T_timeout_seconds = (d2_timeout_seconds * 2 - d2_run_time) if d2_run_time < d2_timeout_seconds else timeout_seconds/4
+        d2T_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_2.T, d2T_timeout_seconds, 0)
         
         self.x_code_distance = min(d1T_min_estimate, d2_min_estimate)
         self.z_code_distance = min(d1_min_estimate, d2T_min_estimate)
