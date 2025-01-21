@@ -76,6 +76,9 @@ class CSSCode(StabilizerCode):
         self.x_logical_operator_basis = None
         self.z_logical_operator_basis = None
 
+        self.x_code_distance = None
+        self.z_code_distance = None
+
         # Check if the input matrices are NumPy arrays or SciPy sparse matrices
         if not isinstance(x_stabilizer_matrix, (np.ndarray, scipy.sparse.spmatrix)):
             raise TypeError(
