@@ -156,28 +156,49 @@ class HypergraphProductCode(CSSCode):
             Best estimate of the (overall) code distance found within time limit. 
 
         """
+        
+        rank_seed_m1 = ldpc.mod2.rank(self.seed_matrix_1)
+        rank_seed_m2 = ldpc.mod2.rank(self.seed_matrix_2)
+
 
         d1_timeout_seconds = timeout_seconds/4
-        d1_start_time = time.time()
-        d1_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_1, d1_timeout_seconds, 0)
-        d1_run_time = (time.time() - d1_start_time)
-    
-        d1T_timeout_seconds = (d1_timeout_seconds * 4 - d1_run_time)/3 if d1_run_time < d1_timeout_seconds else timeout_seconds/4
-        d1T_start_time = time.time()
-        d1T_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_1.T, d1T_timeout_seconds, 0)
-        d1T_run_time = (time.time() - d1T_start_time)
+        if self.seed_matrix_1.shape[1] != rank_seed_m1:    
+            d1_start_time = time.time()
+            d1_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_1, d1_timeout_seconds, 0)
+            d1_run_time = time.time() - d1_start_time
+        else:
+            d1_min_estimate = np.inf
+            d1_run_time = 0
 
-        d2_timeout_seconds = (d1T_timeout_seconds * 3 - d1T_run_time)/2 if d1_run_time < d1_timeout_seconds else timeout_seconds/4
-        d2_start_time = time.time()
-        d2_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_2, d2_timeout_seconds, 0)
-        d2_run_time = (time.time() - d2_start_time)
+        d1T_timeout_seconds = (d1_timeout_seconds * 4 - d1_run_time)/3 if d1_run_time <= d1_timeout_seconds else timeout_seconds/4
+        if self.seed_matrix_1.shape[0] != rank_seed_m1:
+            d1T_start_time = time.time()
+            d1T_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_1.T, d1T_timeout_seconds, 0)
+            d1T_run_time = time.time() - d1T_start_time
+        else:
+            d1T_min_estimate = np.inf
+            d1T_run_time = 0
 
-        d2T_timeout_seconds = (d2_timeout_seconds * 2 - d2_run_time) if d2_run_time < d2_timeout_seconds else timeout_seconds/4
-        d2T_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_2.T, d2T_timeout_seconds, 0)
+        d2_timeout_seconds = (d1T_timeout_seconds * 3 - d1T_run_time)/2 if d1T_run_time <= d1T_timeout_seconds else timeout_seconds/4
+        if self.seed_matrix_2.shape[1] != rank_seed_m2:
+            d2_start_time = time.time()
+            d2_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_2, d2_timeout_seconds, 0)
+            d2_run_time = time.time() - d2_start_time
+        else:
+            d2_min_estimate = np.inf
+            d2_run_time = 0
+
+
+        d2T_timeout_seconds = (d2_timeout_seconds * 2 - d2_run_time) if d2_run_time <= d2_timeout_seconds else timeout_seconds/4
+        if self.seed_matrix_2.shape[0] != rank_seed_m2:
+            d2T_min_estimate, _, _ = ldpc.mod2.estimate_code_distance(self.seed_matrix_2.T, d2T_timeout_seconds, 0)
+        else:
+            d2T_min_estimate = np.inf
         
         self.x_code_distance = min(d1T_min_estimate, d2_min_estimate)
         self.z_code_distance = min(d1_min_estimate, d2T_min_estimate)
         self.code_distance = min(self.x_code_distance, self.z_code_distance)
+
 
         return self.code_distance
 
