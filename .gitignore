@@ -23,6 +23,7 @@ eggs/
 lib/
 lib64/
 parts/
+scratch_examples/
 sdist/
 var/
 wheels/
