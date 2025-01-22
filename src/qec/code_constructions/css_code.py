@@ -1,4 +1,4 @@
-from qec.stabilizer_code import StabilizerCode
+from qec.code_constructions import StabilizerCode
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 # Added / ammended from old code

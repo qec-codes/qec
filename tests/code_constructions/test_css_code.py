@@ -2,7 +2,7 @@ import pytest
 import logging
 import numpy as np
 
-from qec.stabilizer_code.css_code import CSSCode
+from qec.code_constructions import CSSCode
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 # Define a binary parity check matrix for testing

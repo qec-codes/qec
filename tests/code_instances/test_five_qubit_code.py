@@ -1,4 +1,4 @@
-from qec.quantum_codes import FiveQubitCode
+from qec.code_instances import FiveQubitCode
 
 
 def test_params():

@@ -1,4 +1,4 @@
-from qec.stabilizer_code import StabilizerCode
+from qec.code_constructions import StabilizerCode
 from qec.utils.codetables_de_utils import get_codetables_de_matrix, pcm_to_csr_matrix
 
 

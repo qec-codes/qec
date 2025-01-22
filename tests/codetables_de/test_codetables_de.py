@@ -1,4 +1,4 @@
-from qec.quantum_codes import CodeTablesDE
+from qec.codetables_de import CodeTablesDE
 
 
 def test_k1_codes():

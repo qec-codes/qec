@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from qec.stabilizer_code.hgp_code import HypergraphProductCode
+from qec.code_constructions import HypergraphProductCode
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 three_repetition = np.array([[1, 1, 0],

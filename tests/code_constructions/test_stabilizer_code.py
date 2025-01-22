@@ -2,8 +2,9 @@ import pytest
 import logging
 import numpy as np
 
-from qec.stabilizer_code.stabilizer_code import StabilizerCode
-from qec.quantum_codes import CodeTablesDE
+from qec.code_constructions import StabilizerCode
+from qec.codetables_de import CodeTablesDE
+
 
 # Define a binary parity check matrix for testing
 binary_pcm = np.array([[0, 0, 0, 0, 1, 1, 1, 1], [1, 1, 1, 1, 0, 0, 0, 0]])

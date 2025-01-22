@@ -1,4 +1,4 @@
-from qec.stabilizer_code.stabilizer_code import StabilizerCode
+from qec.code_constructions import StabilizerCode
 
 
 class FiveQubitCode(StabilizerCode):

@@ -4,7 +4,7 @@ from typing import Union, Tuple
 import ldpc.mod2 
 import time
 
-from qec.stabilizer_code.css_code import CSSCode
+from qec.code_constructions import CSSCode
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 class HypergraphProductCode(CSSCode):
