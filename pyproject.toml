@@ -6,8 +6,8 @@ description = "Python Tools for Quantum Error Correction"
 readme = "README.md"
 authors = [
     { name = "Joschka Roffe", email = "joschka@roffe.eu" },
-    { name = "Tamas Noszko", email = ""},
-    { name = "Liam Veeder-Sweeney", email = ""},
+    { name = "Tamas Noszko", email = "T.K.Noszko@sms.ed.ac.uk"},
+    { name = "Liam Veeder-Sweeney", email = "L.D.Veeder-Sweeney@sms.ed.ac.uk"},
 ]
 license = { file = "LICENSE" }
 
