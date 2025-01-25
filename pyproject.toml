@@ -1,6 +1,6 @@
 [project]
 name = "qec"
-version = "0.2.2"
+version = "0.2.3"
 
 description = "Python Tools for Quantum Error Correction"
 readme = "README.md"
@@ -12,7 +12,7 @@ license = { file = "LICENSE" }
 classifiers = [
     "Development Status :: 4 - Beta",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "ldpc",
     "numpy>=1.24.0",
