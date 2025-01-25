@@ -1,13 +1,13 @@
 [project]
 name = "qec"
-version = "0.2.5"
+version = "0.2.6"
 
 description = "Python Tools for Quantum Error Correction"
 readme = "README.md"
 authors = [
     { name = "Joschka Roffe", email = "joschka@roffe.eu" },
-    { name = "Tamas Noszko"},
-    { name = "Liam Veeder-Sweeney"},
+    { name = "Tamas Noszko", email = ""},
+    { name = "Liam Veeder-Sweeney", email = ""},
 ]
 license = { file = "LICENSE" }
 
