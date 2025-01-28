@@ -62,3 +62,14 @@ def convert_to_binary_scipy_sparse(
         raise ValueError("All elements of the input matrix must be binary.")
 
     return matrix
+
+def save_sparse_matrix(matrix: scipy.sparse.spmatrix):
+    "Helper function to convert sparse matrix to serializable format."
+
+    return {
+        'data' : matrix.data.tolist(),
+        'indices' : matrix.indices.tolist(),
+        'indptr' : matrix.indptr.tolist(),
+        'shape' : matrix.shape
+    }
+

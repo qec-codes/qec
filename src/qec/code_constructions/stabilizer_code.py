@@ -1,4 +1,4 @@
-from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
+from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse, save_sparse_matrix
 from qec.utils.binary_pauli_utils import (
     symplectic_product,
     check_binary_pauli_matrices_commute,
@@ -9,11 +9,13 @@ from qec.utils.binary_pauli_utils import (
 
 import numpy as np
 import scipy.sparse
+import json
 from tqdm import tqdm
 from ldpc import BpOsdDecoder
 import ldpc.mod2
 import time
 from typing import Tuple, Optional, Union, Sequence
+from pathlib import Path
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -337,7 +339,7 @@ class StabilizerCode(object):
         """
         return self.physical_qubit_count, self.logical_qubit_count, self.code_distance
 
-    def save_code(self, save_dense: bool = False):
+    def save_code(self, filepath: Union[str, Path], save_dense: bool = False, notes: str = "") -> None:
         """
         Save the stabilizer code to disk.
 
@@ -347,7 +349,27 @@ class StabilizerCode(object):
             If True, saves the parity check matrix as a dense format.
             Otherwise, saves the parity check matrix as a sparse format.
         """
-        pass
+
+        filepath = Path(filepath)
+        if not filepath.parent.exists():
+            filepath.parent.mkdir(parents = True)
+
+        code_data = {
+            'class_name': self.__class__.__name__,
+            'name': self.name,
+            'parameters': {
+                'n': self.physical_qubit_count,
+                'k': self.logical_qubit_count,
+                'd': self.code_distance
+            },
+            'stabilizer_matrix': save_sparse_matrix(self.stabilizer_matrix), 
+            'logical_operator_basis': save_sparse_matrix(self.logical_operator_basis),
+            'notes': notes
+        }
+
+        with open(filepath, 'w') as f:
+            json.dump(code_data, f, indent = 4)
+
 
     def load_code(self):
         """
