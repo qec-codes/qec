@@ -339,43 +339,6 @@ class StabilizerCode(object):
         """
         return self.physical_qubit_count, self.logical_qubit_count, self.code_distance
 
-    def save_code(self, filepath: Union[str, Path], save_dense: bool = False, notes: str = "") -> None:
-        """
-        Save the stabilizer code to disk.
-
-        Parameters
-        ----------
-        save_dense : bool, optional
-            If True, saves the parity check matrix as a dense format.
-            Otherwise, saves the parity check matrix as a sparse format.
-        """
-
-        filepath = Path(filepath)
-        if not filepath.parent.exists():
-            filepath.parent.mkdir(parents = True)
-
-        code_data = {
-            'class_name': self.__class__.__name__,
-            'name': self.name,
-            'parameters': {
-                'n': self.physical_qubit_count,
-                'k': self.logical_qubit_count,
-                'd': self.code_distance
-            },
-            'stabilizer_matrix': save_sparse_matrix(self.stabilizer_matrix), 
-            'logical_operator_basis': save_sparse_matrix(self.logical_operator_basis),
-            'notes': notes
-        }
-
-        with open(filepath, 'w') as f:
-            json.dump(code_data, f, indent = 4)
-
-
-    def load_code(self):
-        """
-        Load the stabilizer code from a saved file.
-        """
-        pass
 
     def __repr__(self):
         """
@@ -611,3 +574,52 @@ class StabilizerCode(object):
             An array of integers representing the Hamming weights of the logical operators.
         """
         return binary_pauli_hamming_weight(self.logical_operator_basis).flatten()
+
+    def _class_specific_save(self):
+        class_specific_data = {
+            'logical_operator_basis' : save_sparse_matrix(self.logical_operator_basis)
+        }
+        return class_specific_data
+
+
+    def save_code(self, filepath: Union[str, Path], notes: str = "") -> None:
+        """
+        Save the stabilizer code to disk as a JSON file.
+
+        Parameters
+        ----------
+        code : 
+        filepath : Union[str, Path]
+            Path to the file where the generated JSON is saved
+        notes : str
+            Additional notes to be saved.
+        """
+
+        filepath = Path(filepath)
+        if not filepath.parent.exists():
+            filepath.parent.mkdir(parents = True)
+        
+        general_data = {
+            'class_name': self.__class__.__name__,
+            'name': self.name,
+            'parameters': {
+                'n': self.physical_qubit_count,
+                'k': self.logical_qubit_count,
+                'd': int(self.code_distance) if hasattr(self, 'code_distance') else '?'
+                # 'd': self.code_distance if self.code_distance is not None else '?'
+            },
+        }
+        
+        class_specific_data = self._class_specific_save()
+        merged_data = general_data.copy()
+        for key, value in class_specific_data.items():
+            if key in merged_data and isinstance(merged_data[key], dict) and isinstance(value, dict):
+                merged_data[key].update(value)
+            else:
+                merged_data[key] = value
+
+
+        merged_data["notes"] = notes
+
+        with open(filepath, 'w') as f:
+            json.dump(merged_data, f, indent = 4)

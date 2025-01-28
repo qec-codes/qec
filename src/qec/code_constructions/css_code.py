@@ -1,5 +1,5 @@
 from qec.code_constructions import StabilizerCode
-from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
+from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse, save_sparse_matrix
 
 # Added / ammended from old code
 from typing import Union, Tuple
@@ -771,3 +771,19 @@ class CSSCode(StabilizerCode):
             str: String representation of the CSS code.
         """
         return f"{self.name} Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, dx<={self.x_code_distance}, dz<={self.z_code_distance}]]"
+
+    def _class_specific_save(self):
+        class_specific_data = {
+            'parameters' : {
+                'dx' : str(self.x_code_distance) if self.x_code_distance is not None else '?',
+                'dz' : str(self.z_code_distance) if self.z_code_distance is not None else '?'
+            },
+            'x_stabilizer_matrix' : save_sparse_matrix(self.x_stabilizer_matrix),
+            'z_stabilizer_matrix' : save_sparse_matrix(self.z_stabilizer_matrix),
+            'x_logical_operator_basis' : save_sparse_matrix(self.x_logical_operator_basis),
+            'z_logical_operator_basis' : save_sparse_matrix(self.z_logical_operator_basis)
+
+
+        }
+
+        return class_specific_data

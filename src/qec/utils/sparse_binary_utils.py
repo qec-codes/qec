@@ -72,4 +72,3 @@ def save_sparse_matrix(matrix: scipy.sparse.spmatrix):
         'indptr' : matrix.indptr.tolist(),
         'shape' : matrix.shape
     }
-
