@@ -1,5 +1,5 @@
 from qec.code_constructions import StabilizerCode
-from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse, save_sparse_matrix
+from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse, csr_matrix_to_dict 
 
 # Added / ammended from old code
 from typing import Union, Tuple
@@ -778,10 +778,10 @@ class CSSCode(StabilizerCode):
                 'dx' : str(self.x_code_distance) if self.x_code_distance is not None else '?',
                 'dz' : str(self.z_code_distance) if self.z_code_distance is not None else '?'
             },
-            'x_stabilizer_matrix' : save_sparse_matrix(self.x_stabilizer_matrix),
-            'z_stabilizer_matrix' : save_sparse_matrix(self.z_stabilizer_matrix),
-            'x_logical_operator_basis' : save_sparse_matrix(self.x_logical_operator_basis),
-            'z_logical_operator_basis' : save_sparse_matrix(self.z_logical_operator_basis)
+            'x_stabilizer_matrix' : csr_matrix_to_dict(self.x_stabilizer_matrix),
+            'z_stabilizer_matrix' : csr_matrix_to_dict(self.z_stabilizer_matrix),
+            'x_logical_operator_basis' : csr_matrix_to_dict(self.x_logical_operator_basis),
+            'z_logical_operator_basis' : csr_matrix_to_dict(self.z_logical_operator_basis)
 
 
         }

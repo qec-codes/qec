@@ -1,4 +1,4 @@
-from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse, save_sparse_matrix
+from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse, csr_matrix_to_dict
 from qec.utils.binary_pauli_utils import (
     symplectic_product,
     check_binary_pauli_matrices_commute,
@@ -576,8 +576,10 @@ class StabilizerCode(object):
         return binary_pauli_hamming_weight(self.logical_operator_basis).flatten()
 
     def _class_specific_save(self):
+
         class_specific_data = {
-            'logical_operator_basis' : save_sparse_matrix(self.logical_operator_basis)
+            'stabilizer_matrix' : csr_matrix_to_dict(self.stabilizer_matrix),
+            'logical_operator_basis' : csr_matrix_to_dict(self.logical_operator_basis)
         }
         return class_specific_data
 
@@ -606,18 +608,17 @@ class StabilizerCode(object):
                 'n': self.physical_qubit_count,
                 'k': self.logical_qubit_count,
                 'd': int(self.code_distance) if hasattr(self, 'code_distance') else '?'
-                # 'd': self.code_distance if self.code_distance is not None else '?'
             },
         }
         
         class_specific_data = self._class_specific_save()
         merged_data = general_data.copy()
+
         for key, value in class_specific_data.items():
             if key in merged_data and isinstance(merged_data[key], dict) and isinstance(value, dict):
                 merged_data[key].update(value)
             else:
                 merged_data[key] = value
-
 
         merged_data["notes"] = notes
 
