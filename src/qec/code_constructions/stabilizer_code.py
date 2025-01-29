@@ -576,7 +576,6 @@ class StabilizerCode(object):
         return binary_pauli_hamming_weight(self.logical_operator_basis).flatten()
 
     def _class_specific_save(self):
-
         class_specific_data = {
             'stabilizer_matrix' : csr_matrix_to_dict(self.stabilizer_matrix),
             'logical_operator_basis' : csr_matrix_to_dict(self.logical_operator_basis)
@@ -586,13 +585,12 @@ class StabilizerCode(object):
 
     def save_code(self, filepath: Union[str, Path], notes: str = "") -> None:
         """
-        Save the stabilizer code to disk as a JSON file.
+        Save the stabilizer code as a JSON file.
 
         Parameters
         ----------
-        code : 
         filepath : Union[str, Path]
-            Path to the file where the generated JSON is saved
+            Path where the generated JSON is saved.
         notes : str
             Additional notes to be saved.
         """
