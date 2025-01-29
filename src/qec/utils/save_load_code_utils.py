@@ -1,10 +1,29 @@
 import json 
 from typing import Union
 from pathlib import Path
-import scipy.sparse
 from qec.utils.sparse_binary_utils import dict_to_csr_matrix
 
 def load_code(filepath: Union[str, Path]):
+    """
+    Loads a quantum error correction code from a JSON file.
+
+    Parameters
+    ----------
+    filepath : Union[str, Path]
+        Path to JSON file containing code data
+
+    Returns
+    -------
+    Union[StabilizerCode, CSSCode, HypergraphProductCode]
+        The quantum error correction instance.
+
+    Raises
+    ------
+        FileNotFoundError
+            If filepath does not exist.
+        ValueError
+            If code class in JSON is not recognized.
+    """
     from qec.code_constructions import StabilizerCode, CSSCode, HypergraphProductCode
     
     filepath = Path(filepath)
