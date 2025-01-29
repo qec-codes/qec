@@ -782,8 +782,6 @@ class CSSCode(StabilizerCode):
             'z_stabilizer_matrix' : csr_matrix_to_dict(self.z_stabilizer_matrix),
             'x_logical_operator_basis' : csr_matrix_to_dict(self.x_logical_operator_basis),
             'z_logical_operator_basis' : csr_matrix_to_dict(self.z_logical_operator_basis)
-
-
         }
 
         return class_specific_data
