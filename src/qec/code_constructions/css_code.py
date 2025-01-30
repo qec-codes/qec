@@ -755,6 +755,22 @@ class CSSCode(StabilizerCode):
         return True
 
     def logical_basis_weights(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Calculate the Hamming weights of the X and Z logical operator bases.
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray]
+            A tuple containing:
+            - Array of Hamming weights for each X logical operator
+            - Array of Hamming weights for each Z logical operator
+
+        Notes
+        -----
+        The Hamming weight of a logical operator is the number of non-zero elements
+        in its binary vector representation. Lower weights generally indicate more
+        efficient logical operators.
+        """
         x_weights = []
         z_weights = []
         for i in range(self.logical_qubit_count):
@@ -762,6 +778,58 @@ class CSSCode(StabilizerCode):
             z_weights.append(self.z_logical_operator_basis[i].nnz)
 
         return (np.array(x_weights), np.array(z_weights))
+
+    @property
+    def stabilizer_matrix(self) -> scipy.sparse.spmatrix:
+        """
+        Construct the full stabiliser matrix in block diagonal form.
+        
+        The matrix is constructed as:
+        [ Hx  0 ]
+        [ 0   Hz]
+        
+        where Hx is the X-stabiliser matrix and Hz is the Z-stabiliser matrix.
+
+        Returns
+        -------
+        scipy.sparse.spmatrix
+            The complete stabiliser matrix in block diagonal form.
+
+        Notes
+        -----
+        The resulting matrix has dimensions (rx + rz) × 2n, where:
+        - rx is the number of X-stabiliser rows
+        - rz is the number of Z-stabiliser rows
+        - n is the number of physical qubits
+        """
+        return scipy.sparse.block_diag((self.x_stabilizer_matrix, self.z_stabilizer_matrix))
+
+    @property
+    def logical_operator_basis(self) -> scipy.sparse.spmatrix:
+        """
+        Construct the full logical operator basis in block diagonal form.
+        
+        The matrix is constructed as:
+        [ Lx  0 ]
+        [ 0   Lz]
+        
+        where Lx is the X-logical operator basis and Lz is the Z-logical operator basis.
+
+        Returns
+        -------
+        scipy.sparse.spmatrix
+            The complete logical operator basis in block diagonal form.
+
+        Notes
+        -----
+        The resulting matrix has dimensions (k + k) × 2n, where:
+        - k is the number of logical qubits
+        - n is the number of physical qubits
+
+        Each block contains k rows of logical operators, ensuring that the X and Z
+        logical operators for each logical qubit are properly paired.
+        """
+        return scipy.sparse.block_diag((self.x_logical_operator_basis, self.z_logical_operator_basis))
 
     def __str__(self):
         """
