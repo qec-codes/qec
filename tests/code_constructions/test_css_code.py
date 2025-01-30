@@ -343,7 +343,6 @@ def test_steane_code_estimate_distance():
 
 
 def test_stabilizer_matrix():
-
     # Define the Hamming code parity check matrix for Steane code
     # This is the [7,4,3] Hamming code
     hx = np.array([[1, 1, 1, 0, 1, 0, 0], [1, 1, 0, 1, 0, 1, 0], [1, 0, 1, 1, 0, 0, 1]])
@@ -355,15 +354,23 @@ def test_stabilizer_matrix():
     steane = CSSCode(hx, hz, name="Steane")
 
     # Check the stabilizer matrices
-    assert np.array_equal(steane.x_stabilizer_matrix.toarray(), hx), "X stabilizer matrix mismatch"
-    assert np.array_equal(steane.z_stabilizer_matrix.toarray(), hz), "Z stabilizer matrix mismatch"
+    assert np.array_equal(
+        steane.x_stabilizer_matrix.toarray(), hx
+    ), "X stabilizer matrix mismatch"
+    assert np.array_equal(
+        steane.z_stabilizer_matrix.toarray(), hz
+    ), "Z stabilizer matrix mismatch"
 
-    stabilizer_matrix = scipy.sparse.block_diag([steane.x_stabilizer_matrix, steane.z_stabilizer_matrix])
+    stabilizer_matrix = scipy.sparse.block_diag(
+        [steane.x_stabilizer_matrix, steane.z_stabilizer_matrix]
+    )
 
-    assert np.array_equal(steane.stabilizer_matrix.toarray(), stabilizer_matrix.toarray()), "Stabilizer matrix mismatch"
+    assert np.array_equal(
+        steane.stabilizer_matrix.toarray(), stabilizer_matrix.toarray()
+    ), "Stabilizer matrix mismatch"
+
 
 def test_logical_operator_basis():
-    
     # Define the Hamming code parity check matrix for Steane code
     # This is the [7,4,3] Hamming code
     hx = np.array([[1, 1, 1, 0, 1, 0, 0], [1, 1, 0, 1, 0, 1, 0], [1, 0, 1, 1, 0, 0, 1]])
@@ -374,6 +381,10 @@ def test_logical_operator_basis():
     # Create the Steane code
     steane = CSSCode(hx, hz, name="Steane")
 
-    logical_operator_basis = scipy.sparse.block_diag([steane.x_logical_operator_basis, steane.z_logical_operator_basis])
+    logical_operator_basis = scipy.sparse.block_diag(
+        [steane.x_logical_operator_basis, steane.z_logical_operator_basis]
+    )
 
-    assert np.array_equal(steane.logical_operator_basis.toarray(), logical_operator_basis.toarray()), "Logical operator basis mismatch"
+    assert np.array_equal(
+        steane.logical_operator_basis.toarray(), logical_operator_basis.toarray()
+    ), "Logical operator basis mismatch"

@@ -783,11 +783,11 @@ class CSSCode(StabilizerCode):
     def stabilizer_matrix(self) -> scipy.sparse.spmatrix:
         """
         Construct the full stabiliser matrix in block diagonal form.
-        
+
         The matrix is constructed as:
         [ Hx  0 ]
         [ 0   Hz]
-        
+
         where Hx is the X-stabiliser matrix and Hz is the Z-stabiliser matrix.
 
         Returns
@@ -802,17 +802,19 @@ class CSSCode(StabilizerCode):
         - rz is the number of Z-stabiliser rows
         - n is the number of physical qubits
         """
-        return scipy.sparse.block_diag((self.x_stabilizer_matrix, self.z_stabilizer_matrix))
+        return scipy.sparse.block_diag(
+            (self.x_stabilizer_matrix, self.z_stabilizer_matrix)
+        )
 
     @property
     def logical_operator_basis(self) -> scipy.sparse.spmatrix:
         """
         Construct the full logical operator basis in block diagonal form.
-        
+
         The matrix is constructed as:
         [ Lx  0 ]
         [ 0   Lz]
-        
+
         where Lx is the X-logical operator basis and Lz is the Z-logical operator basis.
 
         Returns
@@ -829,7 +831,9 @@ class CSSCode(StabilizerCode):
         Each block contains k rows of logical operators, ensuring that the X and Z
         logical operators for each logical qubit are properly paired.
         """
-        return scipy.sparse.block_diag((self.x_logical_operator_basis, self.z_logical_operator_basis))
+        return scipy.sparse.block_diag(
+            (self.x_logical_operator_basis, self.z_logical_operator_basis)
+        )
 
     def __str__(self):
         """
