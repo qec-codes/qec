@@ -603,9 +603,9 @@ class StabilizerCode(object):
             'class_name': self.__class__.__name__,
             'name': self.name,
             'parameters': {
-                'n': self.physical_qubit_count,
-                'k': self.logical_qubit_count,
-                'd': int(self.code_distance) if hasattr(self, 'code_distance') else '?'
+                'physical_qubit_count': self.physical_qubit_count,
+                'logical_qubit_count': self.logical_qubit_count,
+                'code_distance': int(self.code_distance) if hasattr(self, 'code_distance') else '?'
             },
         }
         

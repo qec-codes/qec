@@ -311,8 +311,8 @@ class HypergraphProductCode(CSSCode):
 
         class_specific_data = {
             'parameters' : {
-                'dx' : self.x_code_distance if self.x_code_distance is not None else '?',
-                'dz' : self.z_code_distance if self.z_code_distance is not None else '?'
+                'x_code_distance' : self.x_code_distance if self.x_code_distance is not None else '?',
+                'z_code_distance' : self.z_code_distance if self.z_code_distance is not None else '?'
             },
             'seed_matrix_1' : csr_matrix_to_dict(self.seed_matrix_1),
             'seed_matrix_2' : csr_matrix_to_dict(self.seed_matrix_2),
