@@ -36,21 +36,22 @@ def load_code(filepath: Union[str, Path]):
     if code_data['class_name'] == 'StabilizerCode':
         stabilizer_matrix = dict_to_csr_matrix(code_data['stabilizer_matrix'])
         instance = StabilizerCode(stabilizer_matrix, name = code_data['name'])
-        instance.code_distance = code_data['parameters']['d'] if code_data['parameters']['d'] != '?' else None
+        instance.code_distance = code_data['parameters']['code_distance'] if code_data['parameters']['code_distance'] != '?' else None
 
     elif code_data['class_name'] == 'CSSCode':
         x_stabilizer_matrix = dict_to_csr_matrix(code_data['x_stabilizer_matrix'])
         z_stabilizer_matrix = dict_to_csr_matrix(code_data['z_stabilizer_matrix'])
         instance = CSSCode(x_stabilizer_matrix, z_stabilizer_matrix, code_data['name'])
-        instance.x_code_distance = code_data['parameters']['dx'] if code_data['parameters']['dx'] != '?' else None
-        instance.z_code_distance = code_data['parameters']['dz'] if code_data['parameters']['dz'] != '?' else None
+        instance.x_code_distance = code_data['parameters']['x_code_distance'] if code_data['parameters']['x_code_distance'] != '?' else None
+        instance.z_code_distance = code_data['parameters']['z_code_distance'] if code_data['parameters']['z_code_distance'] != '?' else None
 
     elif code_data['class_name'] == 'HypergraphProductCode':
         seed_matrix_1 = dict_to_csr_matrix(code_data['seed_matrix_1'])
         seed_matrix_2 = dict_to_csr_matrix(code_data['seed_matrix_2'])
         instance = HypergraphProductCode(seed_matrix_1, seed_matrix_2, code_data['name'])
-        instance.x_code_distance = code_data['parameters']['dx'] if code_data['parameters']['dx'] != '?' else None
-        instance.z_code_distance = code_data['parameters']['dz'] if code_data['parameters']['dz'] != '?' else None
+        instance.code_distance = code_data['parameters']['code_distance'] if code_data['parameters']['code_distance'] != '?' else None
+        instance.x_code_distance = code_data['parameters']['x_code_distance'] if code_data['parameters']['x_code_distance'] != '?' else None
+        instance.z_code_distance = code_data['parameters']['z_code_distance'] if code_data['parameters']['z_code_distance'] != '?' else None
 
     else:
         raise ValueError(f"The code class: {code_data['class_name']} is not recognised.")
