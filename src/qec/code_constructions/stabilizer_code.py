@@ -605,7 +605,7 @@ class StabilizerCode(object):
             'parameters': {
                 'physical_qubit_count': self.physical_qubit_count,
                 'logical_qubit_count': self.logical_qubit_count,
-                'code_distance': int(self.code_distance) if hasattr(self, 'code_distance') else '?'
+                'code_distance': int(self.code_distance) if self.code_distance is not None else '?'
             },
         }
         
