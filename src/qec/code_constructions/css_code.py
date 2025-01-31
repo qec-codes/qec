@@ -775,8 +775,8 @@ class CSSCode(StabilizerCode):
     def _class_specific_save(self):
         class_specific_data = {
             'parameters' : {
-                'x_code_distance' : str(self.x_code_distance) if self.x_code_distance is not None else '?',
-                'z_code_distance' : str(self.z_code_distance) if self.z_code_distance is not None else '?'
+                'x_code_distance' : self.x_code_distance if self.x_code_distance is not None else '?',
+                'z_code_distance' : self.z_code_distance if self.z_code_distance is not None else '?'
             },
             'x_stabilizer_matrix' : csr_matrix_to_dict(self.x_stabilizer_matrix),
             'z_stabilizer_matrix' : csr_matrix_to_dict(self.z_stabilizer_matrix),
