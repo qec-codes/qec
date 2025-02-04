@@ -1,7 +1,6 @@
 import pytest
 import json
 import numpy as np
-import importlib.resources
 
 from qec.code_constructions import StabilizerCode, CSSCode, HypergraphProductCode
 
@@ -102,6 +101,3 @@ def test_load_hgp_code(tmp_path):
         instance.z_logical_operator_basis.toarray()
         == test_hgp_code.z_logical_operator_basis.toarray()
     )
-
-
-

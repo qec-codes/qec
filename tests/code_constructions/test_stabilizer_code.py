@@ -2,7 +2,6 @@ import pytest
 import logging
 import numpy as np
 import json
-from scipy.sparse import csr_matrix
 
 from qec.code_constructions import StabilizerCode
 from qec.codetables_de import CodeTablesDE
