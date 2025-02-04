@@ -6,7 +6,7 @@ from qec.utils.binary_pauli_utils import (
     binary_pcm_to_pauli_str,
     binary_pauli_hamming_weight,
 )
-
+import re
 import numpy as np
 import scipy.sparse
 import json
@@ -595,6 +595,9 @@ class StabilizerCode(object):
             Additional notes to be saved.
         """
 
+        def repl_function(match):
+            return " ".join(match.group().split())
+
         filepath = Path(filepath)
         if not filepath.parent.exists():
             filepath.parent.mkdir(parents = True)
@@ -620,5 +623,9 @@ class StabilizerCode(object):
 
         merged_data["notes"] = notes
 
+        output = json.dumps(merged_data, indent = 4)
+        formatted_output = re.sub(r"(?<=\[)[^\[\]]+(?=\])", repl_function, output)
+        
         with open(filepath, 'w') as f:
-            json.dump(merged_data, f, indent = 4)
+            f.write(formatted_output)
+
