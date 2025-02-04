@@ -99,6 +99,9 @@ class HypergraphProductCode(CSSCode):
 
         super().__init__(self.x_stabilizer_matrix, self.z_stabilizer_matrix, self.name)
 
+        self.code_distance = None
+
+
     def compute_exact_code_distance(self) -> int:
         """
         Computes the exact code distance of the HGP code.
@@ -316,6 +319,7 @@ class HypergraphProductCode(CSSCode):
 
     def _class_specific_save(self):
         class_specific_data = {
+            "code_distance": self.code_distance if self.code_distance is not None else "?",
             "x_code_distance": self.x_code_distance if self.x_code_distance is not None else "?",
             "z_code_distance": self.z_code_distance if self.z_code_distance is not None else "?",
             "seed_matrix_1": binary_csr_matrix_to_dict(self.seed_matrix_1),

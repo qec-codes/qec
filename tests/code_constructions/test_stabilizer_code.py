@@ -285,11 +285,11 @@ def test_stab_save_code_correct_content(tmp_path):
 
     assert saved_data["class_name"] == "StabilizerCode"
     assert saved_data["name"] == "test"
-    assert saved_data["parameters"]["physical_qubit_count"] == 4
-    assert saved_data["parameters"]["logical_qubit_count"] == 2
-    assert saved_data["parameters"]["code_distance"] == 2
+    assert saved_data["physical_qubit_count"] == 4
+    assert saved_data["logical_qubit_count"] == 2
+    assert saved_data["code_distance"] == 2
     assert saved_data["notes"] == notes
-    assert "stabilizer_matrix" in saved_data
+    assert "stabilizers" in saved_data
     assert "logical_operator_basis" in saved_data
 
 
@@ -311,4 +311,4 @@ def test_save_code_handles_missing_code_distance(tmp_path):
 
     with open(filepath, "r") as f:
         saved_data = json.load(f)
-    assert saved_data["parameters"]["code_distance"] == "?"
+    assert saved_data["code_distance"] == "?"

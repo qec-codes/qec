@@ -579,7 +579,7 @@ class StabilizerCode(object):
 
     def _class_specific_save(self):
         class_specific_data = {
-            "stabilizer_matrix": binary_csr_matrix_to_dict(self.stabilizer_matrix),
+            "stabilizers": binary_csr_matrix_to_dict(self.stabilizer_matrix),
             "logical_operator_basis": binary_csr_matrix_to_dict(self.logical_operator_basis),
         }
         return class_specific_data

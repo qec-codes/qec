@@ -35,99 +35,20 @@ def load_code(filepath: Union[str, Path]):
     with open(filepath, "r") as f:
         code_data = json.load(f)
 
-    if code_data["class_name"] == "StabilizerCode":
-        stabilizer_matrix = dict_to_binary_csr_matrix(code_data["stabilizer_matrix"])
-        instance = qec.code_constructions.StabilizerCode(
-            stabilizer_matrix, name=code_data["name"]
-        )
-        instance.code_distance = (
-            code_data["parameters"]["code_distance"]
-            if code_data["parameters"]["code_distance"] != "?"
-            else None
-        )
-
-    elif code_data["class_name"] == "CSSCode":
-        x_stabilizer_matrix = dict_to_binary_csr_matrix(code_data["x_stabilizer_matrix"])
-        z_stabilizer_matrix = dict_to_binary_csr_matrix(code_data["z_stabilizer_matrix"])
-        instance = qec.code_constructions.CSSCode(
-            x_stabilizer_matrix, z_stabilizer_matrix, code_data["name"]
-        )
-        instance.x_code_distance = (
-            code_data["parameters"]["x_code_distance"]
-            if code_data["parameters"]["x_code_distance"] != "?"
-            else None
-        )
-        instance.z_code_distance = (
-            code_data["parameters"]["z_code_distance"]
-            if code_data["parameters"]["z_code_distance"] != "?"
-            else None
-        )
-
-    elif code_data["class_name"] == "HypergraphProductCode":
-        seed_matrix_1 = dict_to_binary_csr_matrix(code_data["seed_matrix_1"])
-        seed_matrix_2 = dict_to_binary_csr_matrix(code_data["seed_matrix_2"])
-        instance = qec.code_constructions.HypergraphProductCode(
-            seed_matrix_1, seed_matrix_2, code_data["name"]
-        )
-        instance.code_distance = (
-            code_data["parameters"]["code_distance"]
-            if code_data["parameters"]["code_distance"] != "?"
-            else None
-        )
-        instance.x_code_distance = (
-            code_data["parameters"]["x_code_distance"]
-            if code_data["parameters"]["x_code_distance"] != "?"
-            else None
-        )
-        instance.z_code_distance = (
-            code_data["parameters"]["z_code_distance"]
-            if code_data["parameters"]["z_code_distance"] != "?"
-            else None
-        )
-
-    else:
-        raise ValueError(
-            f"The code class: {code_data['class_name']} is not recognised."
-        )
-
-    return instance
-
-
-def load_code_from_dict(code_data: Dict[str, Any]):
-    """
-    Load a quantum code class from a dictionary and instantiate it dynamically.
-
-    Parameters
-    ----------
-    code_data : dict
-        Dictionary containing the saved quantum code, including the class name
-        and parameters required for initialization.
-
-    Returns
-    -------
-    object
-        An instance of the dynamically loaded class with the parameters from the dictionary.
-
-    Raises
-    ------
-    ValueError
-        If the class name is not found in the dictionary.
-    """
-
     if "class_name" not in code_data.keys():
-        raise ValueError("Missing 'class_name' in input dictionary.")
+        raise ValueError("Missing 'class_name' in input file.")
 
     class_name = eval(
-        "qec.code_constructions." + code_data["class_name"]
-    )  # Dynamically retrieve class reference
+        "qec.code_constructions."+ code_data["class_name"]
+    )
+
     valid_params = inspect.signature(class_name.__init__).parameters.keys()
     filtered_params = {}
 
-    # Convert any detected sparse matrices and filter valid parameters
     for key, value in code_data.items():
         if key in valid_params:
             if isinstance(value, dict) and all(
-                k in value for k in ["data", "indices", "indptr", "shape"]
+                k in value for k in ["indices", "indptr", "shape"]
             ):
                 filtered_params[key] = dict_to_binary_csr_matrix(
                     value
@@ -137,4 +58,6 @@ def load_code_from_dict(code_data: Dict[str, Any]):
         else:
             pass
 
-    return class_name(**filtered_params)  # Instantiate the class
+    code_instance = class_name(**filtered_params)
+
+    return class_name(**filtered_params)
