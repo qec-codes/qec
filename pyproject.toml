@@ -1,6 +1,6 @@
 [project]
 name = "qec"
-version = "0.2.7"
+version = "0.2.8"
 
 description = "Python Tools for Quantum Error Correction"
 readme = "README.md"
@@ -23,9 +23,17 @@ dependencies = [
     "beautifulsoup4"
 ]
 
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
 [tool.setuptools.packages.find]
 where = ["src"]  
-include = ["qec","qec.*"]
+include = ["qec"]
+
+[tool.setuptools.package-data]
+qec = ["code_instances/saved_codes/*json"]
 
 [tool.pytest.ini_options]
 pythonpath = [
