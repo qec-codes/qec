@@ -58,6 +58,4 @@ def load_code(filepath: Union[str, Path]):
         else:
             pass
 
-    code_instance = class_name(**filtered_params)
-
     return class_name(**filtered_params)
