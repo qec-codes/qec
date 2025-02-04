@@ -5,7 +5,6 @@ from pathlib import Path
 from qec.utils.sparse_binary_utils import dict_to_binary_csr_matrix
 import qec.code_constructions
 
-
 def load_code(filepath: Union[str, Path]):
     """
     Loads a quantum error correction code from a JSON file.
@@ -17,45 +16,57 @@ def load_code(filepath: Union[str, Path]):
 
     Returns
     -------
-    Union[StabilizerCode, CSSCode, HypergraphProductCode]
-        The quantum error correction instance.
+    object
+        An instance of the quantum error correction code class.
 
     Raises
     ------
         FileNotFoundError
-            If filepath does not exist.
+            If the specified file does not exist.
         ValueError
-            If code class in JSON is not recognized.
+            If the input file is missing the 'class_name' key.
+        AttributeError
+            If the specified class does not exist in qec.code_constructions.
     """
+    
+    file_path = Path(filepath)
+    if not file_path.exists():
+        raise FileNotFoundError(f"Error: No file found at the specified path: {file_path}")
 
-    filepath = Path(filepath)
-    if not filepath.exists():
-        raise FileNotFoundError(f"No file found at {filepath}")
+    with open(file_path, "r") as file:
+        code_data = json.load(file)
 
-    with open(filepath, "r") as f:
-        code_data = json.load(f)
+    if "class_name" not in code_data:
+        raise ValueError("Error: The input JSON file must contain a 'class_name' key specifying the class to instantiate.")
 
-    if "class_name" not in code_data.keys():
-        raise ValueError("Missing 'class_name' in input file.")
+    try:
+        class_reference = eval("qec.code_constructions." + code_data["class_name"])
+    except AttributeError:
+        raise AttributeError(f"Error: The specified class '{code_data['class_name']}' does not exist in qec.code_constructions.")
 
-    class_name = eval(
-        "qec.code_constructions."+ code_data["class_name"]
-    )
-
-    valid_params = inspect.signature(class_name.__init__).parameters.keys()
-    filtered_params = {}
+    constructor_parameters = inspect.signature(class_reference.__init__).parameters.keys()
+    filtered_input_parameters = {}
 
     for key, value in code_data.items():
-        if key in valid_params:
-            if isinstance(value, dict) and all(
-                k in value for k in ["indices", "indptr", "shape"]
-            ):
-                filtered_params[key] = dict_to_binary_csr_matrix(
-                    value
-                )  # Convert only if it's a sparse matrix
+        if key in constructor_parameters:
+            if isinstance(value, dict) and all(k in value for k in ["indices", "indptr", "shape"]):
+                filtered_input_parameters[key] = dict_to_binary_csr_matrix(value)  # Convert sparse matrix
             else:
-                filtered_params[key] = value  # Keep as-is if not a matrix
-        else:
-            pass
+                filtered_input_parameters[key] = value  # Keep as-is if not a matrix
 
-    return class_name(**filtered_params)
+    # Instantiate the class
+    code_instance = class_reference(**filtered_input_parameters)
+
+    # Add extra attributes from JSON that are valid class attributes but not constructor parameters
+    class_attributes = dir(code_instance)
+    print(class_attributes)
+    for key, value in code_data.items():
+        if key not in constructor_parameters and key in class_attributes:
+            if isinstance(value, dict) and all(k in value for k in ["indices", "indptr", "shape"]):
+                value = dict_to_binary_csr_matrix(value)  # Convert sparse matrix
+            else:
+                pass
+         
+            setattr(code_instance, key, value)
+    
+    return code_instance
