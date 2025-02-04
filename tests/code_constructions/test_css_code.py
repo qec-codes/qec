@@ -5,7 +5,10 @@ import json
 import scipy
 
 from qec.code_constructions import CSSCode
-from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse, csr_matrix_to_dict
+from qec.utils.sparse_binary_utils import (
+    convert_to_binary_scipy_sparse,
+    csr_matrix_to_dict,
+)
 
 # Define a binary parity check matrix for testing
 # Hamming (7, 4) code
@@ -341,8 +344,8 @@ def test_steane_code_estimate_distance():
     assert (
         estimated_distance >= 3
     ), f"Estimated distance should be at least 3, got {estimated_distance}"
-    
-    
+
+
 def test_stabilizer_matrix():
     # Define the Hamming code parity check matrix for Steane code
     # This is the [7,4,3] Hamming code
@@ -391,42 +394,87 @@ def test_logical_operator_basis():
     ), "Logical operator basis mismatch"
 
 
-#----------------------------------------
+# ----------------------------------------
 # Tests for saving CSS codes
-#----------------------------------------
+# ----------------------------------------
 
-test_css_code = CSSCode(hamming_7_4, hamming_7_4, name = 'test')
+test_css_code = CSSCode(hamming_7_4, hamming_7_4, name="test")
+
 
 def test_hgp_save_code_correct_content(tmp_path):
     """Test the content of the saved JSON file."""
-    filepath = tmp_path / 'test_code.json'
+    filepath = tmp_path / "test_code.json"
     notes = "Test notes"
     test_css_code.save_code(filepath, notes)
-    
-    with open(filepath, 'r') as f:
+
+    with open(filepath, "r") as f:
         saved_data = json.load(f)
-    
-    assert saved_data['class_name'] == 'CSSCode'
-    assert saved_data['name'] == 'test'
-    assert saved_data['parameters']['physical_qubit_count'] == 7
-    assert saved_data['parameters']['logical_qubit_count'] == 1
-    assert saved_data['parameters']['code_distance'] == 3 
-    assert saved_data['parameters']['x_code_distance'] == 3
-    assert saved_data['parameters']['z_code_distance'] == 3
-    assert saved_data['x_stabilizer_matrix']['data'] == csr_matrix_to_dict(test_css_code.x_stabilizer_matrix)['data']
-    assert saved_data['x_stabilizer_matrix']['indices'] == csr_matrix_to_dict(test_css_code.x_stabilizer_matrix)['indices']
-    assert saved_data['x_stabilizer_matrix']['indptr'] == csr_matrix_to_dict(test_css_code.x_stabilizer_matrix)['indptr']
-    assert saved_data['x_stabilizer_matrix']['shape'] == list(csr_matrix_to_dict(test_css_code.x_stabilizer_matrix)['shape'])
-    assert saved_data['z_stabilizer_matrix']['data'] == csr_matrix_to_dict(test_css_code.z_stabilizer_matrix)['data']
-    assert saved_data['z_stabilizer_matrix']['indices'] == csr_matrix_to_dict(test_css_code.z_stabilizer_matrix)['indices']
-    assert saved_data['z_stabilizer_matrix']['indptr'] == csr_matrix_to_dict(test_css_code.z_stabilizer_matrix)['indptr']
-    assert saved_data['z_stabilizer_matrix']['shape'] == list(csr_matrix_to_dict(test_css_code.z_stabilizer_matrix)['shape'])
-    assert saved_data['x_logical_operator_basis']['data'] == csr_matrix_to_dict(test_css_code.x_logical_operator_basis)['data']
-    assert saved_data['x_logical_operator_basis']['indices'] == csr_matrix_to_dict(test_css_code.x_logical_operator_basis)['indices']
-    assert saved_data['x_logical_operator_basis']['indptr'] == csr_matrix_to_dict(test_css_code.x_logical_operator_basis)['indptr']
-    assert saved_data['x_logical_operator_basis']['shape'] == list(csr_matrix_to_dict(test_css_code.x_logical_operator_basis)['shape'])
-    assert saved_data['z_logical_operator_basis']['data'] == csr_matrix_to_dict(test_css_code.z_logical_operator_basis)['data']
-    assert saved_data['z_logical_operator_basis']['indices'] == csr_matrix_to_dict(test_css_code.z_logical_operator_basis)['indices']
-    assert saved_data['z_logical_operator_basis']['indptr'] == csr_matrix_to_dict(test_css_code.z_logical_operator_basis)['indptr']
-    assert saved_data['z_logical_operator_basis']['shape'] == list(csr_matrix_to_dict(test_css_code.z_logical_operator_basis)['shape'])
-    assert saved_data['notes'] == notes
+
+    assert saved_data["class_name"] == "CSSCode"
+    assert saved_data["name"] == "test"
+    assert saved_data["parameters"]["physical_qubit_count"] == 7
+    assert saved_data["parameters"]["logical_qubit_count"] == 1
+    assert saved_data["parameters"]["code_distance"] == 3
+    assert saved_data["parameters"]["x_code_distance"] == 3
+    assert saved_data["parameters"]["z_code_distance"] == 3
+    assert (
+        saved_data["x_stabilizer_matrix"]["data"]
+        == csr_matrix_to_dict(test_css_code.x_stabilizer_matrix)["data"]
+    )
+    assert (
+        saved_data["x_stabilizer_matrix"]["indices"]
+        == csr_matrix_to_dict(test_css_code.x_stabilizer_matrix)["indices"]
+    )
+    assert (
+        saved_data["x_stabilizer_matrix"]["indptr"]
+        == csr_matrix_to_dict(test_css_code.x_stabilizer_matrix)["indptr"]
+    )
+    assert saved_data["x_stabilizer_matrix"]["shape"] == list(
+        csr_matrix_to_dict(test_css_code.x_stabilizer_matrix)["shape"]
+    )
+    assert (
+        saved_data["z_stabilizer_matrix"]["data"]
+        == csr_matrix_to_dict(test_css_code.z_stabilizer_matrix)["data"]
+    )
+    assert (
+        saved_data["z_stabilizer_matrix"]["indices"]
+        == csr_matrix_to_dict(test_css_code.z_stabilizer_matrix)["indices"]
+    )
+    assert (
+        saved_data["z_stabilizer_matrix"]["indptr"]
+        == csr_matrix_to_dict(test_css_code.z_stabilizer_matrix)["indptr"]
+    )
+    assert saved_data["z_stabilizer_matrix"]["shape"] == list(
+        csr_matrix_to_dict(test_css_code.z_stabilizer_matrix)["shape"]
+    )
+    assert (
+        saved_data["x_logical_operator_basis"]["data"]
+        == csr_matrix_to_dict(test_css_code.x_logical_operator_basis)["data"]
+    )
+    assert (
+        saved_data["x_logical_operator_basis"]["indices"]
+        == csr_matrix_to_dict(test_css_code.x_logical_operator_basis)["indices"]
+    )
+    assert (
+        saved_data["x_logical_operator_basis"]["indptr"]
+        == csr_matrix_to_dict(test_css_code.x_logical_operator_basis)["indptr"]
+    )
+    assert saved_data["x_logical_operator_basis"]["shape"] == list(
+        csr_matrix_to_dict(test_css_code.x_logical_operator_basis)["shape"]
+    )
+    assert (
+        saved_data["z_logical_operator_basis"]["data"]
+        == csr_matrix_to_dict(test_css_code.z_logical_operator_basis)["data"]
+    )
+    assert (
+        saved_data["z_logical_operator_basis"]["indices"]
+        == csr_matrix_to_dict(test_css_code.z_logical_operator_basis)["indices"]
+    )
+    assert (
+        saved_data["z_logical_operator_basis"]["indptr"]
+        == csr_matrix_to_dict(test_css_code.z_logical_operator_basis)["indptr"]
+    )
+    assert saved_data["z_logical_operator_basis"]["shape"] == list(
+        csr_matrix_to_dict(test_css_code.z_logical_operator_basis)["shape"]
+    )
+    assert saved_data["notes"] == notes

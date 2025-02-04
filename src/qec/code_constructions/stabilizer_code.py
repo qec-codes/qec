@@ -1,4 +1,7 @@
-from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse, csr_matrix_to_dict
+from qec.utils.sparse_binary_utils import (
+    convert_to_binary_scipy_sparse,
+    csr_matrix_to_dict,
+)
 from qec.utils.binary_pauli_utils import (
     symplectic_product,
     check_binary_pauli_matrices_commute,
@@ -339,7 +342,6 @@ class StabilizerCode(object):
         """
         return self.physical_qubit_count, self.logical_qubit_count, self.code_distance
 
-
     def __repr__(self):
         """
         Return an unambiguous string representation of the StabilizerCode instance.
@@ -577,11 +579,10 @@ class StabilizerCode(object):
 
     def _class_specific_save(self):
         class_specific_data = {
-            'stabilizer_matrix' : csr_matrix_to_dict(self.stabilizer_matrix),
-            'logical_operator_basis' : csr_matrix_to_dict(self.logical_operator_basis)
+            "stabilizer_matrix": csr_matrix_to_dict(self.stabilizer_matrix),
+            "logical_operator_basis": csr_matrix_to_dict(self.logical_operator_basis),
         }
         return class_specific_data
-
 
     def save_code(self, filepath: Union[str, Path], notes: str = "") -> None:
         """
@@ -600,32 +601,37 @@ class StabilizerCode(object):
 
         filepath = Path(filepath)
         if not filepath.parent.exists():
-            filepath.parent.mkdir(parents = True)
-        
+            filepath.parent.mkdir(parents=True)
+
         general_data = {
-            'class_name': self.__class__.__name__,
-            'name': self.name,
-            'parameters': {
-                'physical_qubit_count': self.physical_qubit_count,
-                'logical_qubit_count': self.logical_qubit_count,
-                'code_distance': int(self.code_distance) if hasattr(self, 'code_distance') and self.code_distance is not None else '?'
+            "class_name": self.__class__.__name__,
+            "name": self.name,
+            "parameters": {
+                "physical_qubit_count": self.physical_qubit_count,
+                "logical_qubit_count": self.logical_qubit_count,
+                "code_distance": int(self.code_distance)
+                if hasattr(self, "code_distance") and self.code_distance is not None
+                else "?",
             },
         }
-        
+
         class_specific_data = self._class_specific_save()
         merged_data = general_data.copy()
 
         for key, value in class_specific_data.items():
-            if key in merged_data and isinstance(merged_data[key], dict) and isinstance(value, dict):
+            if (
+                key in merged_data
+                and isinstance(merged_data[key], dict)
+                and isinstance(value, dict)
+            ):
                 merged_data[key].update(value)
             else:
                 merged_data[key] = value
 
         merged_data["notes"] = notes
 
-        output = json.dumps(merged_data, indent = 4)
+        output = json.dumps(merged_data, indent=4)
         formatted_output = re.sub(r"(?<=\[)[^\[\]]+(?=\])", repl_function, output)
-        
-        with open(filepath, 'w') as f:
-            f.write(formatted_output)
 
+        with open(filepath, "w") as f:
+            f.write(formatted_output)

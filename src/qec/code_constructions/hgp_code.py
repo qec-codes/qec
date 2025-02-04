@@ -5,7 +5,10 @@ import ldpc.mod2
 import time
 
 from qec.code_constructions import CSSCode
-from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse, csr_matrix_to_dict
+from qec.utils.sparse_binary_utils import (
+    convert_to_binary_scipy_sparse,
+    csr_matrix_to_dict,
+)
 
 
 class HypergraphProductCode(CSSCode):
@@ -264,7 +267,9 @@ class HypergraphProductCode(CSSCode):
             ]
         )
 
-        self.z_logical_operator_basis = scipy.sparse.csr_matrix(scipy.sparse.vstack([lz1, lz2], dtype=np.uint8))
+        self.z_logical_operator_basis = scipy.sparse.csr_matrix(
+            scipy.sparse.vstack([lz1, lz2], dtype=np.uint8)
+        )
 
         temp = scipy.sparse.kron(row_comp_h1, ker_h2)
         lx1 = scipy.sparse.hstack(
@@ -286,7 +291,9 @@ class HypergraphProductCode(CSSCode):
             ]
         )
 
-        self.x_logical_operator_basis =  scipy.sparse.csr_matrix(scipy.sparse.vstack([lx1, lx2], dtype=np.uint8))
+        self.x_logical_operator_basis = scipy.sparse.csr_matrix(
+            scipy.sparse.vstack([lx1, lx2], dtype=np.uint8)
+        )
 
         # Follows the way it is done in CSSCode -> move it into __init__?
         # ----------------------------------------------------------------
@@ -308,16 +315,23 @@ class HypergraphProductCode(CSSCode):
         return f"{self.name} Hypergraphproduct Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, dx={self.x_code_distance}, dz={self.z_code_distance}]]"
 
     def _class_specific_save(self):
-
         class_specific_data = {
-            'parameters' : {
-                'x_code_distance' : self.x_code_distance if self.x_code_distance is not None else '?',
-                'z_code_distance' : self.z_code_distance if self.z_code_distance is not None else '?'
+            "parameters": {
+                "x_code_distance": self.x_code_distance
+                if self.x_code_distance is not None
+                else "?",
+                "z_code_distance": self.z_code_distance
+                if self.z_code_distance is not None
+                else "?",
             },
-            'seed_matrix_1' : csr_matrix_to_dict(self.seed_matrix_1),
-            'seed_matrix_2' : csr_matrix_to_dict(self.seed_matrix_2),
-            'x_logical_operator_basis' : csr_matrix_to_dict(self.x_logical_operator_basis),
-            'z_logical_operator_basis' : csr_matrix_to_dict(self.z_logical_operator_basis)
+            "seed_matrix_1": csr_matrix_to_dict(self.seed_matrix_1),
+            "seed_matrix_2": csr_matrix_to_dict(self.seed_matrix_2),
+            "x_logical_operator_basis": csr_matrix_to_dict(
+                self.x_logical_operator_basis
+            ),
+            "z_logical_operator_basis": csr_matrix_to_dict(
+                self.z_logical_operator_basis
+            ),
         }
 
         return class_specific_data

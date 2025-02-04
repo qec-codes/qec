@@ -1,7 +1,8 @@
 import importlib.resources as resources
 import json
 
-### This test confirms that package data is correctly installed by pip 
+### This test confirms that package data is correctly installed by pip
+
 
 def test_package_data_correctly_installed():
     # Read and parse JSON file from package data
