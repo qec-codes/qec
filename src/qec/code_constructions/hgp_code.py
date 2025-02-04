@@ -7,7 +7,7 @@ import time
 from qec.code_constructions import CSSCode
 from qec.utils.sparse_binary_utils import (
     convert_to_binary_scipy_sparse,
-    csr_matrix_to_dict,
+    binary_csr_matrix_to_dict,
 )
 
 
@@ -316,22 +316,12 @@ class HypergraphProductCode(CSSCode):
 
     def _class_specific_save(self):
         class_specific_data = {
-            "parameters": {
-                "x_code_distance": self.x_code_distance
-                if self.x_code_distance is not None
-                else "?",
-                "z_code_distance": self.z_code_distance
-                if self.z_code_distance is not None
-                else "?",
-            },
-            "seed_matrix_1": csr_matrix_to_dict(self.seed_matrix_1),
-            "seed_matrix_2": csr_matrix_to_dict(self.seed_matrix_2),
-            "x_logical_operator_basis": csr_matrix_to_dict(
-                self.x_logical_operator_basis
-            ),
-            "z_logical_operator_basis": csr_matrix_to_dict(
-                self.z_logical_operator_basis
-            ),
+            "x_code_distance": self.x_code_distance if self.x_code_distance is not None else "?",
+            "z_code_distance": self.z_code_distance if self.z_code_distance is not None else "?",
+            "seed_matrix_1": binary_csr_matrix_to_dict(self.seed_matrix_1),
+            "seed_matrix_2": binary_csr_matrix_to_dict(self.seed_matrix_2),
+            "x_logical_operator_basis": binary_csr_matrix_to_dict(self.x_logical_operator_basis),
+            "z_logical_operator_basis": binary_csr_matrix_to_dict(self.z_logical_operator_basis),
         }
 
         return class_specific_data

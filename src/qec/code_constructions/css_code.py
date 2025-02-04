@@ -1,7 +1,7 @@
 from qec.code_constructions import StabilizerCode
 from qec.utils.sparse_binary_utils import (
     convert_to_binary_scipy_sparse,
-    csr_matrix_to_dict,
+    binary_csr_matrix_to_dict,
 )
 
 # Added / ammended from old code
@@ -849,22 +849,12 @@ class CSSCode(StabilizerCode):
 
     def _class_specific_save(self):
         class_specific_data = {
-            "parameters": {
-                "x_code_distance": self.x_code_distance
-                if self.x_code_distance is not None
-                else "?",
-                "z_code_distance": self.z_code_distance
-                if self.z_code_distance is not None
-                else "?",
-            },
-            "x_stabilizer_matrix": csr_matrix_to_dict(self.x_stabilizer_matrix),
-            "z_stabilizer_matrix": csr_matrix_to_dict(self.z_stabilizer_matrix),
-            "x_logical_operator_basis": csr_matrix_to_dict(
-                self.x_logical_operator_basis
-            ),
-            "z_logical_operator_basis": csr_matrix_to_dict(
-                self.z_logical_operator_basis
-            ),
+            "x_code_distance": self.x_code_distance if self.x_code_distance is not None else "?",
+            "z_code_distance": self.z_code_distance if self.z_code_distance is not None else "?",
+            "x_stabilizer_matrix": binary_csr_matrix_to_dict(self.x_stabilizer_matrix),
+            "z_stabilizer_matrix": binary_csr_matrix_to_dict(self.z_stabilizer_matrix),
+            "x_logical_operator_basis": binary_csr_matrix_to_dict(self.x_logical_operator_basis),
+            "z_logical_operator_basis": binary_csr_matrix_to_dict(self.z_logical_operator_basis),
         }
 
         return class_specific_data

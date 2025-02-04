@@ -2,7 +2,7 @@ import json
 from typing import Union, Dict, Any
 import inspect
 from pathlib import Path
-from qec.utils.sparse_binary_utils import dict_to_csr_matrix
+from qec.utils.sparse_binary_utils import dict_to_binary_csr_matrix
 import qec.code_constructions
 
 
@@ -36,7 +36,7 @@ def load_code(filepath: Union[str, Path]):
         code_data = json.load(f)
 
     if code_data["class_name"] == "StabilizerCode":
-        stabilizer_matrix = dict_to_csr_matrix(code_data["stabilizer_matrix"])
+        stabilizer_matrix = dict_to_binary_csr_matrix(code_data["stabilizer_matrix"])
         instance = qec.code_constructions.StabilizerCode(
             stabilizer_matrix, name=code_data["name"]
         )
@@ -47,8 +47,8 @@ def load_code(filepath: Union[str, Path]):
         )
 
     elif code_data["class_name"] == "CSSCode":
-        x_stabilizer_matrix = dict_to_csr_matrix(code_data["x_stabilizer_matrix"])
-        z_stabilizer_matrix = dict_to_csr_matrix(code_data["z_stabilizer_matrix"])
+        x_stabilizer_matrix = dict_to_binary_csr_matrix(code_data["x_stabilizer_matrix"])
+        z_stabilizer_matrix = dict_to_binary_csr_matrix(code_data["z_stabilizer_matrix"])
         instance = qec.code_constructions.CSSCode(
             x_stabilizer_matrix, z_stabilizer_matrix, code_data["name"]
         )
@@ -64,8 +64,8 @@ def load_code(filepath: Union[str, Path]):
         )
 
     elif code_data["class_name"] == "HypergraphProductCode":
-        seed_matrix_1 = dict_to_csr_matrix(code_data["seed_matrix_1"])
-        seed_matrix_2 = dict_to_csr_matrix(code_data["seed_matrix_2"])
+        seed_matrix_1 = dict_to_binary_csr_matrix(code_data["seed_matrix_1"])
+        seed_matrix_2 = dict_to_binary_csr_matrix(code_data["seed_matrix_2"])
         instance = qec.code_constructions.HypergraphProductCode(
             seed_matrix_1, seed_matrix_2, code_data["name"]
         )
@@ -129,7 +129,7 @@ def load_code_from_dict(code_data: Dict[str, Any]):
             if isinstance(value, dict) and all(
                 k in value for k in ["data", "indices", "indptr", "shape"]
             ):
-                filtered_params[key] = dict_to_csr_matrix(
+                filtered_params[key] = dict_to_binary_csr_matrix(
                     value
                 )  # Convert only if it's a sparse matrix
             else:

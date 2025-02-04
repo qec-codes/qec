@@ -1,6 +1,6 @@
 from qec.utils.sparse_binary_utils import (
     convert_to_binary_scipy_sparse,
-    csr_matrix_to_dict,
+    binary_csr_matrix_to_dict,
 )
 from qec.utils.binary_pauli_utils import (
     symplectic_product,
@@ -579,8 +579,8 @@ class StabilizerCode(object):
 
     def _class_specific_save(self):
         class_specific_data = {
-            "stabilizer_matrix": csr_matrix_to_dict(self.stabilizer_matrix),
-            "logical_operator_basis": csr_matrix_to_dict(self.logical_operator_basis),
+            "stabilizer_matrix": binary_csr_matrix_to_dict(self.stabilizer_matrix),
+            "logical_operator_basis": binary_csr_matrix_to_dict(self.logical_operator_basis),
         }
         return class_specific_data
 
@@ -606,13 +606,11 @@ class StabilizerCode(object):
         general_data = {
             "class_name": self.__class__.__name__,
             "name": self.name,
-            "parameters": {
-                "physical_qubit_count": self.physical_qubit_count,
-                "logical_qubit_count": self.logical_qubit_count,
-                "code_distance": int(self.code_distance)
-                if hasattr(self, "code_distance") and self.code_distance is not None
-                else "?",
-            },
+            "physical_qubit_count": self.physical_qubit_count,
+            "logical_qubit_count": self.logical_qubit_count,
+            "code_distance": int(self.code_distance)
+            if hasattr(self, "code_distance") and self.code_distance is not None
+            else "?",
         }
 
         class_specific_data = self._class_specific_save()

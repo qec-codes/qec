@@ -63,18 +63,12 @@ def convert_to_binary_scipy_sparse(
 
     return matrix
 
-
-def csr_matrix_to_dict(matrix: scipy.sparse.spmatrix):
+def binary_csr_matrix_to_dict(matrix: scipy.sparse.spmatrix):
     return {
-        "data": matrix.data.tolist(),
-        "indices": matrix.indices.tolist(),
-        "indptr": matrix.indptr.tolist(),
-        "shape": matrix.shape,
+        'indices' : matrix.indices.tolist(),
+        'indptr' : matrix.indptr.tolist(),
+        'shape' : matrix.shape
     }
 
-
-def dict_to_csr_matrix(csr_dict: dict):
-    return scipy.sparse.csr_matrix(
-        (csr_dict["data"], csr_dict["indices"], csr_dict["indptr"]),
-        shape=csr_dict["shape"],
-    )
+def dict_to_binary_csr_matrix(csr_dict: dict):
+    return scipy.sparse.csr_matrix(([1] * len(csr_dict['indices']), csr_dict['indices'], csr_dict['indptr']), shape = csr_dict['shape'])
