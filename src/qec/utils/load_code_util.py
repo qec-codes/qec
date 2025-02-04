@@ -66,7 +66,7 @@ def load_code(filepath: Union[str, Path]):
                 value = dict_to_binary_csr_matrix(value)  # Convert sparse matrix
             else:
                 pass
-         
-            setattr(code_instance, key, value)
+            if value is not "?" and value is not None:
+                setattr(code_instance, key, value)
     
     return code_instance
