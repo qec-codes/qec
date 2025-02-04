@@ -25,7 +25,7 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["src"]  
-include = ["qec","qec.*"]
+include = ["qec"]
 
 [tool.pytest.ini_options]
 pythonpath = [
