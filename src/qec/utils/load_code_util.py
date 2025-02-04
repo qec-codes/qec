@@ -5,6 +5,7 @@ from pathlib import Path
 from qec.utils.sparse_binary_utils import dict_to_binary_csr_matrix
 import qec.code_constructions
 
+
 def load_code(filepath: Union[str, Path]):
     """
     Loads a quantum error correction code from a JSON file.
@@ -44,7 +45,7 @@ def load_code(filepath: Union[str, Path]):
         )
 
     try:
-        class_reference = eval("qec.code_constructions." + code_data["class_name"])
+        class_reference = eval(f"qec.code_constructions.{code_data['class_name']}", {"qec": qec})
     except AttributeError:
         raise AttributeError(
             f"Error: The specified class '{code_data['class_name']}' does not exist in qec.code_constructions."
@@ -71,7 +72,6 @@ def load_code(filepath: Union[str, Path]):
 
     # Add extra attributes from JSON that are valid class attributes but not constructor parameters
     class_attributes = dir(code_instance)
-    print(class_attributes)
     for key, value in code_data.items():
         if key not in constructor_parameters and key in class_attributes:
             if isinstance(value, dict) and all(
@@ -81,8 +81,7 @@ def load_code(filepath: Union[str, Path]):
             else:
                 pass
 
-            # RUFF does not like the line below, it keeps on changing it to value =! "?", but this throws errors.
-            if value is not "?" and value is not None:
+            if (not isinstance(value, str) or value != "?") and value is not None:
                 setattr(code_instance, key, value)
 
     return code_instance
