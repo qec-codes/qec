@@ -1,6 +1,7 @@
 import pytest
 from qec.code_constructions import ToricCode
 
+
 def test_toric_code_initialization():
     # Test initialization with both dx and dz specified
     code = ToricCode(dx=5, dz=7)
@@ -29,6 +30,7 @@ def test_toric_code_initialization():
     # Test initialization with neither dx nor dz specified (should raise ValueError)
     with pytest.raises(ValueError, match="Please specify dx or dz"):
         ToricCode()
+
 
 if __name__ == "__main__":
     pytest.main()

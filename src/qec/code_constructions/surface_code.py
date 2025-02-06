@@ -3,6 +3,7 @@ import ldpc.codes.rep_code
 import ldpc.codes
 from qec.code_constructions import HypergraphProductCode
 
+
 class SurfaceCode(HypergraphProductCode):
     """
     Represents a Surface Code, which is a type of quantum error correction code.
@@ -47,7 +48,6 @@ class SurfaceCode(HypergraphProductCode):
     """
 
     def __init__(self, dx: int = None, dz: int = None):
-
         if dx is None and dz is None:
             raise ValueError("Please specify dx or dz")
         if dx is None:

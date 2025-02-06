@@ -1,7 +1,7 @@
-import numpy as np
 
 import ldpc.codes
 from qec.code_constructions import HypergraphProductCode
+
 
 class ToricCode(HypergraphProductCode):
     """
@@ -39,7 +39,6 @@ class ToricCode(HypergraphProductCode):
     """
 
     def __init__(self, dx: int = None, dz: int = None):
-
         if dx is None and dz is None:
             raise ValueError("Please specify dx or dz")
         if dx is None:
@@ -56,4 +55,3 @@ class ToricCode(HypergraphProductCode):
         self.z_code_distance = dz
 
         self.code_distance = min(self.x_code_distance, self.z_code_distance)
-    
