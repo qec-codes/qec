@@ -1,4 +1,3 @@
-
 import ldpc.codes
 from qec.code_constructions import HypergraphProductCode
 

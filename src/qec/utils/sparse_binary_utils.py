@@ -52,7 +52,7 @@ def convert_to_binary_scipy_sparse(
     if not isinstance(matrix, (np.ndarray, list, scipy.sparse.spmatrix)):
         raise TypeError("Input must be array-like.")
 
-    if not isinstance(matrix, scipy.sparse.spmatrix):
+    if not isinstance(matrix, scipy.sparse.csr_matrix):
         matrix = scipy.sparse.csr_matrix(matrix, dtype=np.uint8)
 
     if not matrix.dtype == np.uint8:
