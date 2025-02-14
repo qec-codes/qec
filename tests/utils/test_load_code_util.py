@@ -40,7 +40,9 @@ hamming_7_4 = np.array(
     [[1, 1, 1, 1, 0, 0, 0], [1, 1, 0, 0, 1, 1, 0], [1, 0, 1, 0, 1, 0, 1]],
     dtype=np.uint8,
 )
+
 test_css_code = CSSCode(hamming_7_4, hamming_7_4, name="test")
+test_css_code.compute_logical_basis()
 
 
 def test_load_css_code(tmp_path):
@@ -73,8 +75,8 @@ def test_load_css_code(tmp_path):
 
 
 test_hgp_code = HypergraphProductCode(hamming_7_4, hamming_7_4, name="test")
-# test_hgp_code.compute_exact_code_distance() <-- uncomment this to fail the test
-
+test_hgp_code.compute_exact_code_distance()
+test_hgp_code.compute_logical_basis()
 
 def test_load_hgp_code(tmp_path):
     filepath = tmp_path / "test_hgp_code.json"

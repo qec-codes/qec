@@ -83,7 +83,7 @@ class StabilizerCode(object):
 
         self.stabilizer_matrix = None
         self.physical_qubit_count = None
-        self.logical_qubit_count = None
+        self._logical_qubit_count = None
         self.code_distance = None
         self.logical_operator_basis = None
 
@@ -112,12 +112,22 @@ class StabilizerCode(object):
             raise ValueError("The stabilizers do not commute.")
 
         # Compute the number of logical qubits
-        self.logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(
-            self.stabilizer_matrix, method="dense"
-        )
-
+        # self.logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(
+        #     self.stabilizer_matrix, method="dense"
+        # )
+        #
         # Compute a basis for the logical operators of the code
-        self.logical_operator_basis = self.compute_logical_basis()
+        # self.logical_operator_basis = self.compute_logical_basis()
+
+    @property 
+    def logical_qubit_count(self):
+        if self._logical_qubit_count is None:
+            self._logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(self.stabilizer_matrix, method="dense")
+        return self._logical_qubit_count
+
+    @logical_qubit_count.setter
+    def logical_qubit_count(self, value):
+        self._logical_qubit_count = value
 
     @property
     def pauli_stabilizers(self):
@@ -217,6 +227,18 @@ class StabilizerCode(object):
             pass
 
         return logical_stack[p_rows[self.stabilizer_matrix.shape[0] :]]
+
+    @property
+    def logical_operator_basis(self):
+        if self._logical_operator_basis is None:
+            self._logical_operator_basis = self.compute_logical_basis()
+
+        return self._logical_operator_basis
+
+    @logical_operator_basis.setter 
+    def logical_operator_basis(self, basis : scipy.sparse.spmatrix):
+        self._logical_operator_basis = basis
+
 
     def check_valid_logical_basis(self) -> bool:
         """
@@ -609,7 +631,7 @@ class StabilizerCode(object):
             "class_name": self.__class__.__name__,
             "name": self.name,
             "physical_qubit_count": self.physical_qubit_count,
-            "logical_qubit_count": self.logical_qubit_count,
+            "logical_qubit_count": self.logical_qubit_count if self._logical_qubit_count is not None else "?",
             "code_distance": int(self.code_distance)
             if hasattr(self, "code_distance") and self.code_distance is not None
             else "?",
