@@ -285,7 +285,7 @@ def test_stab_save_code_correct_content(tmp_path):
     assert saved_data["class_name"] == "StabilizerCode"
     assert saved_data["name"] == "test"
     assert saved_data["physical_qubit_count"] == 4
-    assert saved_data["logical_qubit_count"] == 2
+    assert saved_data["logical_qubit_count"] == "?"
     assert saved_data["code_distance"] == 2
     assert saved_data["notes"] == notes
     assert "stabilizers" in saved_data

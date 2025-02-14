@@ -1,4 +1,3 @@
-from numpy.random import test
 import pytest
 import json
 import numpy as np

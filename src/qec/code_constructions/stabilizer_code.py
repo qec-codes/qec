@@ -111,14 +111,6 @@ class StabilizerCode(object):
         if not self.check_stabilizers_commute():
             raise ValueError("The stabilizers do not commute.")
 
-        # Compute the number of logical qubits
-        # self.logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(
-        #     self.stabilizer_matrix, method="dense"
-        # )
-        #
-        # Compute a basis for the logical operators of the code
-        # self.logical_operator_basis = self.compute_logical_basis()
-
     @property 
     def logical_qubit_count(self):
         if self._logical_qubit_count is None:
@@ -604,7 +596,7 @@ class StabilizerCode(object):
             "stabilizers": binary_csr_matrix_to_dict(self.stabilizer_matrix),
             "logical_operator_basis": binary_csr_matrix_to_dict(
                 self.logical_operator_basis
-            ),
+            ) if self.logical_operator_basis is not None else "?",
         }
         return class_specific_data
 

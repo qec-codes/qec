@@ -1,3 +1,4 @@
+from numpy.random import test
 import pytest
 import json
 import numpy as np
@@ -23,6 +24,7 @@ def test_invalid_code_class(tmp_path):
 
 
 test_stab_code = StabilizerCode(stabilizers=np.array([["ZZZZ"], ["XXXX"]]), name="test")
+test_stab_code.compute_exact_code_distance()
 
 
 def test_load_stabilizer_code(tmp_path):
