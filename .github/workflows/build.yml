@@ -1,14 +1,14 @@
 name: Publish to PyPI
 
 on:
-  push:
-    branches:
-      - release
-  workflow_dispatch:
+  workflow_run:
+    workflows: ["Run Tests"]
+    types:
+      - completed
 
 jobs:
   publish:
-    name: Build and Publish qec package to PyPI
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'release' }}
     runs-on: ubuntu-latest
 
     steps:
