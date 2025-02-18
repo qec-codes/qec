@@ -85,3 +85,41 @@ def load_code(filepath: Union[str, Path]):
                 setattr(code_instance, key, value)
 
     return code_instance
+
+
+def load_code_from_id(code_id: int):
+    """
+    Load a quantum error correction code from a JSON file based on its ID from the package data.
+    
+    The code files are packaged as data in the directory:
+        qec/code_instances/saved_codes
+    and are named as f"{code_id}.json".
+    
+    Parameters
+    ----------
+    code_id : int
+        The identifier of the saved code.
+    
+    Returns
+    -------
+    object
+        An instance of the quantum error correction code class loaded from the JSON data.
+    
+    Raises
+    ------
+    FileNotFoundError
+        If the JSON file corresponding to code_id is not found in the package data.
+    """
+    import importlib.resources as pkg_resources
+    filename = f"{code_id}.json"
+    package = "qec.code_instances.saved_codes"
+    if not pkg_resources.is_resource(package, filename):
+        raise FileNotFoundError(
+            f"File '{filename}' does not exist in the package data at '{package}'."
+        )
+    with pkg_resources.path(package, filename) as resource_path:
+        if not resource_path.exists():
+            raise FileNotFoundError(
+                f"File '{resource_path}' does not exist on disk."
+            )
+        return load_code(resource_path)
