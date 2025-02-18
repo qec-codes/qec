@@ -125,3 +125,22 @@ def test_load_code_from_id():
     assert (
         code_instance.code_distance == 3
     ), "Loaded code has an unexpected code distance."
+
+def test_load_code_from_id_hgp():
+    # This test assumes that there is a file "1.json" in the package data containing the Steane Code.
+    code_instance = load_code_from_id(2)
+    assert code_instance is not None, "load_code_from_id returned None."
+    assert isinstance(
+        code_instance, HypergraphProductCode
+    ), "Loaded code is not an instance of HypergraphProductCode."
+    # Optionally, check a known attribute from the saved data.
+    assert code_instance.name == "Hypergraph product code", "Loaded code has an unexpected name."
+    assert (
+        code_instance.physical_qubit_count == 400
+    ), "Loaded code has an unexpected physical qubit count."
+    assert (
+        code_instance.logical_qubit_count == 16
+    ), "Loaded code has an unexpected logical qubit count."
+    assert (
+        code_instance.code_distance == 6
+    ), "Loaded code has an unexpected code distance."
