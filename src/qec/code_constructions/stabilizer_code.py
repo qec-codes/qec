@@ -10,6 +10,7 @@ from qec.utils.binary_pauli_utils import (
     binary_pauli_hamming_weight,
 )
 import re
+import numpy.typing
 import numpy as np
 import scipy.sparse
 import json
@@ -32,7 +33,7 @@ class StabilizerCode(object):
 
     Parameters
     ----------
-    stabilizers : np.typing.ArrayLike or scipy.sparse.spmatrix or list
+    stabilizers : numpy.typing.ArrayLike or scipy.sparse.spmatrix or list
         Either a binary parity check matrix (with an even number of columns),
         or a list of Pauli strings that specify the stabilizers of the code.
     name : str, optional
@@ -65,7 +66,7 @@ class StabilizerCode(object):
 
         Parameters
         ----------
-        stabilizers : np.typing.ArrayLike or scipy.sparse.spmatrix or list
+        stabilizers : numpy.typing.ArrayLike or scipy.sparse.spmatrix or list
             Either a binary parity check matrix (with an even number of columns),
             or a list of Pauli strings that specify the stabilizers of the code.
         name : str, optional

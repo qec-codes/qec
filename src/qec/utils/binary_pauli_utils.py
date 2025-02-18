@@ -1,10 +1,11 @@
 import numpy as np
+import numpy.typing
 import scipy
 import scipy.sparse
 from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
 
 
-def GF4_to_binary(GF4_matrix: np.typing.ArrayLike) -> scipy.sparse.csr_matrix:
+def GF4_to_binary(GF4_matrix: numpy.typing.ArrayLike) -> scipy.sparse.csr_matrix:
     """
     Convert a matrix over GF4 (elements {0,1,2,3}) to a binary sparse matrix in CSR format.
 
@@ -96,7 +97,7 @@ def GF4_to_binary(GF4_matrix: np.typing.ArrayLike) -> scipy.sparse.csr_matrix:
 
 
 def pauli_str_to_binary_pcm(
-    pauli_strings: np.typing.ArrayLike,
+    pauli_strings: numpy.typing.ArrayLike,
 ) -> scipy.sparse.csr_matrix:
     """
     Convert an (M x 1) array of Pauli strings, where each string has length N, corresponding to the number of physical qubits, into a binary parity-check matrix (PCM) with dimensions (M x 2*N).
@@ -181,7 +182,7 @@ def pauli_str_to_binary_pcm(
     )
 
 
-def binary_pcm_to_pauli_str(binary_pcm: np.typing.ArrayLike) -> np.ndarray:
+def binary_pcm_to_pauli_str(binary_pcm: numpy.typing.ArrayLike) -> np.ndarray:
     """
     Convert a binary (M x 2*N) PCM corresponding to M stabilisers acting on N physical qubits,
     back into an array (M x 1) of Pauli strings that have length N.
@@ -239,7 +240,7 @@ def binary_pcm_to_pauli_str(binary_pcm: np.typing.ArrayLike) -> np.ndarray:
 
 
 def symplectic_product(
-    a: np.typing.ArrayLike, b: np.typing.ArrayLike
+    a: numpy.typing.ArrayLike, b: numpy.typing.ArrayLike
 ) -> scipy.sparse.csr_matrix:
     """
     Compute the symplectic product of two binary matrices in CSR format.

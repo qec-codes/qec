@@ -1,9 +1,10 @@
+import numpy.typing
 import numpy as np
 import scipy.sparse
 
 
 def convert_to_binary_scipy_sparse(
-    matrix: np.typing.ArrayLike,
+    matrix: numpy.typing.ArrayLike,
 ) -> scipy.sparse.csr_matrix:
     """
     Convert and validate a matrix as a sparse binary matrix in CSR format.
