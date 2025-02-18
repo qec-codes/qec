@@ -1,0 +1,22 @@
+{
+    "class_name": "HypergraphProductCode",
+    "name": "Hypergraph product code",
+    "physical_qubit_count": 400,
+    "logical_qubit_count": "?",
+    "code_distance": 6,
+    "x_code_distance": 6,
+    "z_code_distance": 6,
+    "seed_matrix_1": {
+        "indices": [0, 1, 4, 5, 2, 6, 7, 12, 3, 4, 6, 13, 5, 8, 9, 15, 1, 7, 8, 11, 8, 12, 13, 14, 0, 7, 13, 15, 3, 5, 10, 12, 2, 3, 11, 15, 4, 9, 10, 11, 1, 6, 10, 14, 0, 2, 9, 14],
+        "indptr": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48],
+        "shape": [12, 16]
+    },
+    "seed_matrix_2": {
+        "indices": [0, 1, 4, 5, 2, 6, 7, 12, 3, 4, 6, 13, 5, 8, 9, 15, 1, 7, 8, 11, 8, 12, 13, 14, 0, 7, 13, 15, 3, 5, 10, 12, 2, 3, 11, 15, 4, 9, 10, 11, 1, 6, 10, 14, 0, 2, 9, 14],
+        "indptr": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48],
+        "shape": [12, 16]
+    },
+    "x_logical_operator_basis": "?",
+    "z_logical_operator_basis": "?",
+    "notes": ""
+}
