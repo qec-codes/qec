@@ -139,7 +139,8 @@ class CSSCode(StabilizerCode):
         self.rank_hz = ldpc.mod2.rank(self.z_stabilizer_matrix)
         # The first self.rank_hz pivot_rows of logical_stack are the Z-stabilisers. The remaining pivot_rows are the Z logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        self._z_logical_operator_basis = logical_stack[pivots[self.rank_hz :], :]
+
+        self.z_logical_operator_basis = logical_stack[pivots[self.rank_hz :], :].tocsr()
 
         # X logicals
 
@@ -153,7 +154,8 @@ class CSSCode(StabilizerCode):
         self.rank_hx = ldpc.mod2.rank(self.x_stabilizer_matrix)
         # The first self.rank_hx pivot_rows of logical_stack are the X-stabilisers. The remaining pivot_rows are the X logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        self._x_logical_operator_basis = logical_stack[pivots[self.rank_hx :], :]
+
+        self.x_logical_operator_basis = logical_stack[pivots[self.rank_hx :], :].tocsr()
 
         return (self.x_logical_operator_basis, self.z_logical_operator_basis)
 
@@ -663,7 +665,7 @@ class CSSCode(StabilizerCode):
 
             # Perform row reduction to find a new X logical basis
             pivots_x = ldpc.mod2.pivot_rows(temp_x)
-            self.x_logical_operator_basis = temp_x[pivots_x[rank_hx:], :]
+            self.x_logical_operator_basis = temp_x[pivots_x[rank_hx:], :].tocsr()
 
         # Reduce Z logical operator basis
         if candidate_logicals_z:
@@ -772,6 +774,17 @@ class CSSCode(StabilizerCode):
         in its binary vector representation. Lower weights generally indicate more
         efficient logical operators.
         """
+
+        if type(self.x_logical_operator_basis) is not scipy.sparse.csr_matrix:
+            self.x_logical_operator_basis = scipy.sparse.csr_matrix(
+                self.x_logical_operator_basis
+            )
+
+        if type(self.z_logical_operator_basis) is not scipy.sparse.csr_matrix:
+            self.z_logical_operator_basis = scipy.sparse.csr_matrix(
+                self.z_logical_operator_basis
+            )
+
         x_weights = []
         z_weights = []
         for i in range(self.logical_qubit_count):
@@ -848,6 +861,76 @@ class CSSCode(StabilizerCode):
         """
         return f"{self.name} Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, dx<={self.x_code_distance}, dz<={self.z_code_distance}]]"
 
+    def canonical_basis_search(
+        self, decoder: Optional[BpOsdDecoder] = None, fix_logical: str = "X"
+    ):
+        """
+        Find a canonical basis of logical operators using a BP+OSD decoder-based search.
+
+        This method estimates the minimum distance of the CSS code by searching for a canonical
+        basis of logical operators. It uses a Belief Propagation with Ordered Statistics Decoding
+        (BP+OSD) decoder to perform the search.
+
+        Parameters
+        ----------
+        decoder : Optional[BpOsdDecoder], optional
+            Pre-configured BP+OSD decoder. If None, initializes with default settings.
+        fix_logical : str, optional
+            Specify which logical operator basis to fix. "X" adjusts Z-logicals based on X-logicals,
+            and "Z" adjusts X-logicals based on Z-logicals. Default is "X".
+        """
+
+        # Ensure logical operator bases are computed
+        if (
+            self.x_logical_operator_basis is None
+            or self.z_logical_operator_basis is None
+        ):
+            self.compute_logical_basis()
+
+        if fix_logical == "X":
+            # Setup decoders and parameters for X
+            bp_osd, stack, full_rank, min_distance, max_distance = (
+                self._setup_distance_estimation_decoder(
+                    self.x_stabilizer_matrix, self.x_logical_operator_basis, decoder
+                )
+            )
+            candidate_logicals = []
+
+            for i in range(self.logical_qubit_count):
+                # Z Logical operators
+                dummy_syndrome = np.zeros(stack.shape[0], dtype=np.uint8)
+                dummy_syndrome[full_rank.shape[0] + i] = 1
+
+                candidate = bp_osd.decode(dummy_syndrome)
+                candidate_logicals.append(candidate)
+
+            self.z_logical_operator_basis = scipy.sparse.csr_matrix(
+                np.array(candidate_logicals)
+            )
+
+        elif fix_logical == "Z":
+            # Setup decoders and parameters for Z
+            bp_osd, stack, full_rank, min_distance, max_distance = (
+                self._setup_distance_estimation_decoder(
+                    self.z_stabilizer_matrix, self.z_logical_operator_basis, decoder
+                )
+            )
+            candidate_logicals = []
+
+            for i in range(self.logical_qubit_count):
+                # X Logical operators
+                dummy_syndrome = np.zeros(stack.shape[0], dtype=np.uint8)
+                dummy_syndrome[full_rank.shape[0] + i] = 1
+
+                candidate = bp_osd.decode(dummy_syndrome)
+                candidate_logicals.append(candidate)
+
+            self.x_logical_operator_basis = scipy.sparse.csr_matrix(
+                np.array(candidate_logicals)
+            )
+
+        else:
+            raise ValueError("fix_logical must be either 'X' or 'Z'")
     def _class_specific_save(self):
         class_specific_data = {
             "x_code_distance": self.x_code_distance if self.x_code_distance is not None else "?",
@@ -859,3 +942,4 @@ class CSSCode(StabilizerCode):
         }
 
         return class_specific_data
+
