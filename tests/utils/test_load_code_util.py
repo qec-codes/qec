@@ -1,11 +1,11 @@
-from numpy.random import test
 import pytest
 import json
 import numpy as np
 
 from qec.code_constructions import StabilizerCode, CSSCode, HypergraphProductCode
 
-from qec.utils import load_code,load_code_from_id
+from qec.utils import load_code, load_code_from_id
+
 
 def test_file_not_found():
     with pytest.raises(FileNotFoundError):
@@ -79,6 +79,7 @@ test_hgp_code = HypergraphProductCode(hamming_7_4, hamming_7_4, name="test")
 test_hgp_code.compute_exact_code_distance()
 test_hgp_code.compute_logical_basis()
 
+
 def test_load_hgp_code(tmp_path):
     filepath = tmp_path / "test_hgp_code.json"
     test_hgp_code.save_code(filepath)
@@ -105,13 +106,22 @@ def test_load_hgp_code(tmp_path):
         == test_hgp_code.z_logical_operator_basis.toarray()
     )
 
+
 def test_load_code_from_id():
     # This test assumes that there is a file "1.json" in the package data containing the Steane Code.
     code_instance = load_code_from_id(1)
     assert code_instance is not None, "load_code_from_id returned None."
-    assert isinstance(code_instance, CSSCode), "Loaded code is not an instance of HypergraphProductCode."
+    assert isinstance(
+        code_instance, CSSCode
+    ), "Loaded code is not an instance of HypergraphProductCode."
     # Optionally, check a known attribute from the saved data.
     assert code_instance.name == "Steane", "Loaded code has an unexpected name."
-    assert code_instance.physical_qubit_count == 7, "Loaded code has an unexpected physical qubit count."
-    assert code_instance.logical_qubit_count == 1, "Loaded code has an unexpected logical qubit count."
-    assert code_instance.code_distance == 3, "Loaded code has an unexpected code distance."
+    assert (
+        code_instance.physical_qubit_count == 7
+    ), "Loaded code has an unexpected physical qubit count."
+    assert (
+        code_instance.logical_qubit_count == 1
+    ), "Loaded code has an unexpected logical qubit count."
+    assert (
+        code_instance.code_distance == 3
+    ), "Loaded code has an unexpected code distance."

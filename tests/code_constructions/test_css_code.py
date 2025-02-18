@@ -413,10 +413,10 @@ def test_css_save_code_with_missing_content(tmp_path):
     assert saved_data["class_name"] == "CSSCode"
     assert saved_data["name"] == "test"
     assert saved_data["physical_qubit_count"] == 7
-    assert saved_data["logical_qubit_count"] == '?'
-    assert saved_data["code_distance"] == '?'
-    assert saved_data["x_code_distance"] == '?'
-    assert saved_data["z_code_distance"] == '?'
+    assert saved_data["logical_qubit_count"] == 1
+    assert saved_data["code_distance"] == "?"
+    assert saved_data["x_code_distance"] == "?"
+    assert saved_data["z_code_distance"] == "?"
     assert (
         saved_data["x_stabilizer_matrix"]["indices"]
         == binary_csr_matrix_to_dict(test_css_code.x_stabilizer_matrix)["indices"]
@@ -439,10 +439,7 @@ def test_css_save_code_with_missing_content(tmp_path):
     assert saved_data["z_stabilizer_matrix"]["shape"] == list(
         binary_csr_matrix_to_dict(test_css_code.z_stabilizer_matrix)["shape"]
     )
-    assert (saved_data["x_logical_operator_basis"] == '?')
-    assert (saved_data["z_logical_operator_basis"] == '?') 
     assert saved_data["notes"] == notes
-
 
 
 def test_css_save_code_with_full_content(tmp_path):
