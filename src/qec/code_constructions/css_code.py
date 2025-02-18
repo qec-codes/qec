@@ -1,5 +1,8 @@
 from qec.code_constructions import StabilizerCode
-from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
+from qec.utils.sparse_binary_utils import (
+    convert_to_binary_scipy_sparse,
+    binary_csr_matrix_to_dict,
+)
 
 # Added / ammended from old code
 from typing import Union, Tuple
@@ -67,30 +70,28 @@ class CSSCode(StabilizerCode):
             A name for this CSS code. Defaults to "CSS code".
         """
 
-        # Assign a default name if none is provided
         if name is None:
             self.name = "CSS code"
         else:
             self.name = name
 
-        self.x_logical_operator_basis = None
-        self.z_logical_operator_basis = None
+        self._x_logical_operator_basis = None
+        self._z_logical_operator_basis = None
 
         self.x_code_distance = None
         self.z_code_distance = None
+        self.code_distance = None
 
-        # Check if the input matrices are NumPy arrays or SciPy sparse matrices
         if not isinstance(x_stabilizer_matrix, (np.ndarray, scipy.sparse.spmatrix)):
             raise TypeError(
                 "Please provide x and z stabilizer matrices as either a numpy array or a scipy sparse matrix."
             )
 
-        # Convert matrices to sparse representation and set them as class attributes (replaced the old code "convert_to_sparse")
         self.x_stabilizer_matrix = convert_to_binary_scipy_sparse(x_stabilizer_matrix)
         self.z_stabilizer_matrix = convert_to_binary_scipy_sparse(z_stabilizer_matrix)
 
-        # Calculate the number of physical qubits from the matrix dimension
         self.physical_qubit_count = self.x_stabilizer_matrix.shape[1]
+        self._logical_qubit_count = None
 
         # Validate the number of qubits for both matrices
         try:
@@ -112,9 +113,6 @@ class CSSCode(StabilizerCode):
                               the requirement that hx@hz.T = 0."
             )
 
-        # Compute a basis of the logical operators
-        self.compute_logical_basis()
-
     def compute_logical_basis(self):
         """
         Compute the logical operator basis for the given CSS code.
@@ -130,14 +128,10 @@ class CSSCode(StabilizerCode):
         and then identifies the subsets of which are not themselves linear combinations of the stabilizers.
         """
 
-        # Compute the kernel of hx and hz matrices
-
         # Z logicals
 
-        # Compute the kernel of hx
-        ker_hx = ldpc.mod2.kernel(self.x_stabilizer_matrix)  # kernel of X-stabilisers
-        # Sort the rows of ker_hx by weight
-        row_weights = ker_hx.getnnz(axis=1)
+        ker_hx = ldpc.mod2.kernel(self.x_stabilizer_matrix)  
+        row_weights = ker_hx.getnnz(axis=1)  # Sort the rows of ker_hx by weight
         sorted_rows = np.argsort(row_weights)
         ker_hx = ker_hx[sorted_rows, :]
         # Z logicals are elements of ker_hx (that commute with all the X-stabilisers) that are not linear combinations of Z-stabilisers
@@ -145,11 +139,10 @@ class CSSCode(StabilizerCode):
         self.rank_hz = ldpc.mod2.rank(self.z_stabilizer_matrix)
         # The first self.rank_hz pivot_rows of logical_stack are the Z-stabilisers. The remaining pivot_rows are the Z logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        self.z_logical_operator_basis = logical_stack[pivots[self.rank_hz :], :]
+        self._z_logical_operator_basis = logical_stack[pivots[self.rank_hz :], :]
 
         # X logicals
 
-        # Compute the kernel of hz
         ker_hz = ldpc.mod2.kernel(self.z_stabilizer_matrix)
         # Sort the rows of ker_hz by weight
         row_weights = ker_hz.getnnz(axis=1)
@@ -160,30 +153,40 @@ class CSSCode(StabilizerCode):
         self.rank_hx = ldpc.mod2.rank(self.x_stabilizer_matrix)
         # The first self.rank_hx pivot_rows of logical_stack are the X-stabilisers. The remaining pivot_rows are the X logicals
         pivots = ldpc.mod2.pivot_rows(logical_stack)
-        self.x_logical_operator_basis = logical_stack[pivots[self.rank_hx :], :]
-
-        # set the dimension of the code (i.e. the number of logical qubits)
-        self.logical_qubit_count = self.x_logical_operator_basis.shape[0]
-
-        # find the minimum weight logical operators
-        self.x_code_distance = self.physical_qubit_count
-        self.z_code_distance = self.physical_qubit_count
-
-        for i in range(self.logical_qubit_count):
-            if self.x_logical_operator_basis[i].nnz < self.x_code_distance:
-                self.x_code_distance = self.x_logical_operator_basis[i].nnz
-            if self.z_logical_operator_basis[i].nnz < self.z_code_distance:
-                self.z_code_distance = self.z_logical_operator_basis[i].nnz
-        self.code_distance = np.min([self.x_code_distance, self.z_code_distance])
-
-        # FIXME: How does this differ from rank_hx and rank_hz descibed above (ldpc.mod2.rank())?
-        # compute the hx and hz rank
-        self.rank_hx = self.physical_qubit_count - ker_hx.shape[0]
-        self.rank_hz = self.physical_qubit_count - ker_hz.shape[0]
+        self._x_logical_operator_basis = logical_stack[pivots[self.rank_hx :], :]
 
         return (self.x_logical_operator_basis, self.z_logical_operator_basis)
 
-    # TODO: Add a function to save the logical operator basis to a file
+    @property
+    def x_logical_operator_basis(self) -> scipy.sparse.spmatrix:
+        if self._x_logical_operator_basis is None:
+            self.compute_logical_basis()
+        return self._x_logical_operator_basis
+
+    @x_logical_operator_basis.setter 
+    def x_logical_operator_basis(self, x_basis : scipy.sparse.spmatrix):
+        self._x_logical_operator_basis = x_basis
+
+    @property
+    def z_logical_operator_basis(self) -> scipy.sparse.spmatrix:
+        if self._z_logical_operator_basis is None:
+            self.compute_logical_basis()
+        return self._z_logical_operator_basis
+
+    @z_logical_operator_basis.setter 
+    def z_logical_operator_basis(self, z_basis : scipy.sparse.spmatrix):
+        self._z_logical_operator_basis = z_basis
+
+    @property
+    def logical_qubit_count(self) -> int:
+        if self._logical_qubit_count is None:
+            self._logical_qubit_count = self.x_logical_operator_basis.shape[0]
+        return self._logical_qubit_count
+
+    @logical_qubit_count.setter 
+    def logical_qubit_count(self, value : int):
+        self._logical_qubit_count = value
+
 
     def check_valid_logical_basis(self) -> bool:
         """
@@ -196,18 +199,6 @@ class CSSCode(StabilizerCode):
         bool
             True if the logical operators form a valid basis, otherwise False.
         """
-
-        # If logical bases are not computed yet, compute them
-        if (
-            self.x_logical_operator_basis is None
-            or self.z_logical_operator_basis is None
-        ):
-            self.x_logical_operator_basis, self.z_logical_operator_basis = (
-                self.compute_logical_basis(
-                    self.x_stabilizer_matrix, self.z_stabilizer_matrix
-                )
-            )
-            self.logical_qubit_count = self.x_logical_operator_basis.shape[0]
 
         try:
             # Test dimension
@@ -226,8 +217,6 @@ class CSSCode(StabilizerCode):
                 ldpc.mod2.rank(self.z_logical_operator_basis)
                 == self.logical_qubit_count
             ), "Z logical operator basis is not full rank, and hence not linearly independent."
-
-            # Perform various tests to validate the logical bases
 
             # Check that the logical operators commute with the stabilizers
             try:
@@ -299,6 +288,18 @@ class CSSCode(StabilizerCode):
             - We compute the Hamming weight of each candidate operator
             - We track the minimal Hamming weight encountered
         """
+
+        self.x_code_distance = self.physical_qubit_count
+        self.z_code_distance = self.physical_qubit_count
+
+        for i in range(self.logical_qubit_count):
+            if self.x_logical_operator_basis[i].nnz < self.x_code_distance:
+                self.x_code_distance = self.x_logical_operator_basis[i].nnz
+            if self.z_logical_operator_basis[i].nnz < self.z_code_distance:
+                self.z_code_distance = self.z_logical_operator_basis[i].nnz
+
+        self.code_distance = np.min([self.x_code_distance, self.z_code_distance])
+
         start_time = time.time()
 
         # Get stabiliser spans
@@ -831,6 +832,9 @@ class CSSCode(StabilizerCode):
         Each block contains k rows of logical operators, ensuring that the X and Z
         logical operators for each logical qubit are properly paired.
         """
+        if self._x_logical_operator_basis is None or self._z_logical_operator_basis is None:
+            self.compute_logical_basis()
+
         return scipy.sparse.block_diag(
             (self.x_logical_operator_basis, self.z_logical_operator_basis)
         )
@@ -843,3 +847,15 @@ class CSSCode(StabilizerCode):
             str: String representation of the CSS code.
         """
         return f"{self.name} Code: [[N={self.physical_qubit_count}, K={self.logical_qubit_count}, dx<={self.x_code_distance}, dz<={self.z_code_distance}]]"
+
+    def _class_specific_save(self):
+        class_specific_data = {
+            "x_code_distance": self.x_code_distance if self.x_code_distance is not None else "?",
+            "z_code_distance": self.z_code_distance if self.z_code_distance is not None else "?",
+            "x_stabilizer_matrix": binary_csr_matrix_to_dict(self.x_stabilizer_matrix),
+            "z_stabilizer_matrix": binary_csr_matrix_to_dict(self.z_stabilizer_matrix),
+            "x_logical_operator_basis": binary_csr_matrix_to_dict(self.x_logical_operator_basis) if self._x_logical_operator_basis is not None else "?",
+            "z_logical_operator_basis": binary_csr_matrix_to_dict(self.z_logical_operator_basis) if self._z_logical_operator_basis is not None else "?",
+        }
+
+        return class_specific_data

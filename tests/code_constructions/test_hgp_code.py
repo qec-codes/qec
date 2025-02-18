@@ -1,7 +1,9 @@
 import pytest
+import json
 import numpy as np
 
 from qec.code_constructions import HypergraphProductCode
+from qec.utils.sparse_binary_utils import binary_csr_matrix_to_dict
 
 three_repetition = np.array([[1, 1, 0], [0, 1, 1]])
 
@@ -119,3 +121,120 @@ def test_hgp_compute_logical_basis():
         temp_code.z_logical_operator_basis.toarray()
         == np.array([1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0])
     )
+
+
+# ----------------------------------------
+# Tests for saving HGP codes
+# ----------------------------------------
+
+test_hgp_code = HypergraphProductCode(three_repetition, three_repetition, name="test")
+
+
+def test_hgp_save_code_with_missing_content(tmp_path):
+    """Test the content of the saved JSON file."""
+    filepath = tmp_path / "test_code.json"
+    notes = "Test notes"
+    test_hgp_code.save_code(filepath, notes)
+
+    with open(filepath, "r") as f:
+        saved_data = json.load(f)
+
+    assert saved_data["class_name"] == "HypergraphProductCode"
+    assert saved_data["name"] == "test"
+    assert saved_data["physical_qubit_count"] == 13
+    assert saved_data["logical_qubit_count"] == '?'
+    assert saved_data["code_distance"] == "?"
+    assert saved_data["x_code_distance"] == "?"
+    assert saved_data["z_code_distance"] == "?"
+    assert (
+        saved_data["seed_matrix_1"]["indices"]
+        == binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_1)["indices"]
+    )
+    assert (
+        saved_data["seed_matrix_1"]["indptr"]
+        == binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_1)["indptr"]
+    )
+    assert saved_data["seed_matrix_1"]["shape"] == list(
+        binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_1)["shape"]
+    )
+    assert (
+        saved_data["seed_matrix_2"]["indices"]
+        == binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_2)["indices"]
+    )
+    assert (
+        saved_data["seed_matrix_2"]["indptr"]
+        == binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_2)["indptr"]
+    )
+    assert saved_data["seed_matrix_2"]["shape"] == list(
+        binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_2)["shape"]
+    )
+    assert (saved_data["x_logical_operator_basis"] == '?')
+    assert (saved_data["z_logical_operator_basis"] == '?') 
+    assert saved_data["notes"] == notes
+
+
+def test_hgp_save_code_with_full_content(tmp_path):
+    """Test the content of the saved JSON file."""
+    
+    test_hgp_code.compute_logical_basis()
+    test_hgp_code.compute_exact_code_distance()
+
+    filepath = tmp_path / "test_code.json"
+    notes = "Test notes"
+    test_hgp_code.save_code(filepath, notes)
+
+    with open(filepath, "r") as f:
+        saved_data = json.load(f)
+
+    assert saved_data["class_name"] == "HypergraphProductCode"
+    assert saved_data["name"] == "test"
+    assert saved_data["physical_qubit_count"] == 13
+    assert saved_data["logical_qubit_count"] == 1
+    assert saved_data["code_distance"] == 3
+    assert saved_data["x_code_distance"] == 3
+    assert saved_data["z_code_distance"] == 3
+    assert (
+        saved_data["seed_matrix_1"]["indices"]
+        == binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_1)["indices"]
+    )
+    assert (
+        saved_data["seed_matrix_1"]["indptr"]
+        == binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_1)["indptr"]
+    )
+    assert saved_data["seed_matrix_1"]["shape"] == list(
+        binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_1)["shape"]
+    )
+    assert (
+        saved_data["seed_matrix_2"]["indices"]
+        == binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_2)["indices"]
+    )
+    assert (
+        saved_data["seed_matrix_2"]["indptr"]
+        == binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_2)["indptr"]
+    )
+    assert saved_data["seed_matrix_2"]["shape"] == list(
+        binary_csr_matrix_to_dict(test_hgp_code.seed_matrix_2)["shape"]
+    )
+    assert (
+        saved_data["x_logical_operator_basis"]["indices"]
+        == binary_csr_matrix_to_dict(test_hgp_code.x_logical_operator_basis)["indices"]
+    )
+    assert (
+        saved_data["x_logical_operator_basis"]["indptr"]
+        == binary_csr_matrix_to_dict(test_hgp_code.x_logical_operator_basis)["indptr"]
+    )
+    assert saved_data["x_logical_operator_basis"]["shape"] == list(
+        binary_csr_matrix_to_dict(test_hgp_code.x_logical_operator_basis)["shape"]
+    )
+    assert (
+        saved_data["z_logical_operator_basis"]["indices"]
+        == binary_csr_matrix_to_dict(test_hgp_code.z_logical_operator_basis)["indices"]
+    )
+    assert (
+        saved_data["z_logical_operator_basis"]["indptr"]
+        == binary_csr_matrix_to_dict(test_hgp_code.z_logical_operator_basis)["indptr"]
+    )
+    assert saved_data["z_logical_operator_basis"]["shape"] == list(
+        binary_csr_matrix_to_dict(test_hgp_code.z_logical_operator_basis)["shape"]
+    )
+    assert saved_data["notes"] == notes

@@ -1,3 +1,4 @@
+import numpy as np
 from qec.code_constructions import StabilizerCode
 from qec.utils.codetables_de_utils import get_codetables_de_matrix, pcm_to_csr_matrix
 
@@ -89,5 +90,8 @@ class CodeTablesDE(StabilizerCode):
         self.url = ct_dict["url"]
 
         # Update distance if the reported upper bound is smaller than the default
+        if self.code_distance is None:
+            self.code_distance = np.inf
+
         if int(ct_dict["d_upper"]) < self.code_distance:
             self.code_distance = int(ct_dict["d_upper"])
