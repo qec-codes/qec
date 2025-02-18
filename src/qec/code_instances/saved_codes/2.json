@@ -1,5 +1,5 @@
 {
-    "notes": "",
+    "notes": "Code source: https://arxiv.org/abs/2005.07016. This code is the hypergraph product of two seed codes that have been designed to have minimum-girth 6.",
     "class_name": "HypergraphProductCode",
     "name": "Hypergraph product code",
     "physical_qubit_count": 400,
