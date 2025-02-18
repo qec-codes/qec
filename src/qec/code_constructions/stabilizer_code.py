@@ -1,4 +1,7 @@
-from qec.utils.sparse_binary_utils import convert_to_binary_scipy_sparse
+from qec.utils.sparse_binary_utils import (
+    convert_to_binary_scipy_sparse,
+    binary_csr_matrix_to_dict,
+)
 from qec.utils.binary_pauli_utils import (
     symplectic_product,
     check_binary_pauli_matrices_commute,
@@ -6,14 +9,16 @@ from qec.utils.binary_pauli_utils import (
     binary_pcm_to_pauli_str,
     binary_pauli_hamming_weight,
 )
-
+import re
 import numpy as np
 import scipy.sparse
+import json
 from tqdm import tqdm
 from ldpc import BpOsdDecoder
 import ldpc.mod2
 import time
 from typing import Tuple, Optional, Union, Sequence
+from pathlib import Path
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -78,7 +83,7 @@ class StabilizerCode(object):
 
         self.stabilizer_matrix = None
         self.physical_qubit_count = None
-        self.logical_qubit_count = None
+        self._logical_qubit_count = None
         self.code_distance = None
         self.logical_operator_basis = None
 
@@ -106,13 +111,15 @@ class StabilizerCode(object):
         if not self.check_stabilizers_commute():
             raise ValueError("The stabilizers do not commute.")
 
-        # Compute the number of logical qubits
-        self.logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(
-            self.stabilizer_matrix, method="dense"
-        )
+    @property 
+    def logical_qubit_count(self):
+        if self._logical_qubit_count is None:
+            self._logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(self.stabilizer_matrix, method="dense")
+        return self._logical_qubit_count
 
-        # Compute a basis for the logical operators of the code
-        self.logical_operator_basis = self.compute_logical_basis()
+    @logical_qubit_count.setter
+    def logical_qubit_count(self, value):
+        self._logical_qubit_count = value
 
     @property
     def pauli_stabilizers(self):
@@ -212,6 +219,18 @@ class StabilizerCode(object):
             pass
 
         return logical_stack[p_rows[self.stabilizer_matrix.shape[0] :]]
+
+    @property
+    def logical_operator_basis(self):
+        if self._logical_operator_basis is None:
+            self._logical_operator_basis = self.compute_logical_basis()
+
+        return self._logical_operator_basis
+
+    @logical_operator_basis.setter 
+    def logical_operator_basis(self, basis : scipy.sparse.spmatrix):
+        self._logical_operator_basis = basis
+
 
     def check_valid_logical_basis(self) -> bool:
         """
@@ -336,24 +355,6 @@ class StabilizerCode(object):
             and the distance of the code.
         """
         return self.physical_qubit_count, self.logical_qubit_count, self.code_distance
-
-    def save_code(self, save_dense: bool = False):
-        """
-        Save the stabilizer code to disk.
-
-        Parameters
-        ----------
-        save_dense : bool, optional
-            If True, saves the parity check matrix as a dense format.
-            Otherwise, saves the parity check matrix as a sparse format.
-        """
-        pass
-
-    def load_code(self):
-        """
-        Load the stabilizer code from a saved file.
-        """
-        pass
 
     def __repr__(self):
         """
@@ -589,3 +590,62 @@ class StabilizerCode(object):
             An array of integers representing the Hamming weights of the logical operators.
         """
         return binary_pauli_hamming_weight(self.logical_operator_basis).flatten()
+
+    def _class_specific_save(self):
+        class_specific_data = {
+            "stabilizers": binary_csr_matrix_to_dict(self.stabilizer_matrix),
+            "logical_operator_basis": binary_csr_matrix_to_dict(
+                self.logical_operator_basis
+            ) if self.logical_operator_basis is not None else "?",
+        }
+        return class_specific_data
+
+    def save_code(self, filepath: Union[str, Path], notes: str = "") -> None:
+        """
+        Save the stabilizer code as a JSON file.
+
+        Parameters
+        ----------
+        filepath : Union[str, Path]
+            Path where the generated JSON is saved.
+        notes : str
+            Additional notes to be saved.
+        """
+
+        def repl_function(match):
+            return " ".join(match.group().split())
+
+        filepath = Path(filepath)
+        if not filepath.parent.exists():
+            filepath.parent.mkdir(parents=True)
+
+        general_data = {
+            "class_name": self.__class__.__name__,
+            "name": self.name,
+            "physical_qubit_count": self.physical_qubit_count,
+            "logical_qubit_count": self.logical_qubit_count if self._logical_qubit_count is not None else "?",
+            "code_distance": int(self.code_distance)
+            if hasattr(self, "code_distance") and self.code_distance is not None
+            else "?",
+        }
+
+        class_specific_data = self._class_specific_save()
+        merged_data = general_data.copy()
+
+        for key, value in class_specific_data.items():
+            if (
+                key in merged_data
+                and isinstance(merged_data[key], dict)
+                and isinstance(value, dict)
+            ):
+                merged_data[key].update(value)
+            else:
+                merged_data[key] = value
+
+        merged_data["notes"] = notes
+
+        output = json.dumps(merged_data, indent=4)
+        formatted_output = re.sub(r"(?<=\[)[^\[\]]+(?=\])", repl_function, output)
+
+        with open(filepath, "w") as f:
+            f.write(formatted_output)

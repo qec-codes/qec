@@ -1,6 +1,7 @@
 import pytest
 import logging
 import numpy as np
+import json
 
 from qec.code_constructions import StabilizerCode
 from qec.codetables_de import CodeTablesDE
@@ -254,3 +255,59 @@ def test_check_valid_logical_basis_logging(caplog):
         assert (
             "The logical operators do not anti-commute with one another." in caplog.text
         )
+
+
+# --------------------------------------
+# Tests for the save code functionality
+# --------------------------------------
+
+test_stab_code = StabilizerCode(stabilizers=np.array([["ZZZZ"], ["XXXX"]]), name="test")
+
+
+def test_stab_save_code_creates_file(tmp_path):
+    """Test that save_code creates a JSON file at the specified path."""
+    filepath = tmp_path / "test_stab_code.json"
+    test_stab_code.save_code(filepath)
+
+    assert filepath.exists()
+    assert filepath.is_file()
+
+
+def test_stab_save_code_correct_content(tmp_path):
+    """Test the content of the saved JSON file."""
+    filepath = tmp_path / "test_code.json"
+    notes = "Test notes"
+    test_stab_code.save_code(filepath, notes)
+
+    with open(filepath, "r") as f:
+        saved_data = json.load(f)
+
+    assert saved_data["class_name"] == "StabilizerCode"
+    assert saved_data["name"] == "test"
+    assert saved_data["physical_qubit_count"] == 4
+    assert saved_data["logical_qubit_count"] == "?"
+    assert saved_data["code_distance"] == 2
+    assert saved_data["notes"] == notes
+    assert "stabilizers" in saved_data
+    assert "logical_operator_basis" in saved_data
+
+
+def test_save_code_creates_parent_directory(tmp_path):
+    """Test that parent directories are created if they don't exist."""
+    filepath = tmp_path / "nested" / "directory" / "test_code.json"
+    test_stab_code.save_code(filepath)
+
+    assert filepath.parent.exists()
+    assert filepath.exists()
+
+
+def test_save_code_handles_missing_code_distance(tmp_path):
+    """Test handling of missing code_distance attribute."""
+
+    test_stab_code.code_distance = None
+    filepath = tmp_path / "test_stab_code.json"
+    test_stab_code.save_code(filepath)
+
+    with open(filepath, "r") as f:
+        saved_data = json.load(f)
+    assert saved_data["code_distance"] == "?"
