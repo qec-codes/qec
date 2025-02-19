@@ -1,4 +1,5 @@
 import json
+import importlib.resources
 from typing import Union
 import inspect
 from pathlib import Path
@@ -92,35 +93,48 @@ def load_code(filepath: Union[str, Path]):
 def load_code_from_id(code_id: int):
     """
     Load a quantum error correction code from a JSON file based on its ID from the package data.
-
+    
     The code files are packaged as data in the directory:
         qec/code_instances/saved_codes
     and are named as f"{code_id}.json".
-
+    
     Parameters
     ----------
     code_id : int
         The identifier of the saved code.
-
+    
     Returns
     -------
     object
         An instance of the quantum error correction code class loaded from the JSON data.
-
+    
     Raises
     ------
     FileNotFoundError
-        If the JSON file corresponding to code_id is not found in the package data.
+        If the JSON file corresponding to code_id is not found.
     """
     from importlib.resources import files, as_file
+    from importlib import import_module
+    from pathlib import Path
 
     filename = f"{code_id}.json"
     package = "qec.code_instances.saved_codes"
-    resource = files(package).joinpath(filename)
+    try:
+        pkg = import_module(package)
+        # If the package spec lacks an origin, fall back.
+        if pkg.__spec__ is None or pkg.__spec__.origin is None:
+            raise ImportError("Package spec origin not found; fallback to filesystem.")
+        resource = files(pkg).joinpath(filename)
+    except Exception:
+        # Fallback: construct the path relative to this file.
+        resource = Path(__file__).parent.parent / "code_instances" / "saved_codes" / filename
+
     if not resource.is_file():
         raise FileNotFoundError(
-            f"File '{filename}' does not exist in package data at '{package}'."
+            f"File '{filename}' does not exist in package data at '{package}' "
+            f"or via fallback path '{resource}'."
         )
+
     with as_file(resource) as resource_path:
         if not resource_path.exists():
             raise FileNotFoundError(f"File '{resource_path}' does not exist on disk.")
