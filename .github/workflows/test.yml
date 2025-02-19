@@ -20,8 +20,13 @@ jobs:
       - name: Install package with dependencies
         run: |
           python -m pip install --upgrade pip
-          # Install the package; pyproject.toml dependencies will be read automatically
           pip install .
+
+      - name: Run Ruff Format
+        run: ruff format .
+
+      - name: Run Ruff Check
+        run: ruff check .
 
       - name: Run Pytest
         run: pytest

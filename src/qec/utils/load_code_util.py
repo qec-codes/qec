@@ -1,5 +1,4 @@
 import json
-import importlib.resources
 from typing import Union
 import inspect
 from pathlib import Path
@@ -93,21 +92,21 @@ def load_code(filepath: Union[str, Path]):
 def load_code_from_id(code_id: int):
     """
     Load a quantum error correction code from a JSON file based on its ID from the package data.
-    
+
     The code files are packaged as data in the directory:
         qec/code_instances/saved_codes
     and are named as f"{code_id}.json".
-    
+
     Parameters
     ----------
     code_id : int
         The identifier of the saved code.
-    
+
     Returns
     -------
     object
         An instance of the quantum error correction code class loaded from the JSON data.
-    
+
     Raises
     ------
     FileNotFoundError
@@ -127,7 +126,9 @@ def load_code_from_id(code_id: int):
         resource = files(pkg).joinpath(filename)
     except Exception:
         # Fallback: construct the path relative to this file.
-        resource = Path(__file__).parent.parent / "code_instances" / "saved_codes" / filename
+        resource = (
+            Path(__file__).parent.parent / "code_instances" / "saved_codes" / filename
+        )
 
     if not resource.is_file():
         raise FileNotFoundError(
