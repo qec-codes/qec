@@ -1,4 +1,4 @@
-name: Run Tests
+name: Run Ruff and Pytests
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - '**'
 
 jobs:
-  test:
+  Ruff_and_Pytest:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
