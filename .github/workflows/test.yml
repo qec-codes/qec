@@ -17,6 +17,28 @@ jobs:
         with:
           python-version: '3.9'
 
+      - name: Check Package Version
+        run: |
+          python -c "import re, sys, urllib.request, json;
+          with open('pyproject.toml', 'r') as f:
+              content = f.read();
+          m = re.search(r'version\s*=\s*\"([^\"]+)\"', content);
+          if not m:
+              sys.exit('Version not found in pyproject.toml');
+          current = m.group(1);
+          def parse_version(v):
+              return tuple(map(int, v.split('.')));
+          current_version = parse_version(current);
+          with urllib.request.urlopen('https://pypi.org/pypi/qec/json') as resp:
+              data = json.load(resp);
+          latest = data['info']['version'];
+          latest_version = parse_version(latest);
+          print(f'Current version: {current}, Latest version on PyPI: {latest}');
+          if current_version > latest_version:
+              sys.exit(0);
+          else:
+              sys.exit('Current package version must be higher than the version on PyPI.')" 
+
       - name: Install package with dependencies
         run: |
           python -m pip install --upgrade pip
@@ -28,18 +50,6 @@ jobs:
 
       - name: Run Ruff Check
         run: ruff check .
-
-      - name: Check Package Version
-        run: |
-          python -c "from importlib.metadata import version; \
-          import json, sys, urllib.request, packaging.version; \
-          current_version = packaging.version.parse(version('qec')); \
-          with urllib.request.urlopen('https://pypi.org/pypi/qec/json') as response: \
-              data = json.load(response); \
-          latest_version = packaging.version.parse(data['info']['version']); \
-          print(f'Current version: {current_version}, Latest version on PyPI: {latest_version}'); \
-          if current_version > latest_version: sys.exit(0) \
-          else: sys.exit('Current package version must be higher than the version on PyPI.')"
 
       - name: Run Pytest
         run: pytest
