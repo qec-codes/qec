@@ -128,7 +128,7 @@ def test_load_code_from_id():
 
 
 def test_load_code_from_id_hgp():
-    # This test assumes that there is a file "1.json" in the package data containing the Steane Code.
+    # This test assumes that there is a file "2.json" in the package data containing the Steane Code.
     code_instance = load_code_from_id(2)
     assert code_instance is not None, "load_code_from_id returned None."
     assert isinstance(
