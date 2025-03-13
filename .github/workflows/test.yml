@@ -1,4 +1,4 @@
-name: Run Ruff and Pytests
+name: Check version, run Ruff, and Pytests
 
 on:
   push:
