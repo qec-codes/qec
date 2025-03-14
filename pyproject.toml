@@ -20,7 +20,8 @@ dependencies = [
     "numpy>=1.24.0",
     "scipy>=1.9.3",
     "requests",
-    "beautifulsoup4"
+    "beautifulsoup4",
+    "rustworkx"
 ]
 
 
