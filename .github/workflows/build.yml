@@ -2,7 +2,7 @@ name: Publish to PyPI
 
 on:
   workflow_run:
-    workflows: ["Run Ruff and Pytests"]
+    workflows: ["Check version, run Ruff, and Pytests"]
     types:
       - completed
 
