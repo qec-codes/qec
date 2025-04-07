@@ -448,7 +448,7 @@ class StabilizerCode(object):
                             break
                     for idx, bit in enumerate(random_mask):
                         if bit == 1:
-                            dummy_syndrome[self.stabilizer_matrix.shape[0] + idx] = 1
+                            dummy_syndrome[full_rank_stabilizer_matrix.shape[0] + idx] = 1
 
                 candidate = bp_osd.decode(dummy_syndrome)
                 w = np.count_nonzero(
