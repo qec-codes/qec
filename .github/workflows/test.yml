@@ -1,0 +1,55 @@
+name: Check version, run Ruff, and Pytests
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  Ruff_and_Pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Check Package Version
+        run: |
+          python -c "import re, sys, urllib.request, json;
+          with open('pyproject.toml', 'r') as f:
+              content = f.read();
+          m = re.search(r'version\s*=\s*\"([^\"]+)\"', content);
+          if not m:
+              sys.exit('Version not found in pyproject.toml');
+          current = m.group(1);
+          def parse_version(v):
+              return tuple(map(int, v.split('.')));
+          current_version = parse_version(current);
+          with urllib.request.urlopen('https://pypi.org/pypi/qec/json') as resp:
+              data = json.load(resp);
+          latest = data['info']['version'];
+          latest_version = parse_version(latest);
+          print(f'Current version: {current}, Latest version on PyPI: {latest}');
+          if current_version > latest_version:
+              sys.exit(0);
+          else:
+              sys.exit('Current package version must be higher than the version on PyPI.')" 
+
+      - name: Install package with dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff packaging
+          pip install .
+
+      - name: Run Ruff Format
+        run: ruff format .
+
+      - name: Run Ruff Check
+        run: ruff check .
+
+      - name: Run Pytest
+        run: pytest

@@ -12,7 +12,7 @@ from qec.utils.sparse_binary_utils import (
 
 
 class HypergraphProductCode(CSSCode):
-    """
+    r"""
     Implements a Hypergraph Product (HGP) code - derived from two classical linear binary codes.
     
     Parameters
@@ -102,7 +102,7 @@ class HypergraphProductCode(CSSCode):
         self.code_distance = None
 
     def compute_exact_code_distance(self) -> int:
-        """
+        r"""
         Computes the exact code distance of the HGP code.
 
         Returns
@@ -331,10 +331,14 @@ class HypergraphProductCode(CSSCode):
             "seed_matrix_2": binary_csr_matrix_to_dict(self.seed_matrix_2),
             "x_logical_operator_basis": binary_csr_matrix_to_dict(
                 self.x_logical_operator_basis
-            ) if self._x_logical_operator_basis is not None else "?",
+            )
+            if self._x_logical_operator_basis is not None
+            else "?",
             "z_logical_operator_basis": binary_csr_matrix_to_dict(
                 self.z_logical_operator_basis
-            ) if self._z_logical_operator_basis is not None else "?",
+            )
+            if self._z_logical_operator_basis is not None
+            else "?",
         }
 
         return class_specific_data

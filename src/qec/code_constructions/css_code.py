@@ -130,7 +130,7 @@ class CSSCode(StabilizerCode):
 
         # Z logicals
 
-        ker_hx = ldpc.mod2.kernel(self.x_stabilizer_matrix)  
+        ker_hx = ldpc.mod2.kernel(self.x_stabilizer_matrix)
         row_weights = ker_hx.getnnz(axis=1)  # Sort the rows of ker_hx by weight
         sorted_rows = np.argsort(row_weights)
         ker_hx = ker_hx[sorted_rows, :]
@@ -165,8 +165,8 @@ class CSSCode(StabilizerCode):
             self.compute_logical_basis()
         return self._x_logical_operator_basis
 
-    @x_logical_operator_basis.setter 
-    def x_logical_operator_basis(self, x_basis : scipy.sparse.spmatrix):
+    @x_logical_operator_basis.setter
+    def x_logical_operator_basis(self, x_basis: scipy.sparse.spmatrix):
         self._x_logical_operator_basis = x_basis
 
     @property
@@ -175,8 +175,8 @@ class CSSCode(StabilizerCode):
             self.compute_logical_basis()
         return self._z_logical_operator_basis
 
-    @z_logical_operator_basis.setter 
-    def z_logical_operator_basis(self, z_basis : scipy.sparse.spmatrix):
+    @z_logical_operator_basis.setter
+    def z_logical_operator_basis(self, z_basis: scipy.sparse.spmatrix):
         self._z_logical_operator_basis = z_basis
 
     @property
@@ -185,10 +185,9 @@ class CSSCode(StabilizerCode):
             self._logical_qubit_count = self.x_logical_operator_basis.shape[0]
         return self._logical_qubit_count
 
-    @logical_qubit_count.setter 
-    def logical_qubit_count(self, value : int):
+    @logical_qubit_count.setter
+    def logical_qubit_count(self, value: int):
         self._logical_qubit_count = value
-
 
     def check_valid_logical_basis(self) -> bool:
         """
@@ -845,7 +844,10 @@ class CSSCode(StabilizerCode):
         Each block contains k rows of logical operators, ensuring that the X and Z
         logical operators for each logical qubit are properly paired.
         """
-        if self._x_logical_operator_basis is None or self._z_logical_operator_basis is None:
+        if (
+            self._x_logical_operator_basis is None
+            or self._z_logical_operator_basis is None
+        ):
             self.compute_logical_basis()
 
         return scipy.sparse.block_diag(
@@ -931,15 +933,27 @@ class CSSCode(StabilizerCode):
 
         else:
             raise ValueError("fix_logical must be either 'X' or 'Z'")
+
     def _class_specific_save(self):
         class_specific_data = {
-            "x_code_distance": self.x_code_distance if self.x_code_distance is not None else "?",
-            "z_code_distance": self.z_code_distance if self.z_code_distance is not None else "?",
+            "x_code_distance": self.x_code_distance
+            if self.x_code_distance is not None
+            else "?",
+            "z_code_distance": self.z_code_distance
+            if self.z_code_distance is not None
+            else "?",
             "x_stabilizer_matrix": binary_csr_matrix_to_dict(self.x_stabilizer_matrix),
             "z_stabilizer_matrix": binary_csr_matrix_to_dict(self.z_stabilizer_matrix),
-            "x_logical_operator_basis": binary_csr_matrix_to_dict(self.x_logical_operator_basis) if self._x_logical_operator_basis is not None else "?",
-            "z_logical_operator_basis": binary_csr_matrix_to_dict(self.z_logical_operator_basis) if self._z_logical_operator_basis is not None else "?",
+            "x_logical_operator_basis": binary_csr_matrix_to_dict(
+                self.x_logical_operator_basis
+            )
+            if self._x_logical_operator_basis is not None
+            else "?",
+            "z_logical_operator_basis": binary_csr_matrix_to_dict(
+                self.z_logical_operator_basis
+            )
+            if self._z_logical_operator_basis is not None
+            else "?",
         }
 
         return class_specific_data
-

@@ -10,6 +10,7 @@ from qec.utils.binary_pauli_utils import (
     binary_pauli_hamming_weight,
 )
 import re
+import numpy.typing
 import numpy as np
 import scipy.sparse
 import json
@@ -32,7 +33,7 @@ class StabilizerCode(object):
 
     Parameters
     ----------
-    stabilizers : np.typing.ArrayLike or scipy.sparse.spmatrix or list
+    stabilizers : numpy.typing.ArrayLike or scipy.sparse.spmatrix or list
         Either a binary parity check matrix (with an even number of columns),
         or a list of Pauli strings that specify the stabilizers of the code.
     name : str, optional
@@ -65,7 +66,7 @@ class StabilizerCode(object):
 
         Parameters
         ----------
-        stabilizers : np.typing.ArrayLike or scipy.sparse.spmatrix or list
+        stabilizers : numpy.typing.ArrayLike or scipy.sparse.spmatrix or list
             Either a binary parity check matrix (with an even number of columns),
             or a list of Pauli strings that specify the stabilizers of the code.
         name : str, optional
@@ -111,10 +112,12 @@ class StabilizerCode(object):
         if not self.check_stabilizers_commute():
             raise ValueError("The stabilizers do not commute.")
 
-    @property 
+    @property
     def logical_qubit_count(self):
         if self._logical_qubit_count is None:
-            self._logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(self.stabilizer_matrix, method="dense")
+            self._logical_qubit_count = self.physical_qubit_count - ldpc.mod2.rank(
+                self.stabilizer_matrix, method="dense"
+            )
         return self._logical_qubit_count
 
     @logical_qubit_count.setter
@@ -227,10 +230,9 @@ class StabilizerCode(object):
 
         return self._logical_operator_basis
 
-    @logical_operator_basis.setter 
-    def logical_operator_basis(self, basis : scipy.sparse.spmatrix):
+    @logical_operator_basis.setter
+    def logical_operator_basis(self, basis: scipy.sparse.spmatrix):
         self._logical_operator_basis = basis
-
 
     def check_valid_logical_basis(self) -> bool:
         """
@@ -596,7 +598,9 @@ class StabilizerCode(object):
             "stabilizers": binary_csr_matrix_to_dict(self.stabilizer_matrix),
             "logical_operator_basis": binary_csr_matrix_to_dict(
                 self.logical_operator_basis
-            ) if self.logical_operator_basis is not None else "?",
+            )
+            if self.logical_operator_basis is not None
+            else "?",
         }
         return class_specific_data
 
@@ -620,10 +624,11 @@ class StabilizerCode(object):
             filepath.parent.mkdir(parents=True)
 
         general_data = {
+            "notes": notes,
             "class_name": self.__class__.__name__,
             "name": self.name,
             "physical_qubit_count": self.physical_qubit_count,
-            "logical_qubit_count": self.logical_qubit_count if self._logical_qubit_count is not None else "?",
+            "logical_qubit_count": self.logical_qubit_count,
             "code_distance": int(self.code_distance)
             if hasattr(self, "code_distance") and self.code_distance is not None
             else "?",
@@ -641,8 +646,6 @@ class StabilizerCode(object):
                 merged_data[key].update(value)
             else:
                 merged_data[key] = value
-
-        merged_data["notes"] = notes
 
         output = json.dumps(merged_data, indent=4)
         formatted_output = re.sub(r"(?<=\[)[^\[\]]+(?=\])", repl_function, output)
