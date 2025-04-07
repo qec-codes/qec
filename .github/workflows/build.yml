@@ -8,10 +8,8 @@ on:
 
 jobs:
   publish:
-    # This job runs only if the triggering workflow concluded successfully AND the head branch is "release"
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'release' }}
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
