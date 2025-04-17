@@ -113,7 +113,7 @@ class MemoryExperiment:
         if basis == 'Z':
             for i in range(self.num_z_checks):
                 body.append('DETECTOR', [stim.target_rec(-i - self.num_x_checks - 1),
-                                        stim.target_rec(-i - (2 * self.num_z_checks + self.num_x_checks) - 1)])
+                                        stim.target_rec(-i - ( self.num_z_checks + 2 * self.num_x_checks) - 1)])
 
         elif basis == 'X':
             for i in range(self.num_x_checks):
@@ -140,7 +140,7 @@ class MemoryExperiment:
                 stabilized_data = [stim.target_rec(-1 * (self.num_data - j)) for j in np.where(stabilizer == 1)[0]]
                 tail.append('DETECTOR', stabilized_data + last_measurement_of_stabilizer)
 
-        for i, observable in enumerate(self.code.x_logical_operator_basis.toarray()):
+            for i, observable in enumerate(self.code.x_logical_operator_basis.toarray()):
                 observed_data = [stim.target_rec(-1 * (self.num_data - j)) for j in np.where(observable == 1)[0]]
                 tail.append('OBSERVABLE_INCLUDE', observed_data, i)
 
