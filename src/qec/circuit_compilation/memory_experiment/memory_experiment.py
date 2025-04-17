@@ -3,6 +3,32 @@ from qec.code_constructions import HypergraphProductCode
 import stim
 
 class MemoryExperiment:
+    """
+    Class for compiling memory experiments.
+
+    Parameters
+    ----------
+    code : HypergraphProductCode
+        The code to be used in the experiment.
+
+    Attributes
+    ----------
+    code : HypergraphProductCode
+        The input code to be used in the experiment.
+    num_x_checks : int
+        The number of X stabilizers in the code.
+    num_z_checks : int
+        The number of Z stabilizers in the code.
+    num_data : int
+        The number of data qubits in the code.
+    data_qubits : list
+        The list of data qubit ids of the code.
+    x_stabilizer_qubits : list
+        The list of X stabilizer qubit ids of the code.
+    z_stabilizer_qubits : list
+        The list of Z stabilizer qubit ids of the code.
+    
+    """
 
     def __init__(self,
                  code: HypergraphProductCode, # currently we only support HGP codes
@@ -25,15 +51,34 @@ class MemoryExperiment:
                 basis : str = 'Z',
                 rounds : int = 1,
                 noise : bool = False,
-                schedule : str = 'cardinal'
                 ) -> stim.Circuit:
         
+        """
+        Compiles a memory experiment circuit. 
+
+        Parameters
+        ----------
+        basis : str
+            The basis of the memory experiment. Can be 'Z' or 'X'.
+        rounds : int
+            The number of stabilizer rounds the experiment consists of.
+        noise : bool
+            If True, the circuit will include the noise, described by the noise 
+            model passed to the MemoryExperiment object.
+
+        Returns
+        -------
+        stim.Circuit
+            The compiled circuit for the memory experiment.
+        
+        """
+
         cycle = stim.Circuit()
         cycle.append('H', self.x_stabilizer_qubits)
         cycle.append('TICK')
 
-        if schedule == 'cardinal':
-            cnots = self.code._cardinal_CNOT_schedule()
+
+        cnots = self.code._stabilizer_schedule()
         
         previous_color = cnots[0][1]
 
@@ -47,11 +92,11 @@ class MemoryExperiment:
         cycle.append('TICK')
         cycle.append('MR' + basis, self.z_stabilizer_qubits + self.x_stabilizer_qubits)
 
+
         head = stim.Circuit()
         head.append('R' + basis, self.data_qubits)
         head.append('RZ', self.z_stabilizer_qubits + self.x_stabilizer_qubits)
         head.append('TICK')
-
         head += cycle
 
         if basis == 'Z':
@@ -61,6 +106,7 @@ class MemoryExperiment:
         elif basis == 'X':
             for i in range(self.num_x_checks):
                 head.append('DETECTOR', [stim.target_rec(-i - 1)])
+
 
         body = cycle.copy()
 
@@ -74,10 +120,6 @@ class MemoryExperiment:
                 body.append('DETECTOR', [stim.target_rec(-i - 1),
                                     stim.target_rec(-i - (self.num_z_checks + self.num_x_checks) - 1)])
 
-            
-        #------------------------------------------------------------------------------
-        # tail of circuit:
-        #------------------------------------------------------------------------------
 
         tail = stim.Circuit()
         tail.append('M' + basis, self.data_qubits)

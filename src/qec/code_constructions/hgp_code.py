@@ -154,7 +154,9 @@ class HypergraphProductCode(CSSCode):
 
     def estimate_min_distance(self, timeout_seconds: float = 0.025) -> int:
         """
-        Estimate the minimum X and Z distance of the HGP code.        Parameters
+        Estimate the minimum X and Z distance of the HGP code.        
+        
+        Parameters
         ----------
         timeout_seconds : float, optional
             Time limit in seconds for the full search. Default: 0.25
@@ -340,7 +342,30 @@ class HypergraphProductCode(CSSCode):
 
         return class_specific_data
 
-    def _cardinal_CNOT_schedule(self):
+    def _stabilizer_schedule(self) -> list[Tuple[list[int, int], str]]:
+        """
+        Returns the "cardinal" [2]_ stabilizer schedule for circuit compilation.
+
+        Returns
+        -------
+        list
+            A list of tuples, where each tuple contains a pair of qubit indices
+            and a color id. CNOTs with the same color id can be applied in parallel.
+
+        Notes
+        -----
+        To obtain the balanced graph needed for the optimal circuit depth, we use the
+        "balanced sign" idea from: https://arxiv.org/abs/2504.02673
+        However, instead of their heuristics for the sign assignment, we use the coloring
+        of the seed code's Tanner graph amd assign signs (cardinal directions) to the
+        edges dependening on whether the integer representing the color is even or odd.
+
+        Furthermore, as the N - S stabilizers can be applied in any order without introducing
+        any additional CNOTs, we do not try to balance the second seed code's tanner graph, simply 
+        color it. 
+
+        .. [2] Tremblay, M. A., Delfosse, N., & Beverland, M. E. (2022). Constant-overhead quantum error correction with thin planar connectivity. Physical Review Letters, 129(5), 050504.
+        """
 
         seed_1_tanner = rx.PyGraph(multigraph = False)
         seed_1_data_nodes = [seed_1_tanner.add_node(i) for i in range(self._n1)]
@@ -397,10 +422,10 @@ class HypergraphProductCode(CSSCode):
         for check, data in seed_2_tanner.edge_list():
             for i in range(self._n1):
                 north_south_tanner.add_edge(data * self._n1 + i,
-                                            check * self._n1 + i + num_sector_IV + num_sector_II, 'Z')
+                                            check * self._n1 + i + num_sector_IV + num_sector_II, 1)
             for i in range(self._m1):
                 north_south_tanner.add_edge(data * self._m1 + i + num_data,
-                                            check * self._m1 + i - num_sector_II + num_sector_I, 'X')
+                                            check * self._m1 + i - num_sector_II + num_sector_I, 1)
                 
 
         colored_east = rx.graph_bipartite_edge_color(east_tanner)
