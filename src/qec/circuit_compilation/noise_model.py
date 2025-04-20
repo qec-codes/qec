@@ -330,130 +330,133 @@ class NoiseModel:
         }  # Track qubit activity within the current TICK
 
         for inst in circuit:
-            op = inst.name
-            targets = [int(t.value) for t in inst.targets_copy()]
+            if isinstance(inst, stim.CircuitRepeatBlock):
+                noisy += self.noisy_circuit(inst.body_copy()) * inst.repeat_count
+            else:
+                op = inst.name
+                targets = [int(t.value) for t in inst.targets_copy()]
 
-            # Track qubit activity (for possible idle noise)
-            if OP_TYPES.get(op) in {
-                CLIFFORD_1Q,
-                CLIFFORD_2Q,
-                JUST_MEASURE_1Q,
-                JUST_RESET_1Q,
-                MEASURE_RESET_1Q,
-            }:
-                for q in targets:
-                    qubits_touched[q] += 1
+                # Track qubit activity (for possible idle noise)
+                if OP_TYPES.get(op) in {
+                    CLIFFORD_1Q,
+                    CLIFFORD_2Q,
+                    JUST_MEASURE_1Q,
+                    JUST_RESET_1Q,
+                    MEASURE_RESET_1Q,
+                }:
+                    for q in targets:
+                        qubits_touched[q] += 1
 
-            # Append gate noise
-            if OP_TYPES.get(op) == CLIFFORD_1Q:
-                noisy.append(inst)
-                for q in targets:
-                    if q not in immune_qubits:
+                # Append gate noise
+                if OP_TYPES.get(op) == CLIFFORD_1Q:
+                    noisy.append(inst)
+                    for q in targets:
+                        if q not in immune_qubits:
+                            if op in self.gates:
+                                p = self.gates[op]
+                            else:
+                                p = self.any_clifford_1
+                            if p > 0:
+                                noisy.append_operation("DEPOLARIZE1", [q], p)
+
+                elif OP_TYPES.get(op) == CLIFFORD_2Q:
+                    noisy.append(inst)
+                    if all(q not in immune_qubits for q in targets):
                         if op in self.gates:
                             p = self.gates[op]
                         else:
-                            p = self.any_clifford_1
+                            p = self.any_clifford_2
                         if p > 0:
-                            noisy.append_operation("DEPOLARIZE1", [q], p)
+                            noisy.append_operation("DEPOLARIZE2", targets, p)
 
-            elif OP_TYPES.get(op) == CLIFFORD_2Q:
-                noisy.append(inst)
-                if all(q not in immune_qubits for q in targets):
-                    if op in self.gates:
-                        p = self.gates[op]
-                    else:
-                        p = self.any_clifford_2
-                    if p > 0:
-                        noisy.append_operation("DEPOLARIZE2", targets, p)
+                # Append measurement/reset noise
+                elif OP_TYPES.get(op) == JUST_MEASURE_1Q:
+                    for q in targets:
+                        basis = OP_MEASURE_BASES.get(
+                            op, "Z"
+                        )  # Defaults to "Z" if not found
+                        p = self.measure.get(
+                            basis, 0.0
+                        )  # If value associated to measurement key doesnt exist - set to 0
+                        if p > 0 and q not in immune_qubits:
+                            if basis == "Z":
+                                noisy.append_operation("X_ERROR", [q], p)
+                            elif basis == "X":
+                                noisy.append_operation("Z_ERROR", [q], p)
+                            elif basis == "Y":
+                                # Optional: could model Y flips with either X or Z, or a depolarizing channel
+                                noisy.append_operation("Y_ERROR", [q], p)
+                    noisy.append(inst)
 
-            # Append measurement/reset noise
-            elif OP_TYPES.get(op) == JUST_MEASURE_1Q:
-                for q in targets:
-                    basis = OP_MEASURE_BASES.get(
-                        op, "Z"
-                    )  # Defaults to "Z" if not found
-                    p = self.measure.get(
-                        basis, 0.0
-                    )  # If value associated to measurement key doesnt exist - set to 0
-                    if p > 0 and q not in immune_qubits:
-                        if basis == "Z":
-                            noisy.append_operation("X_ERROR", [q], p)
-                        elif basis == "X":
-                            noisy.append_operation("Z_ERROR", [q], p)
-                        elif basis == "Y":
-                            # Optional: could model Y flips with either X or Z, or a depolarizing channel
-                            noisy.append_operation("Y_ERROR", [q], p)
-                noisy.append(inst)
+                elif OP_TYPES.get(op) == MEASURE_RESET_1Q:
+                    # Add measuremnt noise (before the operation)
+                    for q in targets:
+                        basis = op[-1] if len(op) > 2 else "Z"  # e.g. MRX -> "X"
+                        p_measure = self.measure.get(
+                            basis, 0.0
+                        )  # If value associated to measurement key doesnt exist - set to 0
+                        if p_measure > 0 and q not in immune_qubits:
+                            if basis == "Z":
+                                noisy.append_operation("X_ERROR", [q], p_measure)
+                            elif basis == "X":
+                                noisy.append_operation("Z_ERROR", [q], p_measure)
+                            elif basis == "Y":
+                                # Optional: could model Y flips with either X or Z, or a depolarizing channel
+                                noisy.append_operation("Y_ERROR", [q], p_measure)
 
-            elif OP_TYPES.get(op) == MEASURE_RESET_1Q:
-                # Add measuremnt noise (before the operation)
-                for q in targets:
-                    basis = op[-1] if len(op) > 2 else "Z"  # e.g. MRX -> "X"
-                    p_measure = self.measure.get(
-                        basis, 0.0
-                    )  # If value associated to measurement key doesnt exist - set to 0
-                    if p_measure > 0 and q not in immune_qubits:
-                        if basis == "Z":
-                            noisy.append_operation("X_ERROR", [q], p_measure)
-                        elif basis == "X":
-                            noisy.append_operation("Z_ERROR", [q], p_measure)
-                        elif basis == "Y":
-                            # Optional: could model Y flips with either X or Z, or a depolarizing channel
-                            noisy.append_operation("Y_ERROR", [q], p_measure)
+                    # Append the actual MEASURE_RESET_1Q operation (measurement + reset)
+                    noisy.append(inst)
 
-                # Append the actual MEASURE_RESET_1Q operation (measurement + reset)
-                noisy.append(inst)
+                    # Append reset noise (after the operation)
+                    for q in targets:
+                        p_reset = self.reset.get(
+                            basis, 0.0
+                        )  # If value associated to reset key doesnt exist - set to 0
+                        if p_reset > 0 and q not in immune_qubits:
+                            if basis == "Z":
+                                noisy.append_operation("X_ERROR", [q], p_reset)
+                            elif basis == "X":
+                                noisy.append_operation("Z_ERROR", [q], p_reset)
+                            elif basis == "Y":
+                                # Optional: could model Y flips with either X or Z, or a depolarizing channel
+                                noisy.append_operation("Y_ERROR", [q], p_reset)
 
-                # Append reset noise (after the operation)
-                for q in targets:
-                    p_reset = self.reset.get(
-                        basis, 0.0
-                    )  # If value associated to reset key doesnt exist - set to 0
-                    if p_reset > 0 and q not in immune_qubits:
-                        if basis == "Z":
-                            noisy.append_operation("X_ERROR", [q], p_reset)
-                        elif basis == "X":
-                            noisy.append_operation("Z_ERROR", [q], p_reset)
-                        elif basis == "Y":
-                            # Optional: could model Y flips with either X or Z, or a depolarizing channel
-                            noisy.append_operation("Y_ERROR", [q], p_reset)
+                elif OP_TYPES.get(op) == JUST_RESET_1Q:
+                    noisy.append(inst)
+                    for q in targets:
+                        basis = op[-1] if len(op) > 1 else "Z"  # e.g. RX -> "X"
+                        p = self.reset.get(
+                            basis, 0.0
+                        )  # If value associated to reset key doesnt exist - set to 0
+                        if p > 0 and q not in immune_qubits:
+                            if basis == "Z":
+                                noisy.append_operation("X_ERROR", [q], p)
+                            elif basis == "X":
+                                noisy.append_operation("Z_ERROR", [q], p)
+                            elif basis == "Y":
+                                # Optional: could model Y flips with either X or Z, or a depolarizing channel
+                                noisy.append_operation("Y_ERROR", [q], p)
 
-            elif OP_TYPES.get(op) == JUST_RESET_1Q:
-                noisy.append(inst)
-                for q in targets:
-                    basis = op[-1] if len(op) > 1 else "Z"  # e.g. RX -> "X"
-                    p = self.reset.get(
-                        basis, 0.0
-                    )  # If value associated to reset key doesnt exist - set to 0
-                    if p > 0 and q not in immune_qubits:
-                        if basis == "Z":
-                            noisy.append_operation("X_ERROR", [q], p)
-                        elif basis == "X":
-                            noisy.append_operation("Z_ERROR", [q], p)
-                        elif basis == "Y":
-                            # Optional: could model Y flips with either X or Z, or a depolarizing channel
-                            noisy.append_operation("Y_ERROR", [q], p)
+                # Detect idle qubits within each TICK and apply idle noise
 
-            # Detect idle qubits within each TICK and apply idle noise
+                # All other operations (like DETECTOR, OBSERVABLE_INCLUDE, SHIFT_COORDS, etc.)
+                elif op != "TICK":
+                    noisy.append(inst)
 
-            # All other operations (like DETECTOR, OBSERVABLE_INCLUDE, SHIFT_COORDS, etc.)
-            elif op != "TICK":
-                noisy.append(inst)
+                elif op == "TICK":
+                    # Apply the idle noise BEFORE appending TICK
+                    if self.idle_depolarization > 0:
+                        for q in system_qubits:
+                            if q not in immune_qubits and qubits_touched[q] == 0:
+                                noisy.append_operation(
+                                    "DEPOLARIZE1", [q], self.idle_depolarization
+                                )
 
-            elif op == "TICK":
-                # Apply the idle noise BEFORE appending TICK
-                if self.idle_depolarization > 0:
-                    for q in system_qubits:
-                        if q not in immune_qubits and qubits_touched[q] == 0:
-                            noisy.append_operation(
-                                "DEPOLARIZE1", [q], self.idle_depolarization
-                            )
+                    # Append the TICK operation
+                    noisy.append(inst)
+                    tick_count += 1
 
-                # Append the TICK operation
-                noisy.append(inst)
-                tick_count += 1
-
-                # Reset the activity tracker for the next TICK interval
-                qubits_touched = {q: 0 for q in system_qubits}
+                    # Reset the activity tracker for the next TICK interval
+                    qubits_touched = {q: 0 for q in system_qubits}
 
         return noisy
