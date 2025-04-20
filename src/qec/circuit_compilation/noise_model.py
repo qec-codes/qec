@@ -3,8 +3,7 @@ import numpy as np
 import stim
 from typing import Dict, List, Tuple, Union, Optional, Set
 
-# ------------------------------------------------------------------------------
-# FIXME: Adjust operator types (are there more?)
+# -----------------------------------------------------------------------------
 
 CLIFFORD_1Q = "C1"
 CLIFFORD_2Q = "C2"
@@ -100,20 +99,8 @@ COLLAPSING_OPS = {
     if t == JUST_RESET_1Q or t == JUST_MEASURE_1Q or t == MPP or t == MEASURE_RESET_1Q
 }
 
-# ------------------------------------------------------------------------------
-# class NoisyGate:
-#     """
-#     Represents a noisy gate moment in a quantum circuit.
-#     """
-#     def __init__(self, op: str, targets: List[int], noise: dict[str, float]):
-#         self.op = op
-#         self.targets = targets
-#         self.noise = noise
+# -----------------------------------------------------------------------------
 
-#     def noisy_gate(self, )
-
-
-# @dataclasses.dataclass(frozen=True)
 class NoiseModel:
     """
     Noise model class for stim circuits. --> Soon to be generalised.
@@ -209,7 +196,7 @@ class NoiseModel:
     @staticmethod
     def _get_noise_type(noise_type: str) -> str:
         """
-        Converts noise type to a format compatible with Stim. 
+        Converts noise type to a format compatible with Stim.
         This can be used to convert noise types from other libraries or formats to the format used in Stim.
         --> e.g. noise from Qiskit or other frameworks.
 
@@ -223,14 +210,7 @@ class NoiseModel:
         str
             The converted noise type.
         """
-        # if noise_type == 'X_ERROR':
-        #     return 'X'
-        # elif noise_type == 'Y_ERROR':
-        #     return 'Y'
-        # elif noise_type == 'Z_ERROR':
-        #     return 'Z'
-        # else:
-        #     return noise_type
+        pass
 
     # -------------------------------------------------------------------------
     # TODO: Complete the following methods - Could be more to onsider
@@ -310,14 +290,14 @@ class NoiseModel:
     # use_correlated_parity_measurement_errors: bool = False ???
 
     # -------------------------------------------------------------------------
-    # Nosy circuit
+    # Noisy circuit
     # -------------------------------------------------------------------------
 
     def noisy_circuit(
         self,
         circuit: stim.Circuit,
         *,  # TODO: Check - want below args to be from noise model initialisation
-        system_qubits: Optional[Set[int]] = None,
+        system_qubits: set[int] | None = None,
         immune_qubits: set[int] | None = None,
     ) -> stim.Circuit:
         """
@@ -343,10 +323,11 @@ class NoiseModel:
         if immune_qubits is None:
             immune_qubits = set()
 
-        
         noisy = stim.Circuit()
         tick_count = 0
-        qubits_touched = {q: 0 for q in system_qubits}  # Track qubit activity within the current TICK
+        qubits_touched = {
+            q: 0 for q in system_qubits
+        }  # Track qubit activity within the current TICK
 
         for inst in circuit:
             # FIXME: qubits_touched: Dict[int, int] = {q: 0 for q in system_qubits}
@@ -374,7 +355,7 @@ class NoiseModel:
                     if q not in immune_qubits:
                         if op in self.gates:
                             p = self.gates[op]
-                        else:                
+                        else:
                             p = self.any_clifford_1
                         if p > 0:
                             noisy.append_operation("DEPOLARIZE1", [q], p)
@@ -392,8 +373,12 @@ class NoiseModel:
             # Append measurement/reset noise
             elif OP_TYPES.get(op) == JUST_MEASURE_1Q:
                 for q in targets:
-                    basis = OP_MEASURE_BASES.get(op, "Z") # Defaults to "Z" if not found
-                    p = self.measure.get(basis, 0.0)  # If value associated to measurement key doesnt exist - set to 0
+                    basis = OP_MEASURE_BASES.get(
+                        op, "Z"
+                    )  # Defaults to "Z" if not found
+                    p = self.measure.get(
+                        basis, 0.0
+                    )  # If value associated to measurement key doesnt exist - set to 0
                     if p > 0 and q not in immune_qubits:
                         if basis == "Z":
                             noisy.append_operation("X_ERROR", [q], p)
@@ -403,12 +388,14 @@ class NoiseModel:
                             # Optional: could model Y flips with either X or Z, or a depolarizing channel
                             noisy.append_operation("Y_ERROR", [q], p)
                 noisy.append(inst)
-            
+
             elif OP_TYPES.get(op) == MEASURE_RESET_1Q:
                 # Add measuremnt noise (before the operation)
                 for q in targets:
                     basis = op[-1] if len(op) > 2 else "Z"  # e.g. MRX -> "X"
-                    p_measure = self.measure.get(basis, 0.0) # If value associated to measurement key doesnt exist - set to 0
+                    p_measure = self.measure.get(
+                        basis, 0.0
+                    )  # If value associated to measurement key doesnt exist - set to 0
                     if p_measure > 0 and q not in immune_qubits:
                         if basis == "Z":
                             noisy.append_operation("X_ERROR", [q], p_measure)
@@ -417,13 +404,15 @@ class NoiseModel:
                         elif basis == "Y":
                             # Optional: could model Y flips with either X or Z, or a depolarizing channel
                             noisy.append_operation("Y_ERROR", [q], p_measure)
-                
+
                 # Append the actual MEASURE_RESET_1Q operation (measurement + reset)
                 noisy.append(inst)
 
                 # Append reset noise (after the operation)
                 for q in targets:
-                    p_reset = self.reset.get(basis, 0.0) # If value associated to reset key doesnt exist - set to 0
+                    p_reset = self.reset.get(
+                        basis, 0.0
+                    )  # If value associated to reset key doesnt exist - set to 0
                     if p_reset > 0 and q not in immune_qubits:
                         if basis == "Z":
                             noisy.append_operation("X_ERROR", [q], p_reset)
@@ -437,7 +426,9 @@ class NoiseModel:
                 noisy.append(inst)
                 for q in targets:
                     basis = op[-1] if len(op) > 1 else "Z"  # e.g. RX -> "X"
-                    p = self.reset.get(basis, 0.0) # If value associated to reset key doesnt exist - set to 0
+                    p = self.reset.get(
+                        basis, 0.0
+                    )  # If value associated to reset key doesnt exist - set to 0
                     if p > 0 and q not in immune_qubits:
                         if basis == "Z":
                             noisy.append_operation("X_ERROR", [q], p)
@@ -459,7 +450,9 @@ class NoiseModel:
                 if self.idle_depolarization > 0:
                     for q in system_qubits:
                         if q not in immune_qubits and qubits_touched[q] == 0:
-                            noisy.append_operation("DEPOLARIZE1", [q], self.idle_depolarization)
+                            noisy.append_operation(
+                                "DEPOLARIZE1", [q], self.idle_depolarization
+                            )
 
                 # Append the TICK operation
                 noisy.append(inst)
@@ -502,4 +495,3 @@ class NoiseModel:
             #     #         qs_last_touched[q] = tick_count
 
         return noisy
-
