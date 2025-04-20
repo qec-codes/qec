@@ -296,7 +296,7 @@ class NoiseModel:
     def noisy_circuit(
         self,
         circuit: stim.Circuit,
-        *,  # TODO: Check - want below args to be from noise model initialisation
+        *, 
         system_qubits: set[int] | None = None,
         immune_qubits: set[int] | None = None,
     ) -> stim.Circuit:
@@ -330,10 +330,8 @@ class NoiseModel:
         }  # Track qubit activity within the current TICK
 
         for inst in circuit:
-            # FIXME: qubits_touched: Dict[int, int] = {q: 0 for q in system_qubits}
             op = inst.name
             targets = [int(t.value) for t in inst.targets_copy()]
-            # noisy.append(inst)
 
             # Track qubit activity (for possible idle noise)
             if OP_TYPES.get(op) in {
@@ -345,8 +343,6 @@ class NoiseModel:
             }:
                 for q in targets:
                     qubits_touched[q] += 1
-                    # if q not in immune_qubits:
-                    #     qs_last_touched[q] += 1 # if qubits acted on by an operation, increment their count
 
             # Append gate noise
             if OP_TYPES.get(op) == CLIFFORD_1Q:
@@ -439,7 +435,6 @@ class NoiseModel:
                             noisy.append_operation("Y_ERROR", [q], p)
 
             # Detect idle qubits within each TICK and apply idle noise
-            # TODO: Initialise qubits_touched to 0 at the start of each TICK?
 
             # All other operations (like DETECTOR, OBSERVABLE_INCLUDE, SHIFT_COORDS, etc.)
             elif op != "TICK":
@@ -460,38 +455,5 @@ class NoiseModel:
 
                 # Reset the activity tracker for the next TICK interval
                 qubits_touched = {q: 0 for q in system_qubits}
-
-            # TODO: Idle noise added after each TICK operation
-            # if op == "TICK":
-            #     tick_count += 1
-            #     noisy.append(inst)
-            #     for q in system_qubits:
-            #         if q not in immune_qubits and qubits_touched[q] == 0:
-            #             if self.idle > 0:
-            #                 noisy.append_operation("DEPOLARIZE1", [q], self.idle)
-
-            #     # Reset for next tick
-            #     qubits_touched = {q: 0 for q in system_qubits}
-
-            # ----------------------------------------------------------
-            # OLD CODE BELOW
-            # ----------------------------------------------------------
-            # if op == "TICK":
-            #     tick_count += 1
-            #     noisy.append(inst)
-            #     for q in system_qubits:
-            #         if q in immune_qubits:
-            #             continue
-            #         if qubits_touched[q] == 0:
-            #             # If the qubit was not touched by any operation, apply idle noise
-            #             if self.idle > 0:
-            #                 noisy.append_operation("DEPOLARIZE1", [q], self.idle)
-            #     # for q in system_qubits:
-            #     #     if q in immune_qubits:
-            #     #         continue
-            #     #     if qs_last_touched[q] < tick_count:
-            #     #         if self.idle > 0:
-            #     #             noisy.append_operation("DEPOLARIZE1", [q], self.idle)
-            #     #         qs_last_touched[q] = tick_count
 
         return noisy
