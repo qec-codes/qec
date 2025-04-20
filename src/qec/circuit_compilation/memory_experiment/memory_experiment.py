@@ -1,5 +1,6 @@
 import numpy as np
 from qec.code_constructions import HypergraphProductCode
+from qec.circuit_compilation.noise_model import NoiseModel
 import stim
 
 class MemoryExperiment:
@@ -10,11 +11,15 @@ class MemoryExperiment:
     ----------
     code : HypergraphProductCode
         The code to be used in the experiment.
+    noise_model : NoiseModel, optional
+        The noise model to be used in the experiment. If None, the experiment is noise-free.
 
     Attributes
     ----------
     code : HypergraphProductCode
         The input code to be used in the experiment.
+    noise_model : NoiseModel
+        The noise model to be used in the experiment.
     num_x_checks : int
         The number of X stabilizers in the code.
     num_z_checks : int
@@ -26,21 +31,26 @@ class MemoryExperiment:
     x_stabilizer_qubits : list
         The list of X stabilizer qubit ids of the code.
     z_stabilizer_qubits : list
-        The list of Z stabilizer qubit ids of the code.
-    
+        The list of Z stabilizer qubit ids of the code
+    total_qubits : int
+        The total number of qubits in the code (data + stabilizer).
     """
 
     def __init__(self,
                  code: HypergraphProductCode, # currently we only support HGP codes
+                 noise_model: NoiseModel = None, # <-- optional noise model
                  ):
 
         self.code = code
+        self.noise_model = noise_model
 
         if not isinstance(code, HypergraphProductCode):
             raise ValueError('Currently only Hypergraph-product codes are supported.')
                 
         self.num_x_checks, self.num_data = self.code.x_stabilizer_matrix.shape
         self.num_z_checks, _ = self.code.z_stabilizer_matrix.shape
+        
+        self.total_qubits = self.num_data + self.num_x_checks + self.num_z_checks
         
         self.data_qubits = [*range(self.num_data)]
         self.x_stabilizer_qubits = [*range(self.num_data, self.num_data + self.num_x_checks)]
@@ -144,7 +154,13 @@ class MemoryExperiment:
                 observed_data = [stim.target_rec(-1 * (self.num_data - j)) for j in np.where(observable == 1)[0]]
                 tail.append('OBSERVABLE_INCLUDE', observed_data, i)
 
-        return head + body * (rounds - 1) + tail 
+        out_circuit = head + body * (rounds - 1) + tail 
+
+        if noise and self.noise_model is not None:
+            # Apply the noise model to the circuit
+            out_circuit = self.noise_model.noisy_circuit(out_circuit)
+
+        return out_circuit
 
 
 
