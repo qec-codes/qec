@@ -341,113 +341,115 @@ class HypergraphProductCode(CSSCode):
         }
 
         return class_specific_data
+    
+    # TODO: debug the schedule below, results in non-deterministic detectors
 
-    def _stabilizer_schedule(self) -> list[Tuple[list[int, int], str]]:
-        """
-        Returns the "cardinal" [2]_ stabilizer schedule for circuit compilation.
+    # def _stabilizer_schedule(self) -> list[Tuple[list[int, int], str]]:
+    #     """
+    #     Returns the "cardinal" [2]_ stabilizer schedule for circuit compilation.
 
-        Returns
-        -------
-        list
-            A list of tuples, where each tuple contains a pair of qubit indices
-            and a color id. CNOTs with the same color id can be applied in parallel.
+    #     Returns
+    #     -------
+    #     list
+    #         A list of tuples, where each tuple contains a pair of qubit indices
+    #         and a color id. CNOTs with the same color id can be applied in parallel.
 
-        Notes
-        -----
-        To obtain the balanced graph needed for the optimal circuit depth, we use the
-        "balanced sign" idea from: https://arxiv.org/abs/2504.02673
-        However, instead of their heuristics for the sign assignment, we use the coloring
-        of the seed code's Tanner graph amd assign signs (cardinal directions) to the
-        edges dependening on whether the integer representing the color is even or odd.
+    #     Notes
+    #     -----
+    #     To obtain the balanced graph needed for the optimal circuit depth, we use the
+    #     "balanced sign" idea from: https://arxiv.org/abs/2504.02673
+    #     However, instead of their heuristics for the sign assignment, we use the coloring
+    #     of the seed code's Tanner graph amd assign signs (cardinal directions) to the
+    #     edges dependening on whether the integer representing the color is even or odd.
 
-        Furthermore, as the N - S stabilizers can be applied in any order without introducing
-        any additional CNOTs, we do not try to balance the second seed code's tanner graph, simply 
-        color it. 
+    #     Furthermore, as the N - S stabilizers can be applied in any order without introducing
+    #     any additional CNOTs, we do not try to balance the second seed code's tanner graph, simply 
+    #     color it. 
 
-        .. [2] Tremblay, M. A., Delfosse, N., & Beverland, M. E. (2022). Constant-overhead quantum error correction with thin planar connectivity. Physical Review Letters, 129(5), 050504.
-        """
+    #     .. [2] Tremblay, M. A., Delfosse, N., & Beverland, M. E. (2022). Constant-overhead quantum error correction with thin planar connectivity. Physical Review Letters, 129(5), 050504.
+    #     """
 
-        seed_1_tanner = rx.PyGraph(multigraph = False)
-        seed_1_data_nodes = [seed_1_tanner.add_node(i) for i in range(self._n1)]
-        seed_1_check_nodes = [seed_1_tanner.add_node(i) for i in range(self._m1)]
-        for j in range(self._n1):
-            for i in range(self._m1):
-                if self.seed_matrix_1[i, j] == 1:
-                    seed_1_tanner.add_edge(seed_1_check_nodes[i], seed_1_data_nodes[j], 1)
+    #     seed_1_tanner = rx.PyGraph(multigraph = False)
+    #     seed_1_data_nodes = [seed_1_tanner.add_node(i) for i in range(self._n1)]
+    #     seed_1_check_nodes = [seed_1_tanner.add_node(i) for i in range(self._m1)]
+    #     for j in range(self._n1):
+    #         for i in range(self._m1):
+    #             if self.seed_matrix_1[i, j] == 1:
+    #                 seed_1_tanner.add_edge(seed_1_check_nodes[i], seed_1_data_nodes[j], 1)
 
-        seed_1_colored = rx.graph_bipartite_edge_color(seed_1_tanner)
-        seed_1_ordered = sorted(seed_1_colored.items(), key=lambda x: x[1])
+    #     seed_1_colored = rx.graph_bipartite_edge_color(seed_1_tanner)
+    #     seed_1_ordered = sorted(seed_1_colored.items(), key=lambda x: x[1])
 
-        seed_2_tanner = rx.PyGraph(multigraph = False)
-        seed_2_data_nodes = [seed_2_tanner.add_node(i) for i in range(self._n2)]
-        seed_2_check_nodes = [seed_2_tanner.add_node(i) for i in range(self._m2)]
-        for j in range(self._n2):
-            for i in range(self._m2):
-                if self.seed_matrix_2[i, j] == 1:
-                    seed_2_tanner.add_edge(seed_2_check_nodes[i], seed_2_data_nodes[j], 1)
+    #     seed_2_tanner = rx.PyGraph(multigraph = False)
+    #     seed_2_data_nodes = [seed_2_tanner.add_node(i) for i in range(self._n2)]
+    #     seed_2_check_nodes = [seed_2_tanner.add_node(i) for i in range(self._m2)]
+    #     for j in range(self._n2):
+    #         for i in range(self._m2):
+    #             if self.seed_matrix_2[i, j] == 1:
+    #                 seed_2_tanner.add_edge(seed_2_check_nodes[i], seed_2_data_nodes[j], 1)
 
-        east_tanner = rx.PyGraph(multigraph = False)
-        west_tanner = rx.PyGraph(multigraph = False)
-        north_south_tanner = rx.PyGraph(multigraph = False)
+    #     east_tanner = rx.PyGraph(multigraph = False)
+    #     west_tanner = rx.PyGraph(multigraph = False)
+    #     north_south_tanner = rx.PyGraph(multigraph = False)
 
-        num_sector_I = self._n1 * self._n2      # data
-        num_sector_II = self._m1 * self._n2     # X stabilizers
-        num_sector_III = self._n1 * self._m2    # Z stabilizers
-        num_sector_IV = self._m1 * self._m2     # data
+    #     num_sector_I = self._n1 * self._n2      # data
+    #     num_sector_II = self._m1 * self._n2     # X stabilizers
+    #     num_sector_III = self._n1 * self._m2    # Z stabilizers
+    #     num_sector_IV = self._m1 * self._m2     # data
 
-        num_data = num_sector_I + num_sector_IV
-        num_stabilizers = num_sector_II + num_sector_III
+    #     num_data = num_sector_I + num_sector_IV
+    #     num_stabilizers = num_sector_II + num_sector_III
 
-        for tanner in [east_tanner, west_tanner, north_south_tanner]:
-            for i in range(num_data):
-                tanner.add_node(i)
+    #     for tanner in [east_tanner, west_tanner, north_south_tanner]:
+    #         for i in range(num_data):
+    #             tanner.add_node(i)
 
-            for i in range(num_stabilizers):
-                tanner.add_node(i + num_data)
+    #         for i in range(num_stabilizers):
+    #             tanner.add_node(i + num_data)
 
-        for edge in seed_1_ordered:
-            check, data = seed_1_tanner.get_edge_endpoints_by_index(edge[0])
-            is_even = edge[1] % 2 == 0
-            target_graph = east_tanner if is_even else west_tanner
-            alternative_graph = west_tanner if is_even else east_tanner
+    #     for edge in seed_1_ordered:
+    #         check, data = seed_1_tanner.get_edge_endpoints_by_index(edge[0])
+    #         is_even = edge[1] % 2 == 0
+    #         target_graph = east_tanner if is_even else west_tanner
+    #         alternative_graph = west_tanner if is_even else east_tanner
 
-            for i in range(self._n2):
-                target_graph.add_edge(data + i * self._n1,
-                                        check + num_data - self._n1 + i * self._m1, 1)
+    #         for i in range(self._n2):
+    #             target_graph.add_edge(data + i * self._n1,
+    #                                     check + num_data - self._n1 + i * self._m1, 1)
             
-            for i in range(self._m2):
-                alternative_graph.add_edge(data + i * self._n1 + num_data + num_sector_II,
-                                            check + i * self._m1 - self._n1 + num_sector_I, 1)
+    #         for i in range(self._m2):
+    #             alternative_graph.add_edge(data + i * self._n1 + num_data + num_sector_II,
+    #                                         check + i * self._m1 - self._n1 + num_sector_I, 1)
                 
-        for check, data in seed_2_tanner.edge_list():
-            for i in range(self._n1):
-                north_south_tanner.add_edge(data * self._n1 + i,
-                                            check * self._n1 + i + num_sector_IV + num_sector_II, 1)
-            for i in range(self._m1):
-                north_south_tanner.add_edge(data * self._m1 + i + num_data,
-                                            check * self._m1 + i - num_sector_II + num_sector_I, 1)
+    #     for check, data in seed_2_tanner.edge_list():
+    #         for i in range(self._n1):
+    #             north_south_tanner.add_edge(data * self._n1 + i,
+    #                                         check * self._n1 + i + num_sector_IV + num_sector_II, 1)
+    #         for i in range(self._m1):
+    #             north_south_tanner.add_edge(data * self._m1 + i + num_data,
+    #                                         check * self._m1 + i - num_sector_II + num_sector_I, 1)
                 
 
-        colored_east = rx.graph_bipartite_edge_color(east_tanner)
-        colored_west = rx.graph_bipartite_edge_color(west_tanner)
-        colored_north_south = rx.graph_bipartite_edge_color(north_south_tanner)
+    #     colored_east = rx.graph_bipartite_edge_color(east_tanner)
+    #     colored_west = rx.graph_bipartite_edge_color(west_tanner)
+    #     colored_north_south = rx.graph_bipartite_edge_color(north_south_tanner)
 
-        ordered_east = sorted(colored_east.items(), key=lambda x: x[1])
-        ordered_west = sorted(colored_west.items(), key=lambda x: x[1])
-        ordered_north_south = sorted(colored_north_south.items(), key=lambda x: x[1])
+    #     ordered_east = sorted(colored_east.items(), key=lambda x: x[1])
+    #     ordered_west = sorted(colored_west.items(), key=lambda x: x[1])
+    #     ordered_north_south = sorted(colored_north_south.items(), key=lambda x: x[1])
 
-        final_list = []
+    #     final_list = []
 
-        for edge_id, color in ordered_east:
-            qubit_1, qubit_2 = east_tanner.get_edge_endpoints_by_index(edge_id)
-            final_list.append(([qubit_2, qubit_1], f"E{color}"))
+    #     for edge_id, color in ordered_east:
+    #         qubit_1, qubit_2 = east_tanner.get_edge_endpoints_by_index(edge_id)
+    #         final_list.append(([qubit_2, qubit_1], f"E{color}"))
 
-        for edge_id, color in ordered_north_south:
-            qubit_1, qubit_2 = north_south_tanner.get_edge_endpoints_by_index(edge_id)
-            final_list.append(([qubit_1, qubit_2], f"NS{color}"))
+    #     for edge_id, color in ordered_north_south:
+    #         qubit_1, qubit_2 = north_south_tanner.get_edge_endpoints_by_index(edge_id)
+    #         final_list.append(([qubit_1, qubit_2], f"NS{color}"))
 
-        for edge_id, color in ordered_west:
-            qubit_1, qubit_2 = west_tanner.get_edge_endpoints_by_index(edge_id)
-            final_list.append(([qubit_2, qubit_1], f"W{color}"))
+    #     for edge_id, color in ordered_west:
+    #         qubit_1, qubit_2 = west_tanner.get_edge_endpoints_by_index(edge_id)
+    #         final_list.append(([qubit_2, qubit_1], f"W{color}"))
 
-        return final_list
+    #     return final_list
