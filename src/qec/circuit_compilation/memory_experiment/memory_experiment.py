@@ -133,16 +133,19 @@ class MemoryExperiment:
         for cnot in [(z_tanner_graph.get_edge_endpoints_by_index(edge[0]), edge[1]) for edge in z_ordered]:
             control = z_tanner_graph.get_node_data(cnot[0][1])
             target = z_tanner_graph.get_node_data(cnot[0][0])
-            cycle.append('CNOT', [control, target])
             cycle.append('TICK') if cnot[1] != previous_color else None
+            cycle.append('CNOT', [control, target])
+            
             previous_color = cnot[1]
+
+        cycle.append('TICK')
 
         previous_color = 0 
         for cnot in [(x_tanner_graph.get_edge_endpoints_by_index(edge[0]), edge[1]) for edge in x_ordered]:
             control = x_tanner_graph.get_node_data(cnot[0][0])
             target = x_tanner_graph.get_node_data(cnot[0][1])
-            cycle.append('CNOT', [control, target])
             cycle.append('TICK') if cnot[1] != previous_color else None
+            cycle.append('CNOT', [control, target])
             previous_color = cnot[1]
 
         cycle.append('TICK')
