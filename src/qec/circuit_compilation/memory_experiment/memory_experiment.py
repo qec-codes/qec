@@ -151,7 +151,7 @@ class MemoryExperiment:
         cycle.append('TICK')
         cycle.append('H', self.x_stabilizer_qubits)
         cycle.append('TICK')
-        cycle.append('MR' + basis, self.z_stabilizer_qubits + self.x_stabilizer_qubits)
+        cycle.append('MR', self.z_stabilizer_qubits + self.x_stabilizer_qubits)
 
 
         head = stim.Circuit()
