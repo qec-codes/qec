@@ -48,14 +48,14 @@ class MemoryExperiment:
         if not isinstance(code, HypergraphProductCode):
             raise ValueError('Currently only Hypergraph-product codes are supported.')
                 
-        # self.num_x_checks, self.num_data = self.code.x_stabilizer_matrix.shape
-        # self.num_z_checks, _ = self.code.z_stabilizer_matrix.shape
+        self.num_x_checks, self.num_data = self.code.x_stabilizer_matrix.shape
+        self.num_z_checks, _ = self.code.z_stabilizer_matrix.shape
         
-        # self.total_qubits = self.num_data + self.num_x_checks + self.num_z_checks
+        self.total_qubits = self.num_data + self.num_x_checks + self.num_z_checks
         
-        # self.data_qubits = [*range(self.num_data)]
-        # self.x_stabilizer_qubits = [*range(self.num_data, self.num_data + self.num_x_checks)]
-        # self.z_stabilizer_qubits = [*range(self.num_data + self.num_x_checks, self.num_data + self.num_x_checks + self.num_z_checks)]
+        self.data_qubits = [*range(self.num_data)]
+        self.x_stabilizer_qubits = [*range(self.num_data, self.num_data + self.num_x_checks)]
+        self.z_stabilizer_qubits = [*range(self.num_data + self.num_x_checks, self.num_data + self.num_x_checks + self.num_z_checks)]
 
         
     def circuit(self,
