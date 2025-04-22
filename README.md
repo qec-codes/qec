@@ -1,4 +1,4 @@
-![qec_banner](https://github.com/user-attachments/assets/25dcf89f-d0df-4eb7-a57a-9df09827eb76)
+![qec_banner](https://github.com/user-attachments/assets/9f54ed76-f606-44ed-aa15-275695e45ea0)
 
   <p align="center">
     QEC: Python Tools for Quantum Error Correction
