@@ -233,7 +233,7 @@ class NoiseModel:
             to idle qubits, and to resets and measurements as X_ERROR.
         """
         return NoiseModel(
-            idle_depolarization=p,  # idle noise is DEPOLARIZE1(p)
+            idle_depolarization=0,  # idle noise is DEPOLARIZE1(p)
             measure={"X": p, "Y": p, "Z": p},  # inject X_ERROR(p) before measurements
             reset={"X": p, "Y": p, "Z": p},  # inject X_ERROR(p) after resets
             gates={},  # Leave per-gate overrides empty
