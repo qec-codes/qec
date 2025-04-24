@@ -103,17 +103,21 @@ COLLAPSING_OPS = {
 
 class NoiseModel:
     """
-    Noise model class for stim circuits. --> Soon to be generalised.
+    Noise model class for stim circuits. --> Soon to be generalised for any simulator.
 
-    This class can be used to create a custom noise model, load a noise model from a file,
-    load a noise model from a backend or apply a general noise model of the following type:
-    - depolarizing noise (uniform and non-uniform)
-    - amplitude damping noise
-    - phase damping noise
-    - thermal relaxation noise
-    - adversarial noise
-    - phenomenological noise
-    - pauli noise
+    This class can be used to:
+        - create a custom noise model
+        - load a noise model from a file
+        - load a noise model from a backend
+
+    or apply a general noise model of the following type:
+        - depolarizing noise (uniform and non-uniform)
+        - amplitude damping noise
+        - phase damping noise
+        - thermal relaxation noise
+        - adversarial noise
+        - phenomenological noise
+        - pauli noise
 
     Args:
 
@@ -125,10 +129,10 @@ class NoiseModel:
     def __init__(
         self,
         idle_depolarization: float,
-        # before_round_data_depolarization: float = 0.0, # noise before the start of each round
+        # before_round_data_depolarization: float = 0.0, # noise before the start of each round (used for phenomenological noise creation)
         # additional_depolarization_waiting_for_m_or_r: float = 0,
         # idle_per_duration: float = 0.0,
-        # additional_idle: float, ???
+        # additional_idle: float,
         measure: Dict[str, float],
         # before_measure_flip_probability: float = 0.0,
         reset: Dict[str, float],
@@ -137,7 +141,7 @@ class NoiseModel:
         any_clifford_1: Optional[float] = None,
         any_clifford_2: Optional[float] = None,
         # after_clifford_depolarization: float = 0.0, # noise after any clifford o
-        # use_correlated_parity_measurement_errors: bool = False ???
+        # use_correlated_parity_measurement_errors: bool = False 
     ):
         """
         Initializes a general noise model that supports various types of noise.
@@ -192,8 +196,7 @@ class NoiseModel:
         #             raise ValueError(f"Probability for {noise_type} must be between 0 and 1.")
         pass
 
-    # TODO: Check if this works / is necessary - can maybe be added to utils
-    @staticmethod
+
     def _get_noise_type(noise_type: str) -> str:
         """
         Converts noise type to a format compatible with Stim.
@@ -213,11 +216,11 @@ class NoiseModel:
         pass
 
     # -------------------------------------------------------------------------
-    # TODO: Complete the following methods - Could be more to onsider
+    # TODO: Complete the following methods - Could be more to consider
     # -------------------------------------------------------------------------
 
     @staticmethod
-    def uniform_depolarizing_noise(p: float) -> "NoiseModel":
+    def uniform_depolarizing_noise(p: float, include_idle_noise: bool = False) -> "NoiseModel":
         """
         Creates a uniform depolarizing noise model.
 
@@ -232,26 +235,27 @@ class NoiseModel:
             A NoiseModel instance with uniform depolarizing noise applied after all Clifford gates,
             to idle qubits, and to resets and measurements as X_ERROR.
         """
+        idle_p = p if include_idle_noise else 0.0
         return NoiseModel(
-            idle_depolarization=0,  # idle noise is DEPOLARIZE1(p)
+            idle_depolarization=idle_p,  # idle noise is DEPOLARIZE1(p)
             measure={"X": p, "Y": p, "Z": p},  # inject X_ERROR(p) before measurements
             reset={"X": p, "Y": p, "Z": p},  # inject X_ERROR(p) after resets
             gates={},  # Leave per-gate overrides empty
             any_clifford_1=p,  # Use DEPOLARIZE1(p) after all 1Q Clifford gates
             any_clifford_2=p,  # Use DEPOLARIZE2(p) after all 2Q Clifford gates
-        )
+    )
 
     @staticmethod
     def non_uniform_depolarizing_noise(p: float) -> "NoiseModel":
         pass
 
     @staticmethod
-    def phenomenological_noise(p: float) -> "NoiseModel":
+    def phenomenological_noise(p1: float, p2: float) -> "NoiseModel":
         """
-        Creates a phenamenological noise model by setting the before_round_data_depolarization=p1 (float)
-        and before_measure_flip_probability=p2(float). This will insert a DEPOLARIZE1(p1) operation at the
+        Creates a phenamenological noise model. This will insert a DEPOLARIZE1(p1) operation at the
         start of each round targeting every data qubit, and an X_ERROR(p2) just before each measurement operation.
         """
+        #return NoiseModel(any_clifford_1=p1, gates={JUST_MEASURE_1Q: p2})
         pass
 
     @staticmethod
@@ -271,23 +275,10 @@ class NoiseModel:
         pass
 
     # -------------------------------------------------------------------------
-    # Noisy gate functions
+    # Noisy gate functions 
     # -------------------------------------------------------------------------
 
-    # -> idle_depolarization: float,
-    # before_round_data_depolarization: float = 0.0, # noise before the start of each round
-    # additional_depolarization_waiting_for_m_or_r: float = 0,
-    # idle_per_duration: float = 0.0,
-    # additional_idle: float, ???
-    # -> measure: Dict[str, float],
-    # before_measure_flip_probability: float = 0.0,
-    # -> reset: Dict[str, float],
-    # after_reset_flip_probability: float = 0.0,
-    # -> gates: Dict[str, float],
-    # -> any_clifford_1: float,
-    # -> any_clifford_2: float,
-    # after_clifford_depolarization: float = 0.0, # noise after any clifford o
-    # use_correlated_parity_measurement_errors: bool = False ???
+    # ---> Functions defining noisy version of moments (e.g. gates, measurements, resets)
 
     # -------------------------------------------------------------------------
     # Noisy circuit
