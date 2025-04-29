@@ -2,7 +2,6 @@ import numpy as np
 from qec.code_constructions import HypergraphProductCode
 from qec.circuit_compilation.noise_model import NoiseModel
 import stim
-import rustworkx as rx
 
 class MemoryExperiment:
     """
@@ -87,72 +86,20 @@ class MemoryExperiment:
         cycle = stim.Circuit()
         cycle.append('H', self.x_stabilizer_qubits)
         cycle.append('TICK')
-
-        # cnots = self.code._stabilizer_schedule()
         
-        # previous_color = cnots[0][1]
+        cnots = self.code._stabilizer_schedule()
+        
+        previous_color = cnots[0][1]
 
-        # for qubits, color in cnots:
-        #     cycle.append('TICK') if color != previous_color else None
-        #     cycle.append('CNOT', qubits)
-        #     previous_color = color
-
-        num_x_checks, num_data = self.code.x_stabilizer_matrix.shape
-        num_z_checks, _ = self.code.z_stabilizer_matrix.shape
-
-        data_qubits = [*range(num_data)]
-        x_stabilizer_qubits = [*range(num_data, num_data + num_x_checks)]
-        z_stabilizer_qubits = [*range(num_data + num_x_checks, num_data + num_x_checks + num_z_checks)]
-
-        z_tanner_graph = rx.PyGraph(multigraph = False)
-        x_tanner_graph = rx.PyGraph(multigraph = False)
-
-        x_nodes = [x_tanner_graph.add_node(i) for i in x_stabilizer_qubits]
-        z_nodes = [z_tanner_graph.add_node(i) for i in z_stabilizer_qubits]
-        x_data_nodes = [x_tanner_graph.add_node(i) for i in data_qubits]
-        z_data_nodes = [z_tanner_graph.add_node(i) for i in data_qubits]
-
-        for j in range(num_data):
-            for i in range(num_x_checks):
-                if self.code.x_stabilizer_matrix[i, j] == 1:
-                    x_tanner_graph.add_edge(x_nodes[i], x_data_nodes[j], 1)
-            for k in range(num_z_checks):
-                if self.code.z_stabilizer_matrix[k, j] == 1:
-                    z_tanner_graph.add_edge(z_nodes[k], z_data_nodes[j], 1)
-
-        x_colored = rx.graph_bipartite_edge_color(x_tanner_graph)
-        x_ordered = sorted(x_colored.items(), key = lambda item: item[1])
-        z_colored = rx.graph_bipartite_edge_color(z_tanner_graph)
-        z_ordered = sorted(z_colored.items(), key = lambda item: item[1])
-
-
-        cycle = stim.Circuit()
-        cycle.append('H', x_stabilizer_qubits)
-
-        previous_color = 0
-        for cnot in [(z_tanner_graph.get_edge_endpoints_by_index(edge[0]), edge[1]) for edge in z_ordered]:
-            control = z_tanner_graph.get_node_data(cnot[0][1])
-            target = z_tanner_graph.get_node_data(cnot[0][0])
-            cycle.append('TICK') if cnot[1] != previous_color else None
-            cycle.append('CNOT', [control, target])
-            
-            previous_color = cnot[1]
-
-        cycle.append('TICK')
-
-        previous_color = 0 
-        for cnot in [(x_tanner_graph.get_edge_endpoints_by_index(edge[0]), edge[1]) for edge in x_ordered]:
-            control = x_tanner_graph.get_node_data(cnot[0][0])
-            target = x_tanner_graph.get_node_data(cnot[0][1])
-            cycle.append('TICK') if cnot[1] != previous_color else None
-            cycle.append('CNOT', [control, target])
-            previous_color = cnot[1]
+        for qubits, color in cnots:
+            cycle.append('TICK') if color != previous_color else None
+            cycle.append('CNOT', qubits)
+            previous_color = color
 
         cycle.append('TICK')
         cycle.append('H', self.x_stabilizer_qubits)
         cycle.append('TICK')
         cycle.append('MR', self.z_stabilizer_qubits + self.x_stabilizer_qubits)
-
 
         head = stim.Circuit()
         head.append('R' + basis, self.data_qubits)
@@ -168,7 +115,6 @@ class MemoryExperiment:
             for i in range(self.num_x_checks):
                 head.append('DETECTOR', [stim.target_rec(-i - 1)])
 
-
         body = cycle.copy()
 
         if basis == 'Z':
@@ -180,7 +126,6 @@ class MemoryExperiment:
             for i in range(self.num_x_checks):
                 body.append('DETECTOR', [stim.target_rec(-i - 1),
                                     stim.target_rec(-i - (self.num_z_checks + self.num_x_checks) - 1)])
-
 
         tail = stim.Circuit()
         tail.append('M' + basis, self.data_qubits)
@@ -212,14 +157,3 @@ class MemoryExperiment:
             out_circuit = self.noise_model.noisy_circuit(out_circuit)
 
         return out_circuit
-
-
-
-
-            
-
-        
-
-
-
-
