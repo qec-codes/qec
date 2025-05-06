@@ -1,6 +1,6 @@
 [project]
 name = "qec"
-version = "0.3.2"
+version = "0.3.3"
 
 description = "Python Tools for Quantum Error Correction"
 readme = "README.md"
@@ -30,7 +30,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]  
-include = ["qec"]
+include = ["qec", "qec.*"]
 
 [tool.setuptools.package-data]
 qec = ["code_instances/saved_codes/*json"]
