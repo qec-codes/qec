@@ -1,4 +1,4 @@
-name: Check version, run Ruff, and Pytests
+name: Run Ruff and Pytests
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 jobs:
   Ruff_and_Pytest:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/release'  # Only run on release branch
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

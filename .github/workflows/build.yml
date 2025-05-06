@@ -2,14 +2,17 @@ name: Publish to PyPI
 
 on:
   workflow_run:
-    workflows: ["Check version, run Ruff, and Pytests"]
+    workflows: ["Run Ruff and Pytests"]
     types:
       - completed
 
 jobs:
   publish:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'release' }}
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'release'
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -17,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Minimum Python version required
+          python-version: '3.9'
 
       - name: Install build tools
         run: |
@@ -26,15 +29,19 @@ jobs:
 
       - name: Build package
         run: |
-          python -m build --wheel --outdir ./wheelhouse
+          python -m build --sdist --wheel --outdir ./wheelhouse
 
       - name: Install twine
         run: |
           python -m pip install --upgrade twine
+
+      - name: Check package
+        run: |
+          twine check ./wheelhouse/*
 
       - name: Publish to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.QEC_PYPI_TOKEN }}
         run: |
-          twine upload ./wheelhouse/qec*whl
+          twine upload ./wheelhouse/*
