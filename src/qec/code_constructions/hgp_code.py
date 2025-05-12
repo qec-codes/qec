@@ -342,8 +342,6 @@ class HypergraphProductCode(CSSCode):
 
         return class_specific_data
     
-    # TODO: debug the schedule below, results in non-deterministic detectors
-
     def _stabilizer_schedule(self) -> list[Tuple[list[int, int], str]]:
         """
         Returns the "cardinal" [2]_ stabilizer schedule for circuit compilation.
