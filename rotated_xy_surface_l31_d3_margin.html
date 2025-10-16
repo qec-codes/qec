@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Code Tanner Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {{
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }}
+        #container {{
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            display: inline-block;
+        }}
+        .node-label {{
+            font-size: 10px;
+            pointer-events: none;
+            user-select: none;
+        }}
+        .edge {{
+            pointer-events: none;
+        }}
+        .node {{
+            cursor: pointer;
+        }}
+        /* Remove hover opacity effect */
+        .d3-tooltip {{
+            position: absolute;
+            text-align: left;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 10;
+            visibility: hidden;
+        }}
+    </style>
+</head>
+<body>
+    <div id="container">
+        <svg id="graph" width="793" height="793"></svg>
+    </div>
+    <div class="d3-tooltip" id="d3-tooltip"></div>
+    <script>
+        const nodesData = [{'id': 'q0', 'x': 96.5, 'y': 696.5, 'type': 'qubit', 'label': 'q_0', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q1', 'x': 246.5, 'y': 696.5, 'type': 'qubit', 'label': 'q_1', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q2', 'x': 396.5, 'y': 696.5, 'type': 'qubit', 'label': 'q_2', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q3', 'x': 546.5, 'y': 696.5, 'type': 'qubit', 'label': 'q_3', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q4', 'x': 696.5, 'y': 696.5, 'type': 'qubit', 'label': 'q_4', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q5', 'x': 96.5, 'y': 546.5, 'type': 'qubit', 'label': 'q_5', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q6', 'x': 246.5, 'y': 546.5, 'type': 'qubit', 'label': 'q_6', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q7', 'x': 396.5, 'y': 546.5, 'type': 'qubit', 'label': 'q_7', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q8', 'x': 546.5, 'y': 546.5, 'type': 'qubit', 'label': 'q_8', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q9', 'x': 696.5, 'y': 546.5, 'type': 'qubit', 'label': 'q_9', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q10', 'x': 96.5, 'y': 396.5, 'type': 'qubit', 'label': 'q_10', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q11', 'x': 246.5, 'y': 396.5, 'type': 'qubit', 'label': 'q_11', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q12', 'x': 396.5, 'y': 396.5, 'type': 'qubit', 'label': 'q_12', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q13', 'x': 546.5, 'y': 396.5, 'type': 'qubit', 'label': 'q_13', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q14', 'x': 696.5, 'y': 396.5, 'type': 'qubit', 'label': 'q_14', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q15', 'x': 96.5, 'y': 246.5, 'type': 'qubit', 'label': 'q_15', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q16', 'x': 246.5, 'y': 246.5, 'type': 'qubit', 'label': 'q_16', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q17', 'x': 396.5, 'y': 246.5, 'type': 'qubit', 'label': 'q_17', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q18', 'x': 546.5, 'y': 246.5, 'type': 'qubit', 'label': 'q_18', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q19', 'x': 696.5, 'y': 246.5, 'type': 'qubit', 'label': 'q_19', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q20', 'x': 96.5, 'y': 96.5, 'type': 'qubit', 'label': 'q_20', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q21', 'x': 246.5, 'y': 96.5, 'type': 'qubit', 'label': 'q_21', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q22', 'x': 396.5, 'y': 96.5, 'type': 'qubit', 'label': 'q_22', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q23', 'x': 546.5, 'y': 96.5, 'type': 'qubit', 'label': 'q_23', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q24', 'x': 696.5, 'y': 96.5, 'type': 'qubit', 'label': 'q_24', 'radius': 16, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'x0', 'x': 171.5, 'y': 621.5, 'type': 'x_check', 'label': 'S^X_0', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x1', 'x': 471.5, 'y': 621.5, 'type': 'x_check', 'label': 'S^X_1', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x2', 'x': 321.5, 'y': 471.5, 'type': 'x_check', 'label': 'S^X_2', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x3', 'x': 621.5, 'y': 471.5, 'type': 'x_check', 'label': 'S^X_3', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x4', 'x': 171.5, 'y': 321.5, 'type': 'x_check', 'label': 'S^X_4', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x5', 'x': 471.5, 'y': 321.5, 'type': 'x_check', 'label': 'S^X_5', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x6', 'x': 321.5, 'y': 171.5, 'type': 'x_check', 'label': 'S^X_6', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x7', 'x': 621.5, 'y': 171.5, 'type': 'x_check', 'label': 'S^X_7', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x8', 'x': 21.5, 'y': 471.5, 'type': 'x_check', 'label': 'S^X_8', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x9', 'x': 21.5, 'y': 171.5, 'type': 'x_check', 'label': 'S^X_9', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x10', 'x': 771.5, 'y': 621.5, 'type': 'x_check', 'label': 'S^X_10', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'x11', 'x': 771.5, 'y': 321.5, 'type': 'x_check', 'label': 'S^X_11', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z0', 'x': 321.5, 'y': 621.5, 'type': 'z_check', 'label': 'S^Y_0', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z1', 'x': 621.5, 'y': 621.5, 'type': 'z_check', 'label': 'S^Y_1', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z2', 'x': 171.5, 'y': 471.5, 'type': 'z_check', 'label': 'S^Y_2', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z3', 'x': 471.5, 'y': 471.5, 'type': 'z_check', 'label': 'S^Y_3', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z4', 'x': 321.5, 'y': 321.5, 'type': 'z_check', 'label': 'S^Y_4', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z5', 'x': 621.5, 'y': 321.5, 'type': 'z_check', 'label': 'S^Y_5', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z6', 'x': 171.5, 'y': 171.5, 'type': 'z_check', 'label': 'S^Y_6', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z7', 'x': 471.5, 'y': 171.5, 'type': 'z_check', 'label': 'S^Y_7', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z8', 'x': 171.5, 'y': 771.5, 'type': 'z_check', 'label': 'S^Y_8', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z9', 'x': 471.5, 'y': 771.5, 'type': 'z_check', 'label': 'S^Y_9', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z10', 'x': 321.5, 'y': 21.5, 'type': 'z_check', 'label': 'S^Y_10', 'radius': 20, 'color': 'black', 'fill': 'white'}, {'id': 'z11', 'x': 621.5, 'y': 21.5, 'type': 'z_check', 'label': 'S^Y_11', 'radius': 20, 'color': 'black', 'fill': 'white'}];
+        const edgesData = [{'x1': 96.5, 'y1': 696.5, 'x2': 171.5, 'y2': 621.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 246.5, 'y1': 696.5, 'x2': 171.5, 'y2': 621.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 96.5, 'y1': 546.5, 'x2': 171.5, 'y2': 621.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 246.5, 'y1': 546.5, 'x2': 171.5, 'y2': 621.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 396.5, 'y1': 696.5, 'x2': 471.5, 'y2': 621.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 546.5, 'y1': 696.5, 'x2': 471.5, 'y2': 621.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 396.5, 'y1': 546.5, 'x2': 471.5, 'y2': 621.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 546.5, 'y1': 546.5, 'x2': 471.5, 'y2': 621.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 246.5, 'y1': 546.5, 'x2': 321.5, 'y2': 471.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 396.5, 'y1': 546.5, 'x2': 321.5, 'y2': 471.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 246.5, 'y1': 396.5, 'x2': 321.5, 'y2': 471.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 396.5, 'y1': 396.5, 'x2': 321.5, 'y2': 471.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 546.5, 'y1': 546.5, 'x2': 621.5, 'y2': 471.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 696.5, 'y1': 546.5, 'x2': 621.5, 'y2': 471.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 546.5, 'y1': 396.5, 'x2': 621.5, 'y2': 471.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 696.5, 'y1': 396.5, 'x2': 621.5, 'y2': 471.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 96.5, 'y1': 396.5, 'x2': 171.5, 'y2': 321.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 246.5, 'y1': 396.5, 'x2': 171.5, 'y2': 321.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 96.5, 'y1': 246.5, 'x2': 171.5, 'y2': 321.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 246.5, 'y1': 246.5, 'x2': 171.5, 'y2': 321.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 396.5, 'y1': 396.5, 'x2': 471.5, 'y2': 321.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 546.5, 'y1': 396.5, 'x2': 471.5, 'y2': 321.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 396.5, 'y1': 246.5, 'x2': 471.5, 'y2': 321.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 546.5, 'y1': 246.5, 'x2': 471.5, 'y2': 321.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 246.5, 'y1': 246.5, 'x2': 321.5, 'y2': 171.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 396.5, 'y1': 246.5, 'x2': 321.5, 'y2': 171.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 246.5, 'y1': 96.5, 'x2': 321.5, 'y2': 171.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 396.5, 'y1': 96.5, 'x2': 321.5, 'y2': 171.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 546.5, 'y1': 246.5, 'x2': 621.5, 'y2': 171.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 696.5, 'y1': 246.5, 'x2': 621.5, 'y2': 171.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 546.5, 'y1': 96.5, 'x2': 621.5, 'y2': 171.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 696.5, 'y1': 96.5, 'x2': 621.5, 'y2': 171.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 96.5, 'y1': 546.5, 'x2': 21.5, 'y2': 471.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 96.5, 'y1': 396.5, 'x2': 21.5, 'y2': 471.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 96.5, 'y1': 246.5, 'x2': 21.5, 'y2': 171.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 96.5, 'y1': 96.5, 'x2': 21.5, 'y2': 171.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 696.5, 'y1': 696.5, 'x2': 771.5, 'y2': 621.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 696.5, 'y1': 546.5, 'x2': 771.5, 'y2': 621.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 696.5, 'y1': 396.5, 'x2': 771.5, 'y2': 321.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 696.5, 'y1': 246.5, 'x2': 771.5, 'y2': 321.5, 'color': 'black', 'style': 'solid', 'width': 3}, {'x1': 246.5, 'y1': 696.5, 'x2': 321.5, 'y2': 621.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 396.5, 'y1': 696.5, 'x2': 321.5, 'y2': 621.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 246.5, 'y1': 546.5, 'x2': 321.5, 'y2': 621.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 396.5, 'y1': 546.5, 'x2': 321.5, 'y2': 621.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 546.5, 'y1': 696.5, 'x2': 621.5, 'y2': 621.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 696.5, 'y1': 696.5, 'x2': 621.5, 'y2': 621.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 546.5, 'y1': 546.5, 'x2': 621.5, 'y2': 621.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 696.5, 'y1': 546.5, 'x2': 621.5, 'y2': 621.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 96.5, 'y1': 546.5, 'x2': 171.5, 'y2': 471.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 246.5, 'y1': 546.5, 'x2': 171.5, 'y2': 471.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 96.5, 'y1': 396.5, 'x2': 171.5, 'y2': 471.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 246.5, 'y1': 396.5, 'x2': 171.5, 'y2': 471.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 396.5, 'y1': 546.5, 'x2': 471.5, 'y2': 471.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 546.5, 'y1': 546.5, 'x2': 471.5, 'y2': 471.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 396.5, 'y1': 396.5, 'x2': 471.5, 'y2': 471.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 546.5, 'y1': 396.5, 'x2': 471.5, 'y2': 471.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 246.5, 'y1': 396.5, 'x2': 321.5, 'y2': 321.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 396.5, 'y1': 396.5, 'x2': 321.5, 'y2': 321.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 246.5, 'y1': 246.5, 'x2': 321.5, 'y2': 321.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 396.5, 'y1': 246.5, 'x2': 321.5, 'y2': 321.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 546.5, 'y1': 396.5, 'x2': 621.5, 'y2': 321.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 696.5, 'y1': 396.5, 'x2': 621.5, 'y2': 321.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 546.5, 'y1': 246.5, 'x2': 621.5, 'y2': 321.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 696.5, 'y1': 246.5, 'x2': 621.5, 'y2': 321.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 96.5, 'y1': 246.5, 'x2': 171.5, 'y2': 171.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 246.5, 'y1': 246.5, 'x2': 171.5, 'y2': 171.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 96.5, 'y1': 96.5, 'x2': 171.5, 'y2': 171.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 246.5, 'y1': 96.5, 'x2': 171.5, 'y2': 171.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 396.5, 'y1': 246.5, 'x2': 471.5, 'y2': 171.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 546.5, 'y1': 246.5, 'x2': 471.5, 'y2': 171.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 396.5, 'y1': 96.5, 'x2': 471.5, 'y2': 171.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 546.5, 'y1': 96.5, 'x2': 471.5, 'y2': 171.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 96.5, 'y1': 696.5, 'x2': 171.5, 'y2': 771.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 246.5, 'y1': 696.5, 'x2': 171.5, 'y2': 771.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 396.5, 'y1': 696.5, 'x2': 471.5, 'y2': 771.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 546.5, 'y1': 696.5, 'x2': 471.5, 'y2': 771.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 246.5, 'y1': 96.5, 'x2': 321.5, 'y2': 21.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 396.5, 'y1': 96.5, 'x2': 321.5, 'y2': 21.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 546.5, 'y1': 96.5, 'x2': 621.5, 'y2': 21.5, 'color': 'black', 'style': 'dashed', 'width': 3}, {'x1': 696.5, 'y1': 96.5, 'x2': 621.5, 'y2': 21.5, 'color': 'black', 'style': 'dashed', 'width': 3}];
+
+        const svg = d3.select("#graph");
+        const tooltip = d3.select("#d3-tooltip");
+
+        // Draw edges first (bottom layer)
+        const edges = svg.selectAll(".edge")
+            .data(edgesData)
+            .enter()
+            .append("line")
+            .attr("class", "edge")
+            .attr("x1", d => d.x1)
+            .attr("y1", d => d.y1)
+            .attr("x2", d => d.x2)
+            .attr("y2", d => d.y2)
+            .attr("stroke", d => d.color)
+            .attr("stroke-width", d => d.width)
+            .attr("stroke-dasharray", d => d.style === "dashed" ? "5,5" : "none");
+
+        // Create node groups
+        const nodes = svg.selectAll(".node")
+            .data(nodesData)
+            .enter()
+            .append("g")
+            .attr("class", "node")
+            .attr("transform", d => `translate(${d.x},${d.y})`);
+
+        // Draw node shapes
+        nodes.each(function(d) {
+            const node = d3.select(this);
+            if (d.type === "qubit") {
+                // Circle for qubits
+                node.append("circle")
+                    .attr("r", d.radius)
+                    .attr("fill", d.fill)
+                    .attr("stroke", d.color)
+                    .attr("stroke-width", 2);
+            } else {
+                // Square for checks
+                node.append("rect")
+                    .attr("x", -d.radius)
+                    .attr("y", -d.radius)
+                    .attr("width", d.radius * 2)
+                    .attr("height", d.radius * 2)
+                    .attr("fill", d.fill)
+                    .attr("stroke", d.color)
+                    .attr("stroke-width", 2);
+            }
+        });
+
+        // Add labels
+        nodes.append("text")
+            .attr("class", "node-label")
+            .attr("x", d => d.radius + 5)
+            .attr("y", 5)
+            .attr("text-anchor", "start")
+            .text(d => d.label);
+
+        // Custom tooltip on hover (immediate)
+        nodes.on("mouseover", function(event, d) {
+            tooltip.style("visibility", "visible")
+                .html(`<b>${d.label}</b><br>Type: ${d.type}`)
+                .style("left", (event.pageX + 12) + "px")
+                .style("top", (event.pageY - 12) + "px");
+        })
+        .on("mousemove", function(event) {
+            tooltip.style("left", (event.pageX + 12) + "px")
+                .style("top", (event.pageY - 12) + "px");
+        })
+        .on("mouseout", function() {
+            tooltip.style("visibility", "hidden");
+        });
+    </script>
+</body>
+</html>

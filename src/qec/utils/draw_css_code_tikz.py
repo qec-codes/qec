@@ -102,7 +102,7 @@ def draw_line_dashed(c1, c2, colour):
 
 
 
-def draw_css_code_tikz(
+def draw_css_code_tanner_graph_tikz(
     css_code,
     file_name,
     qubit_radius=0.3,
@@ -240,10 +240,10 @@ def compile_latex(file_name):
 # Example usage: visualize a CSS code as TikZ
 if __name__ == "__main__":
     from qec.code_constructions.rotated_surface_code import RotatedSurfaceCode
-    code = RotatedSurfaceCode(3)
+    code = RotatedSurfaceCode(31)
     code.get_node_coordinates()
     code.get_x_edge_coordinates()
     code.get_z_edge_coordinates()
-    output_file = "rotated_surface_L5.tex"
-    draw_css_code_tikz(code, output_file, qubit_radius=0.25, check_radius=0.4, spacing=1.8, x_check_label="S^X",z_check_label="S^Z", qubit_label_position="right", x_check_label_position="right", z_check_label_position="right")
+    output_file = "rotated_xy_surface_l3.tex"
+    draw_css_code_tanner_graph_tikz(code, output_file, qubit_radius=0.25, check_radius=0.4, spacing=1.8, qubit_label="q", x_check_label="S^X",z_check_label="S^Y", qubit_label_position="right", x_check_label_position="right", z_check_label_position="right")
     compile_latex(output_file)
