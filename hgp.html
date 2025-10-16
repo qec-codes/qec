@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Code Tanner Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        #container {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            display: inline-block;
+        }
+        .node-label {
+            font-size: 12px;
+            pointer-events: none;
+            user-select: none;
+        }
+        .edge {
+            pointer-events: none;
+        }
+        .node {
+            cursor: pointer;
+        }
+        .d3-tooltip {
+            position: absolute;
+            text-align: left;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #111;
+            border: 1.5px solid #111;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: opacity 0.08s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <svg id="graph" width="342" height="342"></svg>
+    </div>
+    <script>
+        const nodesData = [{'id': 'q0', 'x': 11.0, 'y': 11.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q1', 'x': 171.0, 'y': 11.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q2', 'x': 331.0, 'y': 11.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q3', 'x': 11.0, 'y': 171.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q4', 'x': 171.0, 'y': 171.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q5', 'x': 331.0, 'y': 171.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q6', 'x': 11.0, 'y': 331.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q7', 'x': 171.0, 'y': 331.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q8', 'x': 331.0, 'y': 331.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q9', 'x': 91.0, 'y': 91.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q10', 'x': 251.0, 'y': 91.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q11', 'x': 91.0, 'y': 251.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'q12', 'x': 251.0, 'y': 251.0, 'type': 'qubit', 'label': '', 'radius': 8, 'color': '#1f77b4', 'fill': 'white'}, {'id': 'x0', 'x': 11.0, 'y': 91.0, 'type': 'x_check', 'label': '', 'radius': 10, 'color': '#ff7f0e', 'fill': 'white'}, {'id': 'x1', 'x': 171.0, 'y': 91.0, 'type': 'x_check', 'label': '', 'radius': 10, 'color': '#ff7f0e', 'fill': 'white'}, {'id': 'x2', 'x': 331.0, 'y': 91.0, 'type': 'x_check', 'label': '', 'radius': 10, 'color': '#ff7f0e', 'fill': 'white'}, {'id': 'x3', 'x': 11.0, 'y': 251.0, 'type': 'x_check', 'label': '', 'radius': 10, 'color': '#ff7f0e', 'fill': 'white'}, {'id': 'x4', 'x': 171.0, 'y': 251.0, 'type': 'x_check', 'label': '', 'radius': 10, 'color': '#ff7f0e', 'fill': 'white'}, {'id': 'x5', 'x': 331.0, 'y': 251.0, 'type': 'x_check', 'label': '', 'radius': 10, 'color': '#ff7f0e', 'fill': 'white'}, {'id': 'z0', 'x': 91.0, 'y': 11.0, 'type': 'z_check', 'label': '', 'radius': 10, 'color': '#2ca02c', 'fill': 'white'}, {'id': 'z1', 'x': 251.0, 'y': 11.0, 'type': 'z_check', 'label': '', 'radius': 10, 'color': '#2ca02c', 'fill': 'white'}, {'id': 'z2', 'x': 91.0, 'y': 171.0, 'type': 'z_check', 'label': '', 'radius': 10, 'color': '#2ca02c', 'fill': 'white'}, {'id': 'z3', 'x': 251.0, 'y': 171.0, 'type': 'z_check', 'label': '', 'radius': 10, 'color': '#2ca02c', 'fill': 'white'}, {'id': 'z4', 'x': 91.0, 'y': 331.0, 'type': 'z_check', 'label': '', 'radius': 10, 'color': '#2ca02c', 'fill': 'white'}, {'id': 'z5', 'x': 251.0, 'y': 331.0, 'type': 'z_check', 'label': '', 'radius': 10, 'color': '#2ca02c', 'fill': 'white'}];
+        const edgesData = [{'x1': 11.0, 'y1': 11.0, 'x2': 11.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 11.0, 'y1': 171.0, 'x2': 11.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 91.0, 'y1': 91.0, 'x2': 11.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 171.0, 'y1': 11.0, 'x2': 171.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 171.0, 'y1': 171.0, 'x2': 171.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 91.0, 'y1': 91.0, 'x2': 171.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 251.0, 'y1': 91.0, 'x2': 171.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 331.0, 'y1': 11.0, 'x2': 331.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 331.0, 'y1': 171.0, 'x2': 331.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 251.0, 'y1': 91.0, 'x2': 331.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 11.0, 'y1': 171.0, 'x2': 11.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 11.0, 'y1': 331.0, 'x2': 11.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 91.0, 'y1': 251.0, 'x2': 11.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 171.0, 'y1': 171.0, 'x2': 171.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 171.0, 'y1': 331.0, 'x2': 171.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 91.0, 'y1': 251.0, 'x2': 171.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 251.0, 'y1': 251.0, 'x2': 171.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 331.0, 'y1': 171.0, 'x2': 331.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 331.0, 'y1': 331.0, 'x2': 331.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 251.0, 'y1': 251.0, 'x2': 331.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 11.0, 'y1': 11.0, 'x2': 11.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 11.0, 'y1': 171.0, 'x2': 11.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 91.0, 'y1': 91.0, 'x2': 11.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 171.0, 'y1': 11.0, 'x2': 171.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 171.0, 'y1': 171.0, 'x2': 171.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 91.0, 'y1': 91.0, 'x2': 171.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 251.0, 'y1': 91.0, 'x2': 171.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 331.0, 'y1': 11.0, 'x2': 331.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 331.0, 'y1': 171.0, 'x2': 331.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 251.0, 'y1': 91.0, 'x2': 331.0, 'y2': 91.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 11.0, 'y1': 171.0, 'x2': 11.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 11.0, 'y1': 331.0, 'x2': 11.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 91.0, 'y1': 251.0, 'x2': 11.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 171.0, 'y1': 171.0, 'x2': 171.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 171.0, 'y1': 331.0, 'x2': 171.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 91.0, 'y1': 251.0, 'x2': 171.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 251.0, 'y1': 251.0, 'x2': 171.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 331.0, 'y1': 171.0, 'x2': 331.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 331.0, 'y1': 331.0, 'x2': 331.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 251.0, 'y1': 251.0, 'x2': 331.0, 'y2': 251.0, 'color': '#1f77b4', 'style': 'solid', 'width': 2}, {'x1': 11.0, 'y1': 11.0, 'x2': 91.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 11.0, 'x2': 91.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 91.0, 'y1': 91.0, 'x2': 91.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 11.0, 'x2': 251.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 331.0, 'y1': 11.0, 'x2': 251.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 251.0, 'y1': 91.0, 'x2': 251.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 11.0, 'y1': 171.0, 'x2': 91.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 171.0, 'x2': 91.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 91.0, 'y1': 91.0, 'x2': 91.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 91.0, 'y1': 251.0, 'x2': 91.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 171.0, 'x2': 251.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 331.0, 'y1': 171.0, 'x2': 251.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 251.0, 'y1': 91.0, 'x2': 251.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 251.0, 'y1': 251.0, 'x2': 251.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 11.0, 'y1': 331.0, 'x2': 91.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 331.0, 'x2': 91.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 91.0, 'y1': 251.0, 'x2': 91.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 331.0, 'x2': 251.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 331.0, 'y1': 331.0, 'x2': 251.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 251.0, 'y1': 251.0, 'x2': 251.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 11.0, 'y1': 11.0, 'x2': 91.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 11.0, 'x2': 91.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 91.0, 'y1': 91.0, 'x2': 91.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 11.0, 'x2': 251.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 331.0, 'y1': 11.0, 'x2': 251.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 251.0, 'y1': 91.0, 'x2': 251.0, 'y2': 11.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 11.0, 'y1': 171.0, 'x2': 91.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 171.0, 'x2': 91.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 91.0, 'y1': 91.0, 'x2': 91.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 91.0, 'y1': 251.0, 'x2': 91.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 171.0, 'x2': 251.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 331.0, 'y1': 171.0, 'x2': 251.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 251.0, 'y1': 91.0, 'x2': 251.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 251.0, 'y1': 251.0, 'x2': 251.0, 'y2': 171.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 11.0, 'y1': 331.0, 'x2': 91.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 331.0, 'x2': 91.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 91.0, 'y1': 251.0, 'x2': 91.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 171.0, 'y1': 331.0, 'x2': 251.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 331.0, 'y1': 331.0, 'x2': 251.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}, {'x1': 251.0, 'y1': 251.0, 'x2': 251.0, 'y2': 331.0, 'color': '#d62728', 'style': 'dashed', 'width': 2}];
+
+        const svg = d3.select("#graph");
+        d3.selectAll(".d3-tooltip").remove();
+        const tooltip = d3.select("body")
+            .append("div")
+            .attr("class", "d3-tooltip");
+
+        // Draw edges first (bottom layer)
+        const edges = svg.selectAll(".edge")
+            .data(edgesData)
+            .enter()
+            .append("line")
+            .attr("class", "edge")
+            .attr("x1", d => d.x1)
+            .attr("y1", d => d.y1)
+            .attr("x2", d => d.x2)
+            .attr("y2", d => d.y2)
+            .attr("stroke", d => d.color)
+            .attr("stroke-width", d => d.width)
+            .attr("stroke-dasharray", d => d.style === "dashed" ? "5,5" : "none");
+
+        // Create node groups
+        const nodes = svg.selectAll(".node")
+            .data(nodesData)
+            .enter()
+            .append("g")
+            .attr("class", "node")
+            .attr("transform", d => `translate(${d.x},${d.y})`);
+
+        // Draw node shapes
+        nodes.each(function(d) {
+            const node = d3.select(this);
+            if (d.type === "qubit") {
+                // Circle for qubits
+                node.append("circle")
+                    .attr("r", d.radius)
+                    .attr("fill", d.fill)
+                    .attr("stroke", d.color)
+                    .attr("stroke-width", 2);
+            } else {
+                // Square for checks
+                node.append("rect")
+                    .attr("x", -d.radius)
+                    .attr("y", -d.radius)
+                    .attr("width", d.radius * 2)
+                    .attr("height", d.radius * 2)
+                    .attr("fill", d.fill)
+                    .attr("stroke", d.color)
+                    .attr("stroke-width", 2);
+            }
+        });
+
+        // Add labels
+        nodes.append("text")
+            .attr("class", "node-label")
+            .attr("x", d => d.radius + 5)
+            .attr("y", 5)
+            .attr("text-anchor", "start")
+            .text(d => d.label);
+
+        // Tooltip helpers
+        function positionTooltip(event) {
+            const tooltipNode = tooltip.node();
+            if (!tooltipNode) {
+                return;
+            }
+            const pageX = (event.pageX !== undefined ? event.pageX : event.clientX + window.scrollX);
+            const pageY = (event.pageY !== undefined ? event.pageY : event.clientY + window.scrollY);
+            const tooltipWidth = tooltipNode.offsetWidth || 0;
+            const tooltipHeight = tooltipNode.offsetHeight || 0;
+
+            let x = pageX + 16;
+            let y = pageY - tooltipHeight / 2;
+
+            const maxX = window.pageXOffset + window.innerWidth - tooltipWidth - 12;
+            const minX = window.pageXOffset + 12;
+            const maxY = window.pageYOffset + window.innerHeight - tooltipHeight - 12;
+            const minY = window.pageYOffset + 12;
+
+            if (x > maxX) {
+                x = maxX;
+            }
+            if (x < minX) {
+                x = minX;
+            }
+            if (y > maxY) {
+                y = maxY;
+            }
+            if (y < minY) {
+                y = minY;
+            }
+
+            tooltip.style("left", x + "px")
+                   .style("top", y + "px");
+        }
+
+        nodes.on("mouseover", function(event, d) {
+            tooltip.html("<b>" + d.label + "</b><br>Type: " + d.type)
+                .style("visibility", "visible")
+                .style("opacity", 1);
+            positionTooltip(event);
+        })
+        .on("mousemove", function(event) {
+            positionTooltip(event);
+        })
+        .on("mouseout", function() {
+            tooltip.style("opacity", 0)
+                .style("visibility", "hidden");
+        });
+    </script>
+</body>
+</html>

@@ -342,3 +342,57 @@ class HypergraphProductCode(CSSCode):
         }
 
         return class_specific_data
+    
+    def get_node_coordinates(self):
+
+        self.qubit_coordinates = []
+        self.x_check_coordinates = []
+        self.z_check_coordinates = []
+
+        L = self._n1
+
+        for j in range(self._n1):
+            for i in range(self._n2):
+                self.qubit_coordinates.append( (2*i,L-2*j) )
+
+        for j in range(self._n1):
+            for i in range(self._m2):
+                self.z_check_coordinates.append( (2*i+1,L-(2*j)) )
+
+        for j in range(self._m1):
+            for i in range(self._m2):
+                self.qubit_coordinates.append( (2*i+1,L-(2*j+1)) )
+
+        for j in range(self._m1):
+            for i in range(self._n2):
+                self.x_check_coordinates.append( (2*i,L-(2*j+1)) )
+
+
+        hx = self.x_stabilizer_matrix.toarray()
+        hz = self.z_stabilizer_matrix.toarray()
+
+        for i in range(hx.shape[0]):
+            for j in range(hx.shape[1]):
+                if hx[i,j]:
+                    self.x_edge_coordinates.append( (self.qubit_coordinates[j], self.x_check_coordinates[i]) )
+
+        for i in range(hz.shape[0]):
+            for j in range(hz.shape[1]):
+                if hz[i,j]:
+                    self.z_edge_coordinates.append( (self.qubit_coordinates[j], self.z_check_coordinates[i]) )
+
+if __name__ == "__main__":
+    from qec.utils.draw_css_code_d3 import draw_css_code_tanner_graph_d3 
+    from ldpc.codes import rep_code
+
+
+    hgp_code = HypergraphProductCode(
+        rep_code(3),rep_code(3)
+    )
+
+    hgp_code.get_node_coordinates()
+    # hgp_code.get_x_edge_coordinates()
+    # hgp_code.get_z_edge_coordinates()
+
+    output_file = "hgp.html"
+    draw_css_code_tanner_graph_d3(hgp_code,output_file,show_labels=False, spacing=80)

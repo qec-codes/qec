@@ -421,12 +421,12 @@ if __name__ == "__main__":
         show_labels=True,
         label_fontsize=10,
         x_edge_color="black",
-        x_check_fill="pink",
+        x_check_fill="white",
         z_edge_color="black",
-        z_check_fill="purple",
-        qubit_fill="green",
-        x_check_color="white",
-        z_check_color="white",
+        z_check_fill="white",
+        qubit_fill="#0091ff",
+        x_check_color="black",
+        z_check_color="black",
         edge_width=4
     )
     print(f"Open {output_file} in a web browser to view the interactive visualization.")
