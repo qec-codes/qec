@@ -220,56 +220,61 @@ def draw_css_code_tanner_graph_d3(
     <title>CSS Code Tanner Graph</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-        body {{
+        body {
             margin: 0;
             padding: 20px;
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
-        }}
-        #container {{
+        }
+        #container {
             background-color: white;
             border: 1px solid #ddd;
             border-radius: 4px;
             padding: 10px;
             display: inline-block;
-        }}
-        .node-label {{
+        }
+        .node-label {
             font-size: %dpx;
             pointer-events: none;
             user-select: none;
-        }}
-        .edge {{
+        }
+        .edge {
             pointer-events: none;
-        }}
-        .node {{
+        }
+        .node {
             cursor: pointer;
-        }}
-        /* Remove hover opacity effect */
-        .d3-tooltip {{
+        }
+        .d3-tooltip {
             position: absolute;
             text-align: left;
             padding: 6px 10px;
             font-size: 13px;
-            background: rgba(0,0,0,0.85);
-            color: #fff;
+            background: #fff;
+            color: #111;
+            border: 1.5px solid #111;
             border-radius: 4px;
             pointer-events: none;
-            z-index: 10;
+            z-index: 1000;
             visibility: hidden;
-        }}
+            opacity: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: opacity 0.08s ease;
+        }
     </style>
 </head>
 <body>
     <div id="container">
         <svg id="graph" width="%d" height="%d"></svg>
     </div>
-    <div class="d3-tooltip" id="d3-tooltip"></div>
     <script>
         const nodesData = %s;
         const edgesData = %s;
 
         const svg = d3.select("#graph");
-        const tooltip = d3.select("#d3-tooltip");
+        d3.selectAll(".d3-tooltip").remove();
+        const tooltip = d3.select("body")
+            .append("div")
+            .attr("class", "d3-tooltip");
 
         // Draw edges first (bottom layer)
         const edges = svg.selectAll(".edge")
@@ -324,19 +329,54 @@ def draw_css_code_tanner_graph_d3(
             .attr("text-anchor", "start")
             .text(d => d.label);
 
-        // Custom tooltip on hover (immediate)
+        // Tooltip helpers
+        function positionTooltip(event) {
+            const tooltipNode = tooltip.node();
+            if (!tooltipNode) {
+                return;
+            }
+            const pageX = (event.pageX !== undefined ? event.pageX : event.clientX + window.scrollX);
+            const pageY = (event.pageY !== undefined ? event.pageY : event.clientY + window.scrollY);
+            const tooltipWidth = tooltipNode.offsetWidth || 0;
+            const tooltipHeight = tooltipNode.offsetHeight || 0;
+
+            let x = pageX + 16;
+            let y = pageY - tooltipHeight / 2;
+
+            const maxX = window.pageXOffset + window.innerWidth - tooltipWidth - 12;
+            const minX = window.pageXOffset + 12;
+            const maxY = window.pageYOffset + window.innerHeight - tooltipHeight - 12;
+            const minY = window.pageYOffset + 12;
+
+            if (x > maxX) {
+                x = maxX;
+            }
+            if (x < minX) {
+                x = minX;
+            }
+            if (y > maxY) {
+                y = maxY;
+            }
+            if (y < minY) {
+                y = minY;
+            }
+
+            tooltip.style("left", x + "px")
+                   .style("top", y + "px");
+        }
+
         nodes.on("mouseover", function(event, d) {
-            tooltip.style("visibility", "visible")
-                .html(`<b>${d.label}</b><br>Type: ${d.type}`)
-                .style("left", (event.pageX + 12) + "px")
-                .style("top", (event.pageY - 12) + "px");
+            tooltip.html("<b>" + d.label + "</b><br>Type: " + d.type)
+                .style("visibility", "visible")
+                .style("opacity", 1);
+            positionTooltip(event);
         })
         .on("mousemove", function(event) {
-            tooltip.style("left", (event.pageX + 12) + "px")
-                .style("top", (event.pageY - 12) + "px");
+            positionTooltip(event);
         })
         .on("mouseout", function() {
-            tooltip.style("visibility", "hidden");
+            tooltip.style("opacity", 0)
+                .style("visibility", "hidden");
         });
     </script>
 </body>
@@ -372,39 +412,17 @@ if __name__ == "__main__":
         qubit_radius=16,
         check_radius=20,
         spacing=150,
-        width=1600,
-        height=1600,
         qubit_label="q",
-        x_check_label="S^X",
-        z_check_label="S^Y",
+        x_check_label="SX",
+        z_check_label="SZ",
         show_labels=True,
         label_fontsize=10,
         x_edge_color="black",
         z_edge_color="black",
         x_check_color="black",
         z_check_color="black",
-        edge_width=3
+        edge_width=4
     )
     print(f"Open {output_file} in a web browser to view the interactive visualization.")
 
-    # Example 2: Specify margin (auto-size SVG)
-    output_file2 = "rotated_xy_surface_l31_d3_margin.html"
-    draw_css_code_tanner_graph_d3(
-        code,
-        output_file2,
-        qubit_radius=16,
-        check_radius=20,
-        spacing=150,
-        margin=(0, 0, 0, 0),
-        qubit_label="q",
-        x_check_label="S^X",
-        z_check_label="S^Y",
-        show_labels=True,
-        label_fontsize=10,
-        x_edge_color="black",
-        z_edge_color="black",
-        x_check_color="black",
-        z_check_color="black",
-        edge_width=3
-    )
-    print(f"Open {output_file2} in a web browser to view the margin-based interactive visualization.")
+
