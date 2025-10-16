@@ -87,6 +87,8 @@ class StabilizerCode(object):
         self._logical_qubit_count = None
         self.code_distance = None
         self.logical_operator_basis = None
+        self.qubit_coordinates = None # For drawing purposes
+        self.check_coordinates = None # For drawing purposes
 
         if isinstance(stabilizers, list):
             stabilizers = np.array(stabilizers)

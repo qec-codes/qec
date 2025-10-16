@@ -81,6 +81,10 @@ class CSSCode(StabilizerCode):
         self.x_code_distance = None
         self.z_code_distance = None
         self.code_distance = None
+        self.x_check_coordinates = []
+        self.z_check_coordinates = []
+        self.x_edge_coordinates = []
+        self.z_edge_coordinates = []
 
         if not isinstance(x_stabilizer_matrix, (np.ndarray, scipy.sparse.spmatrix)):
             raise TypeError(
