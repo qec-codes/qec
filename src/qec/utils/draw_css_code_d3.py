@@ -402,7 +402,7 @@ def draw_css_code_tanner_graph_d3(
 if __name__ == "__main__":
     from qec.code_constructions.rotated_surface_code import RotatedSurfaceCode
     
-    code = RotatedSurfaceCode(11)
+    code = RotatedSurfaceCode(5)
     code.get_node_coordinates()
     code.get_x_edge_coordinates()
     code.get_z_edge_coordinates()
@@ -418,12 +418,15 @@ if __name__ == "__main__":
         qubit_label="Q",
         x_check_label="SX",
         z_check_label="SZ",
-        show_labels=False,
+        show_labels=True,
         label_fontsize=10,
         x_edge_color="black",
+        x_check_fill="pink",
         z_edge_color="black",
-        x_check_color="black",
-        z_check_color="black",
+        z_check_fill="purple",
+        qubit_fill="green",
+        x_check_color="white",
+        z_check_color="white",
         edge_width=4
     )
     print(f"Open {output_file} in a web browser to view the interactive visualization.")
