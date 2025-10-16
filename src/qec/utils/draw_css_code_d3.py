@@ -102,6 +102,9 @@ def draw_css_code_tanner_graph_d3(
     else:
         min_x = max_x = min_y = max_y = 0
 
+    if height is None and width is None and margin is None:
+        margin = (0,0,0,0)
+
     # Margin logic
     if margin is not None:
         if len(margin) != 4:
@@ -124,7 +127,7 @@ def draw_css_code_tanner_graph_d3(
         height = int(graph_height + margin_top + margin_bottom + 2 * pad)
         def transform_coord(x, y):
             tx = (x - min_x_pad) * spacing + margin_left + pad
-            ty = (y - min_y_pad) * spacing + margin_top + pad
+            ty = (max_y_pad - y) * spacing + margin_top + pad
             return tx, ty
     else:
         # Default: center in width/height
@@ -134,7 +137,7 @@ def draw_css_code_tanner_graph_d3(
         center_y = (min_y + max_y) / 2 if all_y else 0
         def transform_coord(x, y):
             tx = (x - center_x) * spacing + width / 2
-            ty = (y - center_y) * spacing + height / 2
+            ty = (center_y - y) * spacing + height / 2
             return tx, ty
 
     # Build node and edge data
@@ -399,7 +402,7 @@ def draw_css_code_tanner_graph_d3(
 if __name__ == "__main__":
     from qec.code_constructions.rotated_surface_code import RotatedSurfaceCode
     
-    code = RotatedSurfaceCode(5)
+    code = RotatedSurfaceCode(11)
     code.get_node_coordinates()
     code.get_x_edge_coordinates()
     code.get_z_edge_coordinates()
@@ -409,13 +412,13 @@ if __name__ == "__main__":
     draw_css_code_tanner_graph_d3(
         code,
         output_file,
-        qubit_radius=16,
-        check_radius=20,
-        spacing=150,
-        qubit_label="q",
+        qubit_radius=8,
+        check_radius=10,
+        spacing=75,
+        qubit_label="Q",
         x_check_label="SX",
         z_check_label="SZ",
-        show_labels=True,
+        show_labels=False,
         label_fontsize=10,
         x_edge_color="black",
         z_edge_color="black",
@@ -424,5 +427,4 @@ if __name__ == "__main__":
         edge_width=4
     )
     print(f"Open {output_file} in a web browser to view the interactive visualization.")
-
 
