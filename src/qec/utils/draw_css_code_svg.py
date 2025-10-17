@@ -17,7 +17,7 @@ def draw_css_code_tanner_graph_svg(
     qubit_label="Q",
     x_check_label="X",
     z_check_label="Z",
-    qubit_label_offset=0,
+    qubit_index_offset=0,
     check_label_offset=0,
     qubit_color="#1f77b4",
     qubit_fill="white",
@@ -69,7 +69,7 @@ def draw_css_code_tanner_graph_svg(
     Labels
     ------
     qubit_label, x_check_label, z_check_label : str
-    qubit_label_offset, check_label_offset : int
+    qubit_index_offset, check_label_offset : int
     show_labels : bool
     label_fontsize : int
 
@@ -177,7 +177,7 @@ def draw_css_code_tanner_graph_svg(
     node_elems = []
     for i, (x, y) in enumerate(qubit_coords):
         tx, ty = transform(x, y)
-        lbl = f"{qubit_label}_{i + qubit_label_offset}" if show_labels else ""
+        lbl = f"{qubit_label}_{i + qubit_index_offset}" if show_labels else ""
         title = lbl if lbl else f"qubit {i}"
         node_elems.append(circle_element(tx, ty, qubit_radius, qubit_color, qubit_fill, title=title, label=lbl))
 

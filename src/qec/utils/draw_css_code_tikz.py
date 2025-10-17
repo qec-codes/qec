@@ -110,7 +110,7 @@ def draw_css_code_tanner_graph_tikz(
     qubit_label="Q",
     x_check_label="X",
     z_check_label="Z",
-    qubit_label_offset=0,
+    qubit_index_offset=0,
     check_label_offset=0,
     qubit_colour="black",
     qubit_fill="white",
@@ -144,7 +144,7 @@ def draw_css_code_tanner_graph_tikz(
         Node radii for qubits and checks.
     qubit_label, x_check_label, z_check_label : str
         Label prefixes for qubits and checks.
-    qubit_label_offset, check_label_offset : int
+    qubit_index_offset, check_label_offset : int
         Index offset for node labels.
     qubit_colour, qubit_fill, check_colour, check_fill : str
         Node border and fill colors.
@@ -187,7 +187,7 @@ def draw_css_code_tanner_graph_tikz(
     # Draw qubit nodes
     for idx, (x, y) in enumerate(getattr(css_code, "qubit_coordinates", [])):
         x, y = x * spacing, y * spacing
-        label = f"$\\scriptstyle {qubit_label}_{{{idx + qubit_label_offset}}}$"
+        label = f"$\\scriptstyle {qubit_label}_{{{idx + qubit_index_offset}}}$"
         lx, ly = qubit_label_xy_offset
         print(f"\\filldraw[fill={qubit_fill}, draw={qubit_colour}] ({x},{y}) circle ({qubit_radius}) node at ({x+lx},{y+ly}) [{qubit_label_position}] {{{label}}};", file=f)
 

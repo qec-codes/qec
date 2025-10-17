@@ -382,7 +382,8 @@ class HypergraphProductCode(CSSCode):
                     self.z_edge_coordinates.append( (self.qubit_coordinates[j], self.z_check_coordinates[i]) )
 
 if __name__ == "__main__":
-    from qec.utils.draw_css_code_d3 import draw_css_code_tanner_graph_d3 
+    from qec.utils.draw_css_code_d3 import draw_css_code_tanner_graph_d3
+    from qec.utils.draw_css_code_tikz import draw_css_code_tanner_graph_tikz, compile_latex 
     from ldpc.codes import rep_code
 
 
@@ -395,4 +396,6 @@ if __name__ == "__main__":
     # hgp_code.get_z_edge_coordinates()
 
     output_file = "hgp.html"
-    draw_css_code_tanner_graph_d3(hgp_code,output_file,show_labels=False, spacing=80)
+    draw_css_code_tanner_graph_d3(hgp_code,output_file,show_labels=False, spacing=80, qubit_label_position="NE", x_check_label_position="NE", z_check_label_position="NE", qubit_index_offset=0, qubit_radius=12)
+    # draw_css_code_tanner_graph_tikz(hgp_code,"hgp.tex",spacing=1.5)
+    # compile_latex(output_file.replace(".html",".tex"))

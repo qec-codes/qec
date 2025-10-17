@@ -2,6 +2,9 @@
 Utility functions for drawing CSS code Tanner graphs using D3.js.
 """
 
+import json
+import math
+
 
 def draw_css_code_tanner_graph_d3(
     css_code,
@@ -11,16 +14,16 @@ def draw_css_code_tanner_graph_d3(
     qubit_label="Q",
     x_check_label="X",
     z_check_label="Z",
-    qubit_label_offset=0,
+    qubit_index_offset=0,
     check_label_offset=0,
-    qubit_color="#1f77b4",
+    qubit_color="#000000",
     qubit_fill="white",
-    x_check_color="#ff7f0e",
+    x_check_color="#000000",
     x_check_fill="white",
-    z_check_color="#2ca02c",
+    z_check_color="#000000",
     z_check_fill="white",
-    x_edge_color="#1f77b4",
-    z_edge_color="#d62728",
+    x_edge_color="#000000",
+    z_edge_color="#000000",
     x_edge_style="solid",
     z_edge_style="dashed",
     edge_width=2,
@@ -29,7 +32,14 @@ def draw_css_code_tanner_graph_d3(
     height=None,
     margin=None,
     show_labels=True,
-    label_fontsize=12
+    label_fontsize=12,
+    qubit_label_position="NE",
+    x_check_label_position="NE",
+    z_check_label_position="NE",
+    qubit_label_xy_offset=None,
+    x_check_label_xy_offset=None,
+    z_check_label_xy_offset=None,
+    background_color="transparent"
 ):
     """
     Draws a CSS code Tanner graph using D3.js, creating an interactive HTML visualization.
@@ -49,7 +59,7 @@ def draw_css_code_tanner_graph_d3(
         Node radii for qubits and checks (in pixels).
     qubit_label, x_check_label, z_check_label : str
         Label prefixes for qubits and checks.
-    qubit_label_offset, check_label_offset : int
+    qubit_index_offset, check_label_offset : int
         Index offset for node labels.
     qubit_color, x_check_color, z_check_color : str
         Node border colors (CSS color strings).
@@ -68,9 +78,20 @@ def draw_css_code_tanner_graph_d3(
     margin : tuple or None
         Optional. Tuple (left, top, right, bottom) specifying margins in pixels. If provided, SVG size is computed to fit the code with these margins.
     show_labels : bool
-        Whether to display node labels.
+        Whether to draw text labels next to the nodes (tooltips always keep the
+        identifiers, even when labels are hidden on the canvas).
     label_fontsize : int
         Font size for labels in pixels.
+    qubit_label_position, x_check_label_position, z_check_label_position : str
+        Cardinal direction for label placement relative to the node (one of
+        "N", "NE", "E", "SE", "S", "SW", "W", "NW", or "C"). Default is "NE".
+    qubit_label_xy_offset, x_check_label_xy_offset, z_check_label_xy_offset : tuple(float, float) or None
+        Optional explicit (dx, dy) offsets in pixels from the node centre. When
+        supplied, these replace the automatic offset calculated from the node
+        size and label position for the respective node family.
+    background_color : str
+        CSS color string for the page and container background. Defaults to
+        transparent so the generated page can be overlaid easily.
 
     Notes
     -----
@@ -91,6 +112,192 @@ def draw_css_code_tanner_graph_d3(
     x_edge_coords = getattr(css_code, "x_edge_coordinates", [])
     z_edge_coords = getattr(css_code, "z_edge_coordinates", [])
 
+    label_position_map = {
+        "N": (0.0, -1.0, "middle", "alphabetic"),
+        "NE": (1.0, -1.0, "start", "alphabetic"),
+        "E": (1.0, 0.0, "start", "middle"),
+        "SE": (1.0, 1.0, "start", "hanging"),
+        "S": (0.0, 1.0, "middle", "hanging"),
+        "SW": (-1.0, 1.0, "end", "hanging"),
+        "W": (-1.0, 0.0, "end", "middle"),
+        "NW": (-1.0, -1.0, "end", "alphabetic"),
+        "C": (0.0, 0.0, "middle", "middle")
+    }
+
+    def normalise_label_position(position):
+        if not position:
+            return "NE"
+        key = position.strip().upper()
+        if key in label_position_map:
+            return key
+        if key in {"CENTER", "CENTRE"}:
+            return "C"
+        return "NE"
+
+    def normalise_offset(offset, label_name):
+        if offset is None:
+            return None
+        if not isinstance(offset, (list, tuple)) or len(offset) != 2:
+            raise ValueError(f"{label_name} must be a 2-element tuple like (dx, dy) or None")
+        try:
+            return float(offset[0]), float(offset[1])
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{label_name} must contain numeric values") from exc
+
+    def estimate_text_width(text: str) -> float:
+        if not text:
+            return 0.0
+        # Empirical factor for typical font width
+        return max(label_fontsize * 0.6, len(text) * label_fontsize * 0.6)
+
+    def compute_label_info(label_text: str, radius: float, position: str, node_shape: str, custom_offset):
+        tooltip_label = label_text
+        display_label = label_text if (show_labels and label_text) else ""
+        pos_key = normalise_label_position(position)
+        mult_x, mult_y, anchor, baseline = label_position_map[pos_key]
+        gap = max(6.0, label_fontsize * 0.35)
+
+        if custom_offset is not None:
+            dx, dy = custom_offset
+        else:
+            dir_len = math.sqrt(mult_x * mult_x + mult_y * mult_y)
+            if dir_len == 0.0:
+                dx = dy = 0.0
+            else:
+                ux = mult_x / dir_len
+                uy = mult_y / dir_len
+
+                if node_shape == "square":
+                    distances = []
+                    if ux != 0.0:
+                        distances.append(radius / abs(ux))
+                    if uy != 0.0:
+                        distances.append(radius / abs(uy))
+                    if not distances:
+                        distances.append(radius)
+                    distance_to_edge = min(distances)
+                else:
+                    distance_to_edge = radius
+
+                total_distance = distance_to_edge + gap
+                dx = ux * total_distance
+                dy = uy * total_distance
+
+        bbox = {
+            "left": 0.0,
+            "right": 0.0,
+            "top": 0.0,
+            "bottom": 0.0
+        }
+
+        if display_label:
+            text_width = estimate_text_width(display_label)
+            text_height = float(label_fontsize)
+
+            if anchor == "start":
+                x_min = dx
+                x_max = dx + text_width
+            elif anchor == "end":
+                x_min = dx - text_width
+                x_max = dx
+            else:  # middle
+                x_min = dx - text_width / 2
+                x_max = dx + text_width / 2
+
+            if baseline == "alphabetic":
+                y_min = dy - text_height
+                y_max = dy
+            elif baseline == "hanging":
+                y_min = dy
+                y_max = dy + text_height
+            else:  # middle
+                y_min = dy - text_height / 2
+                y_max = dy + text_height / 2
+
+            bbox = {
+                "left": x_min,
+                "right": x_max,
+                "top": y_min,
+                "bottom": y_max
+            }
+
+        return {
+            "display_label": display_label,
+            "tooltip_label": tooltip_label,
+            "dx": dx,
+            "dy": dy,
+            "anchor": anchor,
+            "baseline": baseline,
+            "bbox": bbox
+        }
+
+    node_specs = []
+
+    qubit_offset_vec = normalise_offset(qubit_label_xy_offset, "qubit_label_xy_offset")
+    x_check_offset_vec = normalise_offset(x_check_label_xy_offset, "x_check_label_xy_offset")
+    z_check_offset_vec = normalise_offset(z_check_label_xy_offset, "z_check_label_xy_offset")
+
+    def add_node_spec(node_type, coords, radius, color, fill, label_prefix, label_offset, position, index, node_shape, custom_offset):
+        if label_prefix:
+            label_text = f"{label_prefix}_{index + label_offset}"
+        else:
+            label_text = f"{index + label_offset}"
+        label_info = compute_label_info(label_text, radius, position, node_shape, custom_offset)
+        node_specs.append({
+            "type": node_type,
+            "coords": coords,
+            "radius": radius,
+            "color": color,
+            "fill": fill,
+            "label_info": label_info,
+            "id": f"{node_type[0]}{index}",
+            "index": index,
+        })
+
+    for idx, coord in enumerate(qubit_coords):
+        add_node_spec(
+            "qubit",
+            coord,
+            qubit_radius,
+            qubit_color,
+            qubit_fill,
+            qubit_label,
+            qubit_index_offset,
+            qubit_label_position,
+            idx,
+            "circle",
+            qubit_offset_vec
+        )
+
+    for idx, coord in enumerate(x_check_coords):
+        add_node_spec(
+            "x_check",
+            coord,
+            check_radius,
+            x_check_color,
+            x_check_fill,
+            x_check_label,
+            check_label_offset,
+            x_check_label_position,
+            idx,
+            "square",
+            x_check_offset_vec
+        )
+
+    for idx, coord in enumerate(z_check_coords):
+        add_node_spec(
+            "z_check",
+            coord,
+            check_radius,
+            z_check_color,
+            z_check_fill,
+            z_check_label,
+            check_label_offset,
+            z_check_label_position,
+            idx,
+            "square",
+            z_check_offset_vec
+        )
 
     # Calculate bounds for layout
     all_x = [x for x, y in qubit_coords + x_check_coords + z_check_coords]
@@ -102,6 +309,27 @@ def draw_css_code_tanner_graph_d3(
     else:
         min_x = max_x = min_y = max_y = 0
 
+    edge_pad = edge_width / 2.0
+    if node_specs:
+        pad_left_req = pad_right_req = pad_top_req = pad_bottom_req = 0.0
+        for spec in node_specs:
+            radius_with_edge = spec["radius"] + edge_pad
+            left_extent = right_extent = top_extent = bottom_extent = radius_with_edge
+            label_info = spec["label_info"]
+            if label_info["display_label"]:
+                bbox = label_info["bbox"]
+                left_extent = max(left_extent, max(0.0, -bbox["left"]))
+                right_extent = max(right_extent, max(0.0, bbox["right"]))
+                top_extent = max(top_extent, max(0.0, -bbox["top"]))
+                bottom_extent = max(bottom_extent, max(0.0, bbox["bottom"]))
+            pad_left_req = max(pad_left_req, left_extent)
+            pad_right_req = max(pad_right_req, right_extent)
+            pad_top_req = max(pad_top_req, top_extent)
+            pad_bottom_req = max(pad_bottom_req, bottom_extent)
+    else:
+        default_pad = spacing / 2.0
+        pad_left_req = pad_right_req = pad_top_req = pad_bottom_req = default_pad
+
     if height is None and width is None and margin is None:
         margin = (0,0,0,0)
 
@@ -110,24 +338,25 @@ def draw_css_code_tanner_graph_d3(
         if len(margin) != 4:
             raise ValueError("margin must be a tuple of 4 integers: (left, top, right, bottom)")
         margin_left, margin_top, margin_right, margin_bottom = margin
-        # Find max node radius for each node type
-        max_qubit_radius = qubit_radius if qubit_coords else 0
-        max_check_radius = check_radius if (x_check_coords or z_check_coords) else 0
-        max_node_radius = max(max_qubit_radius, max_check_radius)
-        edge_pad = edge_width / 2
-        # Expand bounds by node radius and edge width (in SVG units, not code units)
-        pad = (max_node_radius + edge_pad)
+        pad_left = pad_left_req or spacing / 2.0
+        pad_right = pad_right_req or spacing / 2.0
+        pad_top = pad_top_req or spacing / 2.0
+        pad_bottom = pad_bottom_req or spacing / 2.0
+
         min_x_pad = min_x
         max_x_pad = max_x
         min_y_pad = min_y
         max_y_pad = max_y
+
         graph_width = (max_x_pad - min_x_pad) * spacing if max_x_pad > min_x_pad else spacing
         graph_height = (max_y_pad - min_y_pad) * spacing if max_y_pad > min_y_pad else spacing
-        width = int(graph_width + margin_left + margin_right + 2 * pad)
-        height = int(graph_height + margin_top + margin_bottom + 2 * pad)
+
+        width = int(math.ceil(graph_width + margin_left + margin_right + pad_left + pad_right))
+        height = int(math.ceil(graph_height + margin_top + margin_bottom + pad_top + pad_bottom))
+
         def transform_coord(x, y):
-            tx = (x - min_x_pad) * spacing + margin_left + pad
-            ty = (max_y_pad - y) * spacing + margin_top + pad
+            tx = (x - min_x_pad) * spacing + margin_left + pad_left
+            ty = (max_y_pad - y) * spacing + margin_top + pad_top
             return tx, ty
     else:
         # Default: center in width/height
@@ -144,46 +373,30 @@ def draw_css_code_tanner_graph_d3(
     nodes_data = []
     edges_data = []
 
-    # Add qubit nodes
-    for idx, (x, y) in enumerate(qubit_coords):
-        tx, ty = transform_coord(x, y)
-        nodes_data.append({
-            'id': f'q{idx}',
-            'x': tx,
-            'y': ty,
-            'type': 'qubit',
-            'label': f'{qubit_label}_{idx + qubit_label_offset}' if show_labels else '',
-            'radius': qubit_radius,
-            'color': qubit_color,
-            'fill': qubit_fill
-        })
+    type_label_map = {
+        "qubit": "Qubit",
+        "x_check": "X stabilizer",
+        "z_check": "Z stabilizer"
+    }
 
-    # Add X check nodes
-    for idx, (x, y) in enumerate(x_check_coords):
-        tx, ty = transform_coord(x, y)
+    for spec in node_specs:
+        tx, ty = transform_coord(spec["coords"][0], spec["coords"][1])
+        label_info = spec["label_info"]
         nodes_data.append({
-            'id': f'x{idx}',
+            'id': spec['id'],
             'x': tx,
             'y': ty,
-            'type': 'x_check',
-            'label': f'{x_check_label}_{idx + check_label_offset}' if show_labels else '',
-            'radius': check_radius,
-            'color': x_check_color,
-            'fill': x_check_fill
-        })
-
-    # Add Z check nodes
-    for idx, (x, y) in enumerate(z_check_coords):
-        tx, ty = transform_coord(x, y)
-        nodes_data.append({
-            'id': f'z{idx}',
-            'x': tx,
-            'y': ty,
-            'type': 'z_check',
-            'label': f'{z_check_label}_{idx + check_label_offset}' if show_labels else '',
-            'radius': check_radius,
-            'color': z_check_color,
-            'fill': z_check_fill
+            'type': spec['type'],
+            'type_label': type_label_map.get(spec['type'], spec['type'].title()),
+            'tooltip_label': label_info['tooltip_label'],
+            'display_label': label_info['display_label'],
+            'label_dx': label_info['dx'],
+            'label_dy': label_info['dy'],
+            'label_anchor': label_info['anchor'],
+            'label_baseline': label_info['baseline'],
+            'radius': spec['radius'],
+            'color': spec['color'],
+            'fill': spec['fill']
         })
 
     # Add X edges
@@ -214,6 +427,9 @@ def draw_css_code_tanner_graph_d3(
             'width': edge_width
         })
 
+    nodes_json = json.dumps(nodes_data, ensure_ascii=False)
+    edges_json = json.dumps(edges_data, ensure_ascii=False)
+
     # Generate HTML with embedded D3.js
     html_content = r"""<!DOCTYPE html>
 <html lang="en">
@@ -227,13 +443,12 @@ def draw_css_code_tanner_graph_d3(
             margin: 0;
             padding: 20px;
             font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
+            background-color: %s;
         }
         #container {
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
+            background-color: %s;
+            border: none;
+            padding: 0;
             display: inline-block;
         }
         .node-label {
@@ -270,8 +485,8 @@ def draw_css_code_tanner_graph_d3(
         <svg id="graph" width="%d" height="%d"></svg>
     </div>
     <script>
-        const nodesData = %s;
-        const edgesData = %s;
+    const nodesData = %s;
+    const edgesData = %s;
 
         const svg = d3.select("#graph");
         d3.selectAll(".d3-tooltip").remove();
@@ -327,10 +542,12 @@ def draw_css_code_tanner_graph_d3(
         // Add labels
         nodes.append("text")
             .attr("class", "node-label")
-            .attr("x", d => d.radius + 5)
-            .attr("y", 5)
-            .attr("text-anchor", "start")
-            .text(d => d.label);
+            .attr("x", d => d.label_dx)
+            .attr("y", d => d.label_dy)
+            .attr("text-anchor", d => d.label_anchor)
+            .attr("dominant-baseline", d => d.label_baseline)
+            .text(d => d.display_label)
+            .style("visibility", d => d.display_label ? "visible" : "hidden");
 
         // Tooltip helpers
         function positionTooltip(event) {
@@ -369,7 +586,8 @@ def draw_css_code_tanner_graph_d3(
         }
 
         nodes.on("mouseover", function(event, d) {
-            tooltip.html("<b>" + d.label + "</b><br>Type: " + d.type)
+            const tooltipLabel = d.tooltip_label || d.display_label || d.id;
+            tooltip.html("<b>" + tooltipLabel + "</b><br>Type: " + d.type_label)
                 .style("visibility", "visible")
                 .style("opacity", 1);
             positionTooltip(event);
@@ -384,11 +602,13 @@ def draw_css_code_tanner_graph_d3(
     </script>
 </body>
 </html>""" % (
-        label_fontsize,
-        width,
-        height,
-        repr(nodes_data),
-        repr(edges_data)
+    background_color,
+    background_color,
+    label_fontsize,
+    width,
+    height,
+    nodes_json,
+    edges_json
     )
 
     # Write to file
@@ -402,23 +622,23 @@ def draw_css_code_tanner_graph_d3(
 if __name__ == "__main__":
     from qec.code_constructions.rotated_surface_code import RotatedSurfaceCode
     
-    code = RotatedSurfaceCode(5)
+    code = RotatedSurfaceCode(35)
     code.get_node_coordinates()
     code.get_x_edge_coordinates()
     code.get_z_edge_coordinates()
     
-    output_file = "rotated_xy_surface_l31_d3.html"
+    output_file = "rs.html"
     # Example 1: Specify width/height (centered)
     draw_css_code_tanner_graph_d3(
         code,
         output_file,
-        qubit_radius=8,
-        check_radius=10,
-        spacing=75,
+        qubit_radius=12,
+        check_radius=15,
+        spacing=90,
         qubit_label="Q",
         x_check_label="SX",
         z_check_label="SZ",
-        show_labels=True,
+        show_labels=False,
         label_fontsize=10,
         x_edge_color="black",
         x_check_fill="white",
@@ -427,7 +647,13 @@ if __name__ == "__main__":
         qubit_fill="#0091ff",
         x_check_color="black",
         z_check_color="black",
-        edge_width=4
+    edge_width=4,
+        qubit_label_position="NE",
+        x_check_label_position="E",
+    z_check_label_position="W",
+    background_color="#ffffff"
     )
     print(f"Open {output_file} in a web browser to view the interactive visualization.")
+
+
 
