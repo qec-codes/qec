@@ -396,6 +396,16 @@ if __name__ == "__main__":
     # hgp_code.get_z_edge_coordinates()
 
     output_file = "hgp.html"
-    draw_css_code_tanner_graph_d3(hgp_code,output_file,show_labels=False, spacing=80, qubit_label_position="NE", x_check_label_position="NE", z_check_label_position="NE", qubit_index_offset=0, qubit_radius=12)
+    draw_css_code_tanner_graph_d3(hgp_code,output_file,
+                                  show_labels=False,
+                                  spacing=80,
+                                  qubit_label_position="NE",
+                                  x_check_label_position="NE",
+                                  z_check_label_position="NE",
+                                  qubit_index_offset=1,
+                                  qubit_radius=12,
+                                  check_radius=12,
+                                  x_check_fill="#005EB8",
+                                  z_check_fill="#005EB8",)
     # draw_css_code_tanner_graph_tikz(hgp_code,"hgp.tex",spacing=1.5)
     # compile_latex(output_file.replace(".html",".tex"))
