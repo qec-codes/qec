@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PLU Debug Test</title>
+</head>
+<body>
+    <h1>Testing PLU Solver with Zero Vector</h1>
+    <div id="output"></div>
+
+    <script>
+        // Simplified pluSolve function
+        function pluSolve(plu, y) {
+            if (!plu || !plu.L || !plu.U || !plu.P) {
+                console.log("Invalid PLU structure");
+                return null;
+            }
+            
+            const rank = plu.rank;
+            const numRows = plu.P.length;
+            const numCols = plu.U[0].length;
+            
+            console.log(`pluSolve called with y of length ${y.length}`);
+            console.log(`PLU: rank=${rank}, numRows=${numRows}, numCols=${numCols}`);
+            console.log(`y = [${y.join(',')}]`);
+            
+            // Apply permutation P to y: Py = P @ y
+            const Py = new Array(numRows).fill(0);
+            for (let i = 0; i < numRows; i++) {
+                for (let j = 0; j < numRows; j++) {
+                    if (plu.P[i][j] === 1) {
+                        Py[i] = y[j];
+                        break;
+                    }
+                }
+            }
+            
+            console.log(`After permutation: Py = [${Py.join(',')}]`);
+            
+            // Forward substitution: solve Lb = Py for b
+            const b = new Array(rank).fill(0);
+            for (let i = 0; i < rank; i++) {
+                let sum = 0;
+                for (let j = 0; j < i; j++) {
+                    sum ^= (plu.L[i][j] * b[j]);
+                }
+                b[i] = Py[i] ^ sum;
+            }
+            
+            console.log(`After forward sub: b = [${b.join(',')}]`);
+            
+            // Check if y is in the image
+            for (let i = rank; i < numRows; i++) {
+                let sum = 0;
+                for (let j = 0; j < rank; j++) {
+                    sum ^= (plu.L[i][j] * b[j]);
+                }
+                const residual = Py[i] ^ sum;
+                console.log(`Row ${i}: Py[${i}]=${Py[i]}, sum=${sum}, residual=${residual}`);
+                if (residual !== 0) {
+                    console.log(`NOT in image! Returning null`);
+                    return null;
+                }
+            }
+            
+            // Backward substitution
+            const x = new Array(numCols).fill(0);
+            for (let i = rank - 1; i >= 0; i--) {
+                let sum = 0;
+                for (let j = plu.pivot_cols[i] + 1; j < numCols; j++) {
+                    sum ^= (plu.U[i][j] * x[j]);
+                }
+                x[plu.pivot_cols[i]] = b[i] ^ sum;
+            }
+            
+            console.log(`Solution: x = [${x.join(',')}]`);
+            return x;
+        }
+        
+        // Create a simple 3x2 matrix for testing
+        // [ 1 0 ]
+        // [ 0 1 ]
+        // [ 0 0 ]
+        // This has rank 2
+        
+        const testPLU = {
+            L: [[1,0,0],[0,1,0],[0,0,1]],
+            U: [[1,0],[0,1],[0,0]],
+            P: [[1,0,0],[0,1,0],[0,0,1]],
+            rank: 2,
+            pivot_cols: [0, 1]
+        };
+        
+        // Test 1: Zero vector (should work)
+        console.log("\n=== Test 1: Zero vector ===");
+        const result1 = pluSolve(testPLU, [0, 0, 0]);
+        console.log("Result:", result1);
+        
+        // Test 2: [1, 0, 0] (should work - in column space)
+        console.log("\n=== Test 2: [1, 0, 0] ===");
+        const result2 = pluSolve(testPLU, [1, 0, 0]);
+        console.log("Result:", result2);
+        
+        // Test 3: [0, 0, 1] (should fail - NOT in column space)
+        console.log("\n=== Test 3: [0, 0, 1] ===");
+        const result3 = pluSolve(testPLU, [0, 0, 1]);
+        console.log("Result:", result3);
+        
+        document.getElementById('output').innerHTML = `
+            <p>Test 1 (zero vector): ${result1 ? JSON.stringify(result1) : 'null'}</p>
+            <p>Test 2 ([1,0,0]): ${result2 ? JSON.stringify(result2) : 'null'}</p>
+            <p>Test 3 ([0,0,1]): ${result3 ? JSON.stringify(result3) : 'null'}</p>
+            <p>Check console for details</p>
+        `;
+    </script>
+</body>
+</html>

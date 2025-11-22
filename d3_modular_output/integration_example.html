@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated CSS Code Visualization Example</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="css_code_viz.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .control-group {
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button.secondary {
+            background: #2196F3;
+        }
+        button.secondary:hover {
+            background: #0b7dda;
+        }
+        label {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        #svg-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            display: inline-block;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+        .info h3 {
+            margin-top: 0;
+        }
+        .code-example {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Modular CSS Code Visualization</h1>
+        <p>This example shows how to embed the CSS code visualization in a larger application.</p>
+        
+        <div class="controls">
+            <h3>Interactive Controls</h3>
+            
+            <div class="control-group">
+                <strong>Error Simulation:</strong><br>
+                <button onclick="simulateRandomError()">Add Random Error</button>
+                <button onclick="simulateMultipleErrors()">Add Multiple Errors</button>
+                <button class="secondary" onclick="clearAllErrors()">Clear All Errors</button>
+            </div>
+            
+            <div class="control-group">
+                <strong>Display Options:</strong><br>
+                <label>
+                    <input type="checkbox" id="show-x-edges" checked onchange="toggleXEdges()">
+                    Show X-check Edges
+                </label>
+                <label>
+                    <input type="checkbox" id="show-z-edges" checked onchange="toggleZEdges()">
+                    Show Z-check Edges
+                </label>
+                <label>
+                    <input type="checkbox" id="show-labels" checked onchange="toggleLabels()">
+                    Show Labels
+                </label>
+            </div>
+        </div>
+        
+        <div id="svg-container">
+            <svg id="main-visualization"></svg>
+        </div>
+        
+        <div class="info">
+            <h3>📚 Integration Guide</h3>
+            <p>This visualization is powered by a modular JavaScript file that can be embedded anywhere:</p>
+            <div class="code-example">
+&lt;!-- 1. Include D3.js --&gt;<br>
+&lt;script src="https://d3js.org/d3.v7.min.js"&gt;&lt;/script&gt;<br><br>
+&lt;!-- 2. Include the CSS Code Viz module --&gt;<br>
+&lt;script src="css_code_viz.js"&gt;&lt;/script&gt;<br><br>
+&lt;!-- 3. Render in your application --&gt;<br>
+&lt;script&gt;<br>
+&nbsp;&nbsp;// Initial render<br>
+&nbsp;&nbsp;CSSCodeViz.render('#main-visualization');<br><br>
+&nbsp;&nbsp;// Highlight errors on specific qubits<br>
+&nbsp;&nbsp;CSSCodeViz.highlightErrors('#main-visualization', ['q0', 'q5']);<br><br>
+&nbsp;&nbsp;// Toggle edge types<br>
+&nbsp;&nbsp;CSSCodeViz.toggleEdges('#main-visualization', 'x_check', false);<br>
+&lt;/script&gt;
+            </div>
+            <p><strong>Features:</strong> Error highlighting, edge toggling, custom styling, dynamic updates</p>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize the visualization
+        let vizElements = CSSCodeViz.render('#main-visualization');
+        let errorNodes = [];
+        
+        function simulateRandomError() {
+            const nodes = CSSCodeViz.data.nodes.filter(n => n.type === 'qubit');
+            const randomNode = nodes[Math.floor(Math.random() * nodes.length)];
+            errorNodes.push(randomNode.id);
+            CSSCodeViz.highlightErrors('#main-visualization', errorNodes, '#ff0000');
+            console.log('Error added to:', randomNode.id);
+        }
+        
+        function simulateMultipleErrors() {
+            const nodes = CSSCodeViz.data.nodes.filter(n => n.type === 'qubit');
+            const numErrors = Math.min(3, nodes.length);
+            for (let i = 0; i < numErrors; i++) {
+                const randomNode = nodes[Math.floor(Math.random() * nodes.length)];
+                if (!errorNodes.includes(randomNode.id)) {
+                    errorNodes.push(randomNode.id);
+                }
+            }
+            CSSCodeViz.highlightErrors('#main-visualization', errorNodes, '#ff0000');
+            console.log('Errors on:', errorNodes);
+        }
+        
+        function clearAllErrors() {
+            errorNodes = [];
+            CSSCodeViz.clearErrors('#main-visualization');
+            console.log('All errors cleared');
+        }
+        
+        function toggleXEdges() {
+            const checked = document.getElementById('show-x-edges').checked;
+            CSSCodeViz.toggleEdges('#main-visualization', 'x_check', checked);
+        }
+        
+        function toggleZEdges() {
+            const checked = document.getElementById('show-z-edges').checked;
+            CSSCodeViz.toggleEdges('#main-visualization', 'z_check', checked);
+        }
+        
+        function toggleLabels() {
+            const checked = document.getElementById('show-labels').checked;
+            const svg = d3.select('#main-visualization');
+            svg.selectAll('.css-node-label')
+                .transition()
+                .duration(200)
+                .style('opacity', checked ? 1 : 0);
+        }
+    </script>
+</body>
+</html>

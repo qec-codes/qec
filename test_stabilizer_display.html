@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Stabilizer Display</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div id="test-output" class="font-mono"></div>
+    
+    <script>
+        // Simulate the data structure
+        const testData = {
+            nodes: [
+                { id: 'x0', type: 'x_check' },
+                { id: 'x1', type: 'x_check' },
+                { id: 'z0', type: 'z_check' },
+                { id: 'z1', type: 'z_check' }
+            ],
+            x_check_id_to_index: {
+                'x0': 0,
+                'x1': 1
+            },
+            z_check_id_to_index: {
+                'z0': 0,
+                'z1': 1
+            }
+        };
+        
+        const selectedStabilizers = new Set(['x0', 'z1']);
+        const errorMode = 'X_STAB';
+        
+        // Test the logic
+        const stabilizerList = [];
+        
+        selectedStabilizers.forEach(checkId => {
+            console.log('Processing checkId:', checkId);
+            const checkNode = testData.nodes.find(n => n.id === checkId);
+            console.log('Found node:', checkNode);
+            
+            if (!checkNode) {
+                console.log('Node not found!');
+                return;
+            }
+            
+            const checkType = checkNode.type;
+            console.log('Check type:', checkType);
+            
+            const idToIndex = checkType === 'x_check' ? testData.x_check_id_to_index : testData.z_check_id_to_index;
+            console.log('ID to index map:', idToIndex);
+            
+            const idx = idToIndex[checkId];
+            console.log('Index:', idx);
+            
+            if (idx !== undefined) {
+                const stabType = checkType === 'x_check' ? 'X' : 'Z';
+                const colorClass = checkType === 'x_check' ? 'text-orange-400' : 'text-teal-400';
+                stabilizerList.push({ type: stabType, index: idx, colorClass });
+                console.log('Added to list:', { type: stabType, index: idx, colorClass });
+            }
+        });
+        
+        console.log('Final stabilizer list:', stabilizerList);
+        
+        // Sort by index
+        stabilizerList.sort((a, b) => a.index - b.index);
+        
+        // Format as S_X(1) S_Z(2) etc.
+        const formattedStabilizers = stabilizerList.map(stab => {
+            return `<span class="${stab.colorClass}">S<sub>${stab.type}</sub>(${stab.index})</span>`;
+        });
+        
+        const output = formattedStabilizers.join(' ');
+        console.log('Output:', output);
+        
+        document.getElementById('test-output').innerHTML = output;
+    </script>
+</body>
+</html>

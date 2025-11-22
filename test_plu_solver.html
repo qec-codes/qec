@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLU Solver Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .test-case {
+            background: #2a2a2a;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-case.pass {
+            border-color: #00ff00;
+        }
+        .test-case.fail {
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+        h1 {
+            color: #00ff00;
+            text-align: center;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #ffff00;
+            margin-top: 0;
+        }
+        .matrix {
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        .pass-text {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        .fail-text {
+            color: #ff0000;
+            font-weight: bold;
+        }
+        .info {
+            color: #00aaff;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>JavaScript PLU Solver Test Suite (GF(2))</h1>
+    <div id="test-results"></div>
+
+    <script>
+        // Copy the PLU solver from the main file
+        function matrixVectorMod2(matrix, vector) {
+            const result = [];
+            for (let i = 0; i < matrix.length; i++) {
+                let sum = 0;
+                for (let j = 0; j < matrix[i].length; j++) {
+                    sum += matrix[i][j] * vector[j];
+                }
+                result.push(sum % 2);
+            }
+            return result;
+        }
+
+        function pluSolve(plu, y) {
+            if (!plu || !plu.L || !plu.U || !plu.P) {
+                return null;
+            }
+            
+            const rank = plu.rank;
+            const numRows = plu.P.length;
+            const numCols = plu.U[0].length;
+            
+            // Apply permutation P to y: Py = P @ y
+            const Py = new Array(numRows).fill(0);
+            for (let i = 0; i < numRows; i++) {
+                for (let j = 0; j < numRows; j++) {
+                    if (plu.P[i][j] === 1) {
+                        Py[i] = y[j];
+                        break;
+                    }
+                }
+            }
+            
+            // Forward substitution: solve Lb = Py for b
+            // L is lower triangular with 1s on diagonal
+            const b = new Array(rank).fill(0);
+            for (let i = 0; i < rank; i++) {
+                let sum = 0;
+                for (let j = 0; j < i; j++) {
+                    sum ^= (plu.L[i][j] * b[j]);
+                }
+                b[i] = Py[i] ^ sum;
+            }
+            
+            // Check if y is in the image (remaining rows of Py should be zero after forward substitution)
+            for (let i = rank; i < numRows; i++) {
+                let sum = 0;
+                for (let j = 0; j < rank; j++) {
+                    sum ^= (plu.L[i][j] * b[j]);
+                }
+                if ((Py[i] ^ sum) !== 0) {
+                    return null; // y is not in image of matrix
+                }
+            }
+            
+            // Backward substitution: solve Ux = b for x
+            // U is upper triangular (not necessarily 1s on diagonal due to pivoting)
+            const x = new Array(numCols).fill(0);
+            for (let i = rank - 1; i >= 0; i--) {
+                let sum = 0;
+                // Sum over columns to the right of the pivot
+                for (let j = plu.pivot_cols[i] + 1; j < numCols; j++) {
+                    sum ^= (plu.U[i][j] * x[j]);
+                }
+                // Set the pivot column value
+                x[plu.pivot_cols[i]] = b[i] ^ sum;
+            }
+            
+            return x;
+        }
+
+        // Helper functions for testing
+        function arraysEqual(a, b) {
+            if (a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) {
+                if (a[i] !== b[i]) return false;
+            }
+            return true;
+        }
+
+        function matrixToString(matrix) {
+            return matrix.map(row => '[' + row.join(' ') + ']').join('\n');
+        }
+
+        function vectorToString(vec) {
+            return '[' + vec.join(' ') + ']';
+        }
+
+        // Test runner
+        const testResults = [];
+
+        function runTest(name, description, matrix, plu, testCases) {
+            let html = `<div class="test-case">`;
+            html += `<h2>${name}</h2>`;
+            html += `<p class="info">${description}</p>`;
+            html += `<div class="matrix"><strong>Matrix A:</strong>\n<pre>${matrixToString(matrix)}</pre></div>`;
+            
+            let allPassed = true;
+            
+            for (let i = 0; i < testCases.length; i++) {
+                const test = testCases[i];
+                const y = test.y;
+                const expectedX = test.expectedX;
+                const shouldSolve = test.shouldSolve !== false;
+                
+                html += `<hr><p><strong>Test ${i + 1}:</strong> ${test.description}</p>`;
+                html += `<p>Input y = ${vectorToString(y)}</p>`;
+                
+                const solution = pluSolve(plu, y);
+                
+                if (shouldSolve) {
+                    if (solution === null) {
+                        html += `<p class="fail-text">❌ FAIL: Expected solution but got null</p>`;
+                        allPassed = false;
+                    } else {
+                        html += `<p>Solution x = ${vectorToString(solution)}</p>`;
+                        
+                        // Verify Ax = y
+                        const Ax = matrixVectorMod2(matrix, solution);
+                        const matches = arraysEqual(Ax, y);
+                        
+                        if (matches) {
+                            html += `<p class="pass-text">✓ Verification: Ax = ${vectorToString(Ax)} = y ✓</p>`;
+                            if (expectedX && !arraysEqual(solution, expectedX)) {
+                                html += `<p class="info">Note: Different solution than expected (${vectorToString(expectedX)}) but still valid</p>`;
+                            }
+                        } else {
+                            html += `<p class="fail-text">❌ FAIL: Ax = ${vectorToString(Ax)} ≠ y</p>`;
+                            allPassed = false;
+                        }
+                    }
+                } else {
+                    // Should NOT solve (y not in image)
+                    if (solution === null) {
+                        html += `<p class="pass-text">✓ PASS: Correctly returned null (y not in image)</p>`;
+                    } else {
+                        html += `<p class="fail-text">❌ FAIL: Expected null but got solution ${vectorToString(solution)}</p>`;
+                        allPassed = false;
+                    }
+                }
+            }
+            
+            html += `</div>`;
+            
+            testResults.push({name, passed: allPassed});
+            document.getElementById('test-results').innerHTML += allPassed ? 
+                html.replace('test-case', 'test-case pass') : 
+                html.replace('test-case', 'test-case fail');
+        }
+
+        // Test Case 1: Identity matrix
+        const test1_matrix = [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ];
+        const test1_plu = {
+            L: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+            U: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+            P: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+            rank: 3,
+            pivot_cols: [0, 1, 2]
+        };
+        runTest(
+            "Test 1: Identity Matrix",
+            "3x3 identity matrix - simplest case",
+            test1_matrix,
+            test1_plu,
+            [
+                {description: "Solve for y = [1, 0, 0]", y: [1, 0, 0], expectedX: [1, 0, 0]},
+                {description: "Solve for y = [0, 1, 1]", y: [0, 1, 1], expectedX: [0, 1, 1]},
+                {description: "Solve for y = [1, 1, 1]", y: [1, 1, 1], expectedX: [1, 1, 1]}
+            ]
+        );
+
+        // Test Case 2: Simple 2x3 matrix (rank 2)
+        const test2_matrix = [
+            [1, 0, 1],
+            [0, 1, 1]
+        ];
+        const test2_plu = {
+            L: [[1, 0], [0, 1]],
+            U: [[1, 0, 1], [0, 1, 1]],
+            P: [[1, 0], [0, 1]],
+            rank: 2,
+            pivot_cols: [0, 1]
+        };
+        runTest(
+            "Test 2: Rectangular Matrix (2x3)",
+            "Underdetermined system - multiple solutions possible",
+            test2_matrix,
+            test2_plu,
+            [
+                {description: "Solve for y = [1, 0]", y: [1, 0], expectedX: [1, 0, 0]},
+                {description: "Solve for y = [0, 1]", y: [0, 1], expectedX: [0, 1, 0]},
+                {description: "Solve for y = [1, 1]", y: [1, 1], expectedX: [1, 1, 0]}
+            ]
+        );
+
+        // Test Case 3: Matrix with dependent rows (rank deficient)
+        // From actual Python PLU computation
+        const test3_matrix = [
+            [1, 1, 0],
+            [0, 1, 1],
+            [1, 0, 1]  // This is row0 + row1 (mod 2)
+        ];
+        const test3_plu = {
+            L: [[1, 0, 0], [0, 1, 0], [1, 1, 0]],
+            U: [[1, 1, 0], [0, 1, 1], [0, 0, 0]],
+            P: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+            rank: 2,
+            pivot_cols: [0, 1]
+        };
+        runTest(
+            "Test 3: Rank-Deficient Matrix",
+            "3x3 matrix with rank 2 - some y vectors not in image",
+            test3_matrix,
+            test3_plu,
+            [
+                {description: "Solve for y = [0, 0, 0] (in image)", y: [0, 0, 0], expectedX: [0, 0, 0]},
+                {description: "Solve for y = [1, 1, 0] (in image, y=row0+row1)", y: [1, 1, 0], expectedX: [0, 1, 0]},
+                {description: "Solve for y = [1, 0, 0] (NOT in image)", y: [1, 0, 0], shouldSolve: false},
+                {description: "Solve for y = [0, 0, 1] (NOT in image)", y: [0, 0, 1], shouldSolve: false}
+            ]
+        );
+
+        // Test Case 4: Surface Code-like example (from actual PLU data)
+        const test4_matrix = [
+            [1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0],
+            [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0]
+        ];
+        const test4_plu = {
+            L: [
+                [1, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0, 1]
+            ],
+            U: [
+                [1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0],
+                [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+                [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
+                [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1],
+                [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0]
+            ],
+            P: [
+                [1, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0, 1]
+            ],
+            rank: 6,
+            pivot_cols: [0, 1, 2, 3, 4, 5]
+        };
+        runTest(
+            "Test 4: Surface Code Parity Check Matrix",
+            "6x12 matrix from actual surface code (Hx or Hz)",
+            test4_matrix,
+            test4_plu,
+            [
+                {description: "Solve for zero syndrome", y: [0, 0, 0, 0, 0, 0], expectedX: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
+                {description: "Solve for single stabilizer (row 0)", y: [1, 0, 0, 0, 0, 0], expectedX: [1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0]},
+                {description: "Solve for combined stabilizers", y: [1, 1, 0, 0, 0, 0]}
+            ]
+        );
+
+        // Test Case 5: XOR operations
+        const test5_matrix = [
+            [1, 1, 0, 0],
+            [0, 1, 1, 0],
+            [0, 0, 1, 1]
+        ];
+        const test5_plu = {
+            L: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+            U: [[1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1]],
+            P: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+            rank: 3,
+            pivot_cols: [0, 1, 2]
+        };
+        runTest(
+            "Test 5: XOR Chain Matrix",
+            "3x4 matrix with XOR dependencies",
+            test5_matrix,
+            test5_plu,
+            [
+                {description: "Solve for y = [1, 1, 1]", y: [1, 1, 1]},
+                {description: "Solve for y = [0, 1, 0]", y: [0, 1, 0]},
+                {description: "Solve for y = [1, 0, 1]", y: [1, 0, 1]}
+            ]
+        );
+
+        // Display summary
+        const totalTests = testResults.length;
+        const passedTests = testResults.filter(r => r.passed).length;
+        const summary = `
+            <div class="test-case ${passedTests === totalTests ? 'pass' : 'fail'}">
+                <h2>Summary</h2>
+                <p style="font-size: 20px;">
+                    ${passedTests === totalTests ? 
+                        `<span class="pass-text">ALL TESTS PASSED! ✓</span>` : 
+                        `<span class="fail-text">SOME TESTS FAILED! ✗</span>`
+                    }
+                </p>
+                <p>Tests Passed: ${passedTests}/${totalTests}</p>
+                ${passedTests !== totalTests ? 
+                    `<p class="fail-text">Failed tests: ${testResults.filter(r => !r.passed).map(r => r.name).join(', ')}</p>` : 
+                    ''
+                }
+            </div>
+        `;
+        document.getElementById('test-results').innerHTML += summary;
+    </script>
+</body>
+</html>

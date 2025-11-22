@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Code Tanner Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: transparent;
+        }
+        #container {
+            background-color: transparent;
+            border: none;
+            padding: 0;
+            display: inline-block;
+        }
+        .node-label {
+            font-size: 12px;
+            pointer-events: none;
+            user-select: none;
+        }
+        .edge {
+            pointer-events: none;
+        }
+        .node {
+            cursor: pointer;
+        }
+        .d3-tooltip {
+            position: absolute;
+            text-align: left;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #111;
+            border: 1.5px solid #111;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: opacity 0.08s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <svg id="graph" width="556" height="522"></svg>
+    </div>
+    <script>
+    const nodesData = [{"id": "q0", "x": 61.0, "y": 61.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_0", "display_label": "Q_0", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q1", "x": 161.0, "y": 61.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_1", "display_label": "Q_1", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q2", "x": 261.0, "y": 61.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_2", "display_label": "Q_2", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q3", "x": 361.0, "y": 61.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_3", "display_label": "Q_3", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q4", "x": 461.0, "y": 61.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_4", "display_label": "Q_4", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q5", "x": 61.0, "y": 161.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_5", "display_label": "Q_5", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q6", "x": 161.0, "y": 161.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_6", "display_label": "Q_6", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q7", "x": 261.0, "y": 161.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_7", "display_label": "Q_7", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q8", "x": 361.0, "y": 161.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_8", "display_label": "Q_8", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q9", "x": 461.0, "y": 161.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_9", "display_label": "Q_9", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q10", "x": 61.0, "y": 261.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_10", "display_label": "Q_10", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q11", "x": 161.0, "y": 261.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_11", "display_label": "Q_11", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q12", "x": 261.0, "y": 261.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_12", "display_label": "Q_12", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q13", "x": 361.0, "y": 261.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_13", "display_label": "Q_13", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q14", "x": 461.0, "y": 261.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_14", "display_label": "Q_14", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q15", "x": 61.0, "y": 361.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_15", "display_label": "Q_15", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q16", "x": 161.0, "y": 361.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_16", "display_label": "Q_16", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q17", "x": 261.0, "y": 361.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_17", "display_label": "Q_17", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q18", "x": 361.0, "y": 361.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_18", "display_label": "Q_18", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q19", "x": 461.0, "y": 361.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_19", "display_label": "Q_19", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q20", "x": 61.0, "y": 461.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_20", "display_label": "Q_20", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q21", "x": 161.0, "y": 461.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_21", "display_label": "Q_21", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q22", "x": 261.0, "y": 461.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_22", "display_label": "Q_22", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q23", "x": 361.0, "y": 461.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_23", "display_label": "Q_23", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "q24", "x": 461.0, "y": 461.0, "type": "qubit", "type_label": "Qubit", "tooltip_label": "Q_24", "display_label": "Q_24", "label_dx": 14.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 8, "color": "#000000", "fill": "white"}, {"id": "x0", "x": 111.0, "y": 111.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_0", "display_label": "X_0", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x1", "x": 311.0, "y": 111.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_1", "display_label": "X_1", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x2", "x": 211.0, "y": 211.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_2", "display_label": "X_2", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x3", "x": 411.0, "y": 211.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_3", "display_label": "X_3", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x4", "x": 111.0, "y": 311.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_4", "display_label": "X_4", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x5", "x": 311.0, "y": 311.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_5", "display_label": "X_5", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x6", "x": 211.0, "y": 411.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_6", "display_label": "X_6", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x7", "x": 411.0, "y": 411.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_7", "display_label": "X_7", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x8", "x": 11.0, "y": 211.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_8", "display_label": "X_8", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x9", "x": 11.0, "y": 411.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_9", "display_label": "X_9", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x10", "x": 511.0, "y": 111.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_10", "display_label": "X_10", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "x11", "x": 511.0, "y": 311.0, "type": "x_check", "type_label": "X stabilizer", "tooltip_label": "X_11", "display_label": "X_11", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z0", "x": 211.0, "y": 111.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_0", "display_label": "Z_0", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z1", "x": 411.0, "y": 111.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_1", "display_label": "Z_1", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z2", "x": 111.0, "y": 211.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_2", "display_label": "Z_2", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z3", "x": 311.0, "y": 211.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_3", "display_label": "Z_3", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z4", "x": 211.0, "y": 311.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_4", "display_label": "Z_4", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z5", "x": 411.0, "y": 311.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_5", "display_label": "Z_5", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z6", "x": 111.0, "y": 411.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_6", "display_label": "Z_6", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z7", "x": 311.0, "y": 411.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_7", "display_label": "Z_7", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z8", "x": 111.0, "y": 11.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_8", "display_label": "Z_8", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z9", "x": 311.0, "y": 11.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_9", "display_label": "Z_9", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z10", "x": 211.0, "y": 511.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_10", "display_label": "Z_10", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}, {"id": "z11", "x": 411.0, "y": 511.0, "type": "z_check", "type_label": "Z stabilizer", "tooltip_label": "Z_11", "display_label": "Z_11", "label_dx": 16.0, "label_dy": 0.0, "label_anchor": "start", "label_baseline": "middle", "radius": 10, "color": "#000000", "fill": "white"}];
+    const edgesData = [{"x1": 61.0, "y1": 61.0, "x2": 111.0, "y2": 111.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 161.0, "y1": 61.0, "x2": 111.0, "y2": 111.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 61.0, "y1": 161.0, "x2": 111.0, "y2": 111.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 161.0, "y1": 161.0, "x2": 111.0, "y2": 111.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 261.0, "y1": 61.0, "x2": 311.0, "y2": 111.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 361.0, "y1": 61.0, "x2": 311.0, "y2": 111.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 261.0, "y1": 161.0, "x2": 311.0, "y2": 111.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 361.0, "y1": 161.0, "x2": 311.0, "y2": 111.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 161.0, "y1": 161.0, "x2": 211.0, "y2": 211.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 261.0, "y1": 161.0, "x2": 211.0, "y2": 211.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 161.0, "y1": 261.0, "x2": 211.0, "y2": 211.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 261.0, "y1": 261.0, "x2": 211.0, "y2": 211.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 361.0, "y1": 161.0, "x2": 411.0, "y2": 211.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 461.0, "y1": 161.0, "x2": 411.0, "y2": 211.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 361.0, "y1": 261.0, "x2": 411.0, "y2": 211.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 461.0, "y1": 261.0, "x2": 411.0, "y2": 211.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 61.0, "y1": 261.0, "x2": 111.0, "y2": 311.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 161.0, "y1": 261.0, "x2": 111.0, "y2": 311.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 61.0, "y1": 361.0, "x2": 111.0, "y2": 311.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 161.0, "y1": 361.0, "x2": 111.0, "y2": 311.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 261.0, "y1": 261.0, "x2": 311.0, "y2": 311.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 361.0, "y1": 261.0, "x2": 311.0, "y2": 311.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 261.0, "y1": 361.0, "x2": 311.0, "y2": 311.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 361.0, "y1": 361.0, "x2": 311.0, "y2": 311.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 161.0, "y1": 361.0, "x2": 211.0, "y2": 411.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 261.0, "y1": 361.0, "x2": 211.0, "y2": 411.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 161.0, "y1": 461.0, "x2": 211.0, "y2": 411.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 261.0, "y1": 461.0, "x2": 211.0, "y2": 411.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 361.0, "y1": 361.0, "x2": 411.0, "y2": 411.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 461.0, "y1": 361.0, "x2": 411.0, "y2": 411.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 361.0, "y1": 461.0, "x2": 411.0, "y2": 411.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 461.0, "y1": 461.0, "x2": 411.0, "y2": 411.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 61.0, "y1": 161.0, "x2": 11.0, "y2": 211.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 61.0, "y1": 261.0, "x2": 11.0, "y2": 211.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 61.0, "y1": 361.0, "x2": 11.0, "y2": 411.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 61.0, "y1": 461.0, "x2": 11.0, "y2": 411.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 461.0, "y1": 61.0, "x2": 511.0, "y2": 111.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 461.0, "y1": 161.0, "x2": 511.0, "y2": 111.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 461.0, "y1": 261.0, "x2": 511.0, "y2": 311.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 461.0, "y1": 361.0, "x2": 511.0, "y2": 311.0, "color": "#000000", "style": "solid", "width": 2}, {"x1": 161.0, "y1": 61.0, "x2": 211.0, "y2": 111.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 261.0, "y1": 61.0, "x2": 211.0, "y2": 111.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 161.0, "y1": 161.0, "x2": 211.0, "y2": 111.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 261.0, "y1": 161.0, "x2": 211.0, "y2": 111.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 361.0, "y1": 61.0, "x2": 411.0, "y2": 111.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 461.0, "y1": 61.0, "x2": 411.0, "y2": 111.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 361.0, "y1": 161.0, "x2": 411.0, "y2": 111.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 461.0, "y1": 161.0, "x2": 411.0, "y2": 111.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 61.0, "y1": 161.0, "x2": 111.0, "y2": 211.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 161.0, "y1": 161.0, "x2": 111.0, "y2": 211.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 61.0, "y1": 261.0, "x2": 111.0, "y2": 211.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 161.0, "y1": 261.0, "x2": 111.0, "y2": 211.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 261.0, "y1": 161.0, "x2": 311.0, "y2": 211.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 361.0, "y1": 161.0, "x2": 311.0, "y2": 211.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 261.0, "y1": 261.0, "x2": 311.0, "y2": 211.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 361.0, "y1": 261.0, "x2": 311.0, "y2": 211.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 161.0, "y1": 261.0, "x2": 211.0, "y2": 311.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 261.0, "y1": 261.0, "x2": 211.0, "y2": 311.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 161.0, "y1": 361.0, "x2": 211.0, "y2": 311.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 261.0, "y1": 361.0, "x2": 211.0, "y2": 311.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 361.0, "y1": 261.0, "x2": 411.0, "y2": 311.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 461.0, "y1": 261.0, "x2": 411.0, "y2": 311.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 361.0, "y1": 361.0, "x2": 411.0, "y2": 311.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 461.0, "y1": 361.0, "x2": 411.0, "y2": 311.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 61.0, "y1": 361.0, "x2": 111.0, "y2": 411.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 161.0, "y1": 361.0, "x2": 111.0, "y2": 411.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 61.0, "y1": 461.0, "x2": 111.0, "y2": 411.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 161.0, "y1": 461.0, "x2": 111.0, "y2": 411.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 261.0, "y1": 361.0, "x2": 311.0, "y2": 411.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 361.0, "y1": 361.0, "x2": 311.0, "y2": 411.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 261.0, "y1": 461.0, "x2": 311.0, "y2": 411.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 361.0, "y1": 461.0, "x2": 311.0, "y2": 411.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 61.0, "y1": 61.0, "x2": 111.0, "y2": 11.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 161.0, "y1": 61.0, "x2": 111.0, "y2": 11.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 261.0, "y1": 61.0, "x2": 311.0, "y2": 11.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 361.0, "y1": 61.0, "x2": 311.0, "y2": 11.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 161.0, "y1": 461.0, "x2": 211.0, "y2": 511.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 261.0, "y1": 461.0, "x2": 211.0, "y2": 511.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 361.0, "y1": 461.0, "x2": 411.0, "y2": 511.0, "color": "#000000", "style": "dashed", "width": 2}, {"x1": 461.0, "y1": 461.0, "x2": 411.0, "y2": 511.0, "color": "#000000", "style": "dashed", "width": 2}];
+
+        const svg = d3.select("#graph");
+        d3.selectAll(".d3-tooltip").remove();
+        const tooltip = d3.select("body")
+            .append("div")
+            .attr("class", "d3-tooltip");
+
+        // Draw edges first (bottom layer)
+        const edges = svg.selectAll(".edge")
+            .data(edgesData)
+            .enter()
+            .append("line")
+            .attr("class", "edge")
+            .attr("x1", d => d.x1)
+            .attr("y1", d => d.y1)
+            .attr("x2", d => d.x2)
+            .attr("y2", d => d.y2)
+            .attr("stroke", d => d.color)
+            .attr("stroke-width", d => d.width)
+            .attr("stroke-dasharray", d => d.style === "dashed" ? "5,5" : "none");
+
+        // Create node groups
+        const nodes = svg.selectAll(".node")
+            .data(nodesData)
+            .enter()
+            .append("g")
+            .attr("class", "node")
+            .attr("transform", d => `translate(${d.x},${d.y})`);
+
+        // Draw node shapes
+        nodes.each(function(d) {
+            const node = d3.select(this);
+            if (d.type === "qubit") {
+                // Circle for qubits
+                node.append("circle")
+                    .attr("r", d.radius)
+                    .attr("fill", d.fill)
+                    .attr("stroke", d.color)
+                    .attr("stroke-width", 2);
+            } else {
+                // Square for checks
+                node.append("rect")
+                    .attr("x", -d.radius)
+                    .attr("y", -d.radius)
+                    .attr("width", d.radius * 2)
+                    .attr("height", d.radius * 2)
+                    .attr("fill", d.fill)
+                    .attr("stroke", d.color)
+                    .attr("stroke-width", 2);
+            }
+        });
+
+        // Add labels
+        nodes.append("text")
+            .attr("class", "node-label")
+            .attr("x", d => d.label_dx)
+            .attr("y", d => d.label_dy)
+            .attr("text-anchor", d => d.label_anchor)
+            .attr("dominant-baseline", d => d.label_baseline)
+            .text(d => d.display_label)
+            .style("visibility", d => d.display_label ? "visible" : "hidden");
+
+        // Tooltip helpers
+        function positionTooltip(event) {
+            const tooltipNode = tooltip.node();
+            if (!tooltipNode) {
+                return;
+            }
+            const pageX = (event.pageX !== undefined ? event.pageX : event.clientX + window.scrollX);
+            const pageY = (event.pageY !== undefined ? event.pageY : event.clientY + window.scrollY);
+            const tooltipWidth = tooltipNode.offsetWidth || 0;
+            const tooltipHeight = tooltipNode.offsetHeight || 0;
+
+            let x = pageX + 16;
+            let y = pageY - tooltipHeight / 2;
+
+            const maxX = window.pageXOffset + window.innerWidth - tooltipWidth - 12;
+            const minX = window.pageXOffset + 12;
+            const maxY = window.pageYOffset + window.innerHeight - tooltipHeight - 12;
+            const minY = window.pageYOffset + 12;
+
+            if (x > maxX) {
+                x = maxX;
+            }
+            if (x < minX) {
+                x = minX;
+            }
+            if (y > maxY) {
+                y = maxY;
+            }
+            if (y < minY) {
+                y = minY;
+            }
+
+            tooltip.style("left", x + "px")
+                   .style("top", y + "px");
+        }
+
+        nodes.on("mouseover", function(event, d) {
+            const tooltipLabel = d.tooltip_label || d.display_label || d.id;
+            tooltip.html("<b>" + tooltipLabel + "</b><br>Type: " + d.type_label)
+                .style("visibility", "visible")
+                .style("opacity", 1);
+            positionTooltip(event);
+        })
+        .on("mousemove", function(event) {
+            positionTooltip(event);
+        })
+        .on("mouseout", function() {
+            tooltip.style("opacity", 0)
+                .style("visibility", "hidden");
+        });
+    </script>
+</body>
+</html>
