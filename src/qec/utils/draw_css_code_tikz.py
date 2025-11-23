@@ -155,9 +155,26 @@ def draw_css_code_tanner_graph_tikz(
     qubit_label_position, x_check_label_position, z_check_label_position : str
         Position of the label relative to the node (e.g. "above right", "right", "below", "south east", etc.).
         These are passed directly to TikZ's node positioning. Default is "above right" (northeast).
+        Single letter compass directions (N, S, E, W, NE, NW, SE, SW) are also supported.
     qubit_label_xy_offset, x_check_label_xy_offset, z_check_label_xy_offset : tuple(float, float)
         Additional (x, y) offset applied to the label position for each node type, in TikZ coordinates.
     """
+    # Convert single letter compass directions to TikZ positions
+    position_map = {
+        "N": "above",
+        "S": "below",
+        "E": "right",
+        "W": "left",
+        "NE": "above right",
+        "NW": "above left",
+        "SE": "below right",
+        "SW": "below left"
+    }
+    
+    qubit_label_position = position_map.get(qubit_label_position, qubit_label_position)
+    x_check_label_position = position_map.get(x_check_label_position, x_check_label_position)
+    z_check_label_position = position_map.get(z_check_label_position, z_check_label_position)
+    
     f = open(file_name, "w+")
     print(r"\documentclass[tikz, border=0]{standalone}", file=f)
     print(r"\usepackage{tikz}", file=f)
