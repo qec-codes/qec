@@ -351,7 +351,7 @@ class CSSCode(StabilizerCode):
                     x_logical, x_stabiliser = next(x_iter)
                     candidate_x = x_logical + x_stabiliser
                     candidate_x.data %= 2
-                    x_weight = candidate_x.getnnz()
+                    x_weight = (candidate_x != 0).sum() #count non-duplicate non zeros
                     if x_weight < x_code_distance:
                         x_code_distance = x_weight
                     combinations_considered += 1
@@ -364,7 +364,7 @@ class CSSCode(StabilizerCode):
                     z_logical, z_stabiliser = next(z_iter)
                     candidate_z = z_logical + z_stabiliser
                     candidate_z.data %= 2
-                    z_weight = candidate_z.getnnz()
+                    z_weight = (candidate_z != 0).sum()
                     if z_weight < z_code_distance:
                         z_code_distance = z_weight
                     combinations_considered += 1
